@@ -4,7 +4,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, current_timestamp, from_json
 from pyspark.sql.types import DoubleType, StringType, StructType
 
-from src.common.logger import log
+from common.logger import log
 
 logger = log("KafkaConsumer")
 
@@ -110,6 +110,7 @@ class KafkaConsumer:
             .option("kafka.bootstrap.servers", self.kafka_bootstrap_servers)
             .option("subscribe", self.topic_name)
             .option("startingOffsets", "earliest")
+            .option("kafka.group.id", "spark_consumer_group")
             .load()
         )
 
