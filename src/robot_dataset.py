@@ -1,9 +1,11 @@
 import pandas as pd
+from dotenv import load_dotenv
 from RoADDataset import Dataset
 
 from common.logger import log
 
 logger = log("RobotDataset")
+load_dotenv()
 
 
 class RobotDataset:

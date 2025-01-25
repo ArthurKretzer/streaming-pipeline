@@ -1,11 +1,13 @@
 import os
 
+from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, current_timestamp, from_json
-from pyspark.sql.types import DoubleType, StringType, StructType
+from pyspark.sql.types import DoubleType, StringType
 
 from common.logger import log
 
+load_dotenv()
 logger = log("KafkaConsumer")
 
 

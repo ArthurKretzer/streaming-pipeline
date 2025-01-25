@@ -1,6 +1,9 @@
 import logging
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
 # Color number definition
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, GRAY = range(9)
 
