@@ -1,67 +1,95 @@
-import sys
+import os
 import time
+import traceback
+from argparse import ArgumentParser
 
 from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 from common.logger import log
 from data_process import DataProcess
 from kafka_consumer import KafkaConsumer
 from kafka_producer import KafkaProducer
 
+load_dotenv()
+
+
 logger = log("Main")
 
-kafka_broker = "kafka-cpc.certi.org.br:31289"  # Kafka Bootstrap server
+KAFKA_BROKER = os.getenv("KAFKA_BROKER")
 
 
 def produce(topic_name: str = "robot", data_type: str = "mocked"):
-    producer = KafkaProducer(kafka_broker, topic_name)
-    producer.produce(data_type)
+    try:
+        producer = KafkaProducer(KAFKA_BROKER, topic_name)
+        producer.produce(data_type)
+        logger.info(
+            f"Produced data of type '{data_type}' to topic '{topic_name}'."
+        )
+    except Exception as e:
+        logger.error(f"Failed to produce to topic '{topic_name}': {e}")
+        traceback()
 
 
 def consume(topic_name: str = "robot"):
-    consumer = KafkaConsumer(kafka_broker, topic_name)
-    stream = consumer.consume()
-
-    show_stream_progress(stream)
+    try:
+        consumer = KafkaConsumer(KAFKA_BROKER, topic_name)
+        stream = consumer.consume()
+        show_stream_progress(stream)
+    except Exception as e:
+        logger.error(f"Failed to consume from topic '{topic_name}': {e}")
+        traceback()
 
 
 def process():
-    process = DataProcess()
-    stream = process.process()
-
-    show_stream_progress(stream)
+    try:
+        processor = DataProcess()
+        stream = processor.process()
+        show_stream_progress(stream)
+    except Exception as e:
+        logger.error(f"Error during processing: {e}")
+        traceback()
 
 
 def show_stream_progress(stream):
-    while stream.isActive:
+    try:
+        while stream.isActive:
+            logger.info(stream.lastProgress)
+            time.sleep(5)
+        logger.info("Stream is not active anymore")
         logger.info(stream.lastProgress)
-        time.sleep(5)
-    logger.info("Stream is not active anymore")
-    logger.info(stream.lastProgress)
+    except AttributeError as e:
+        logger.error(f"Error accessing stream attributes: {e}")
+        traceback()
+
+
+def parse_arguments():
+    parser = ArgumentParser(description="Kafka producer/consumer script")
+    parser.add_argument(
+        "function_name",
+        choices=["consume", "produce", "process"],
+        help="Function to execute: 'consume', 'produce', or 'process'.",
+    )
+    parser.add_argument(
+        "topic_name",
+        nargs="?",
+        default="robot",
+        help="Kafka topic name (default: 'robot').",
+    )
+    parser.add_argument(
+        "data_type",
+        nargs="?",
+        default="mocked",
+        help="Data type to produce (default: 'mocked').",
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    if (len(sys.argv) < 2) | (len(sys.argv) > 3):
-        logger.error("Usage: python script.py <function_name> <topic_name>")
-        sys.exit(1)
+    args = parse_arguments()
 
-    function_name = sys.argv[1]
-
-    try:
-        topic_name = sys.argv[2]
-    except IndexError:
-        pass
-
-    if function_name == "consume":
-        consume(topic_name)
-    elif function_name == "produce":
-        produce(topic_name, "mocked")
-    elif function_name == "process":
+    if args.function_name == "consume":
+        consume(args.topic_name)
+    elif args.function_name == "produce":
+        produce(args.topic_name, args.data_type)
+    elif args.function_name == "process":
         process()
-    else:
-        logger.error(
-            "Invalid function name. Choose from 'consume', 'produce', or 'process'."
-        )
