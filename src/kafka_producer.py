@@ -3,11 +3,13 @@ import time
 from datetime import datetime, timezone
 
 from confluent_kafka import Producer
+from dotenv import load_dotenv
 
 from common.logger import log
 from robot_dataset import RobotDataset
 
 logger = log("KafkaConsumer")
+load_dotenv()
 
 
 class KafkaProducer:
