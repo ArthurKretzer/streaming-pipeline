@@ -27,7 +27,7 @@ def produce(topic_name: str = "robot", data_type: str = "mocked"):
         )
     except Exception as e:
         logger.error(f"Failed to produce to topic '{topic_name}': {e}")
-        traceback()
+        traceback.print_exc()
 
 
 def consume(topic_name: str = "robot"):
@@ -37,7 +37,7 @@ def consume(topic_name: str = "robot"):
         show_stream_progress(stream)
     except Exception as e:
         logger.error(f"Failed to consume from topic '{topic_name}': {e}")
-        traceback()
+        traceback.print_exc()
 
 
 def process():
@@ -47,7 +47,7 @@ def process():
         show_stream_progress(stream)
     except Exception as e:
         logger.error(f"Error during processing: {e}")
-        traceback()
+        traceback.print_exc()
 
 
 def show_stream_progress(stream):
@@ -59,7 +59,7 @@ def show_stream_progress(stream):
         logger.info(stream.lastProgress)
     except AttributeError as e:
         logger.error(f"Error accessing stream attributes: {e}")
-        traceback()
+        traceback.print_exc()
 
 
 def parse_arguments():
@@ -71,13 +71,13 @@ def parse_arguments():
     )
     parser.add_argument(
         "topic_name",
-        nargs="?",
+        choices=["robot", "control_power", "accelerometer_gyro"],
         default="robot",
         help="Kafka topic name (default: 'robot').",
     )
     parser.add_argument(
         "data_type",
-        nargs="?",
+        choices=["mocked", "control_power", "accelerometer_gyro"],
         default="mocked",
         help="Data type to produce (default: 'mocked').",
     )
