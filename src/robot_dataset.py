@@ -102,8 +102,8 @@ class RobotDataset:
     ]
 
     def __init__(self, normalize: bool = False):
-        self.columns = self.control_power_columns.append(
-            self.accelerometer_gyro_columns
+        self.columns = (
+            self.control_power_columns + self.accelerometer_gyro_columns
         )
         dataset_raw = Dataset(normalize=normalize)
         training_subset = dataset_raw.sets["training"]
@@ -112,16 +112,18 @@ class RobotDataset:
     def _concat_subsets(self, subsets: list) -> pd.DataFrame:
         """Concatenate subsets into a single DataFrame."""
         return pd.concat(
-            [pd.DataFrame(subset, columns=self.columns) for subset in subsets]
+            [pd.DataFrame(subset, columns=self.columns) for subset in subsets],
+            ignore_index=True,
         )
 
-    def get_dataset(self, data_type: str):
+    def get_dataset(self, data_type: str) -> pd.DataFrame:
         if data_type == "control_power":
-            self._get_control_power_data()
+            return self._get_control_power_data()
         elif data_type == "accelerometer_gyro":
-            self._get_temperature_accelerometer_gyro_data()
+            return self._get_temperature_accelerometer_gyro_data()
         else:
             logger.error(f"Invalid data type ({data_type}) for producer.")
+            raise ValueError(f"Invalid data type ({data_type}) for producer.")
 
     def _get_control_power_data(self) -> pd.DataFrame:
         return self.dataset[self.control_power_columns]
