@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 
 from confluent_kafka import Producer
 
-from src.common.logger import log
-from src.robot_dataset import RobotDataset
+from common.logger import log
+from robot_dataset import RobotDataset
 
 logger = log("KafkaConsumer")
 
@@ -53,7 +53,9 @@ class KafkaProducer:
             time.sleep(0.1)  # 10Hz
 
     def _produce_mocked_data(self):
-        while True:
+        i = 0
+        msg_count = 10000
+        while i <= msg_count:
             # Creates random temperature data between 20.0
             # and 30.0 degrees Celsius.
             temperature = round(random.uniform(20.0, 30.0), 2)
@@ -64,7 +66,7 @@ class KafkaProducer:
             }"""
 
             self._send_message(key=timestamp, value=message)
-
+            i += 1
             time.sleep(0.1)  # 10Hz
 
     def _send_message(self, key, value):

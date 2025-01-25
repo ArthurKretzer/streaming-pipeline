@@ -1,7 +1,7 @@
 import pandas as pd
 from RoADDataset import Dataset
 
-from src.common.logger import log
+from common.logger import log
 
 logger = log("RobotDataset")
 
