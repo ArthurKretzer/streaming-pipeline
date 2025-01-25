@@ -4,11 +4,30 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, current_timestamp, from_json
 from pyspark.sql.types import DoubleType, StringType, StructType
 
+from src.common.logger import log
+
+logger = log("KafkaConsumer")
+
 
 class KafkaConsumer:
-    def __init__(self):
+    def __init__(
+        self, kafka_bootstrap_servers: str, kafka_topic: str = "robot"
+    ):
+        self.topic_name = kafka_topic
+        self.kafka_bootstrap_servers = kafka_bootstrap_servers
+
+        # TODO: Avaliar a utilização de outra ferramenta que não o Spark, como o Storm ou Flink.
+
+        # Set up Spark with Delta Lake and MinIO support
+        minio_package = "org.apache.hadoop:hadoop-aws:3.3.4"
+        delta_package = "io.delta:delta-spark_2.12:3.3.0"
+        kafka_package = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.4"
+        kafka_package += ",org.apache.kafka:kafka-clients:3.9.0"
+        packages = f"{minio_package},{delta_package},{kafka_package}"
+
+        # Submit packages to Spark
         os.environ["PYSPARK_SUBMIT_ARGS"] = (
-            "--packages org.apache.hadoop:hadoop-aws:3.3.4,io.delta:delta-spark_2.12:3.3.0,org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.4,org.apache.kafka:kafka-clients:3.9.0 pyspark-shell"
+            f"--packages {packages} pyspark-shell"
         )
 
         # Initialize Spark session with Delta Lake and MinIO support
@@ -60,7 +79,7 @@ class KafkaConsumer:
             .getOrCreate()
         )
 
-    def create_delta_table(self):
+    def _create_delta_table(self):
         # Define the schema for the processed table
         processed_schema = (
             StructType()
@@ -77,10 +96,7 @@ class KafkaConsumer:
         ).option("delta.enableChangeDataFeed", "true").mode("overwrite").save()
 
     def consume(self):
-        # Kafka Configuration
-        kafka_broker = "kafka-cpc.certi.org.br:31289"
-        topic_name = "iot-temperature"
-
+        self._create_delta_table()
         # Define the schema for the JSON data
         schema = (
             StructType()
@@ -91,8 +107,8 @@ class KafkaConsumer:
         # Read data from Kafka
         kafka_stream = (
             self.spark.readStream.format("kafka")
-            .option("kafka.bootstrap.servers", kafka_broker)
-            .option("subscribe", topic_name)
+            .option("kafka.bootstrap.servers", self.kafka_bootstrap_servers)
+            .option("subscribe", self.topic_name)
             .option("startingOffsets", "earliest")
             .load()
         )
@@ -112,20 +128,22 @@ class KafkaConsumer:
         parsed_stream_with_timestamp.printSchema()
 
         # Define the path to the raw Delta table
-        raw_delta_path = "s3a://lakehouse/delta/raw_iot_data"
+        raw_delta_path = f"s3a://lakehouse/delta/raw_{self.topic_name}"
 
         # Write Kafka stream to Delta table
         raw_stream_query = (
             parsed_stream_with_timestamp.writeStream.format("delta")
             .option(
                 "checkpointLocation",
-                "s3a://lakehouse/delta/checkpoints/raw_iot_data",
+                f"s3a://lakehouse/delta/checkpoints/raw_{self.topic_name}",
             )
             .option("mergeSchema", "true")
             .outputMode("append")
             .start(raw_delta_path)
         )
 
-        print("Streaming Kafka data into Delta Lake (raw_iot_data)...")
+        logger.info(
+            f"Streaming Kafka data from {self.topic_name} into Delta Lake raw_{self.topic_name}..."
+        )
 
         return raw_stream_query

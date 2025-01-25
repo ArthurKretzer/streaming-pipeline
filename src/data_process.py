@@ -1,10 +1,6 @@
 import os
 
-from dotenv import load_dotenv
 from pyspark.sql import SparkSession
-
-# Load environment variables from .env file
-load_dotenv("./.env")
 
 
 class DataProcess:
