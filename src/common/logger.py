@@ -1,8 +1,6 @@
 import logging
 import os
 
-from data_backend.settings import Settings
-
 # Color number definition
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE, GRAY = range(9)
 
@@ -69,13 +67,13 @@ class log(logging.Logger):
         if not self.handlers:
             color_formatter = ColoredFormatter(self.COLOR_FORMAT)
             ch = logging.StreamHandler()
-            ch.setLevel(Settings().LOG_LEVEL)
+            ch.setLevel(os.getenv("LOG_LEVEL"))
             # add formatter to ch
             ch.setFormatter(color_formatter)
             # add ch to logger
             self.addHandler(ch)
 
-            store_log = Settings().STORE_LOG_LOCALLY
+            store_log = os.getenv("STORE_LOG_LOCALLY")
             if store_log == "True":
                 os.makedirs("logs", exist_ok=True)
                 log_file = logging.FileHandler(
@@ -84,5 +82,5 @@ class log(logging.Logger):
                     encoding="utf8",
                 )
                 log_file.setFormatter(color_formatter)
-                log_file.setLevel(Settings().LOG_LEVEL)
+                log_file.setLevel(os.getenv("LOG_LEVEL"))
                 self.addHandler(log_file)
