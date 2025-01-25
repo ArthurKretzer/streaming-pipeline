@@ -53,5 +53,3 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ENV PATH="/app/.venv/bin:$PATH"
 
 EXPOSE 8080
-
-CMD ["fastapi", "run", "--host", "0.0.0.0", "/app/data_backend/app.py", "--port", "8080"]
