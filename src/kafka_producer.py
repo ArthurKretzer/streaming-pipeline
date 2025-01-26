@@ -6,6 +6,7 @@ from confluent_kafka import Producer
 from dotenv import load_dotenv
 
 from common.logger import log
+from kafka_topic_configurator import KafkaTopicConfigurator
 from robot_dataset import RobotDataset
 
 logger = log("KafkaConsumer")
@@ -18,14 +19,15 @@ class KafkaProducer:
         # Tenho alguns artigos sobre isso.
         # Verificar também o broker.
 
-        producer_config = {
+        self.producer_config = {
             "bootstrap.servers": bootstrap_servers,
             "client.id": f"{topic_name}-producer",
         }
-        self.producer = Producer(producer_config)
+        self.producer = Producer(self.producer_config)
         self.topic_name = topic_name
 
     def produce(self, data_type: str):
+        self._configure_topic()
         if data_type == "control_power":
             self._produce_control_power_data()
         elif data_type == "accelerometer_gyro":
@@ -34,6 +36,13 @@ class KafkaProducer:
             self._produce_mocked_data()
         else:
             logger.error(f"Invalid data type ({data_type}) for producer.")
+
+    def _configure_topic(self):
+        configurator = KafkaTopicConfigurator(
+            self.producer_config["bootstrap.servers"]
+        )
+        config_updates = {"message.timestamp.type": "LogAppendTime"}
+        configurator.configure_topic(self.topic_name, config_updates)
 
     def _produce_control_power_data(self):
         dataset = RobotDataset(normalize=False)
