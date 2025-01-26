@@ -38,6 +38,9 @@ select = [
 lint = 'ruff check'
 pre_format = 'ruff check --fix'
 format = 'ruff format'
+produce = 'uv run --script ./src/main.py produce'
+consume = 'uv run --script ./src/main.py consume'
+process = 'uv run --script ./src/main.py process'
 
 [tool.uv.sources]
 road-dataset = { git = "https://gitlab.com/AlessioMascolini/roaddataset/" }
