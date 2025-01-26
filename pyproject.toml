@@ -10,6 +10,7 @@ dependencies = [
     "pyspark>=3.5.4",
     "python-dotenv>=1.0.1",
     "road-dataset",
+    "seaborn>=0.13.2",
 ]
 
 [dependency-groups]
@@ -37,9 +38,6 @@ select = [
 lint = 'ruff check'
 pre_format = 'ruff check --fix'
 format = 'ruff format'
-drain_kafka = 'task drain_kafka_control_power drain_kafka_accelerometer_gyro'
-drain_kafka_control_power = 'kafkacat -b kafka-cpc.certi.org.br:31289 -t "control_power" -o beginning -C -e -G spark_consumer_group'
-drain_kafka_accelerometer_gyro = 'kafkacat -b kafka-cpc.certi.org.br:31289 -t "accelerometer_gyro" -o beginning -C -e -G spark_consumer_group'
 
 [tool.uv.sources]
 road-dataset = { git = "https://gitlab.com/AlessioMascolini/roaddataset/" }
