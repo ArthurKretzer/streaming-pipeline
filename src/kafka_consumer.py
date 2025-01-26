@@ -84,6 +84,16 @@ class KafkaConsumer:
                 "spark.hadoop.fs.s3n.impl",
                 "org.apache.hadoop.fs.s3a.S3AFileSystem",
             )
+            # Stream optimizations
+            .config(
+                "spark.sql.execution.arrow.pyspark.enabled", "true"
+            )  # Enable Arrow
+            .config(
+                "spark.sql.streaming.stateStore.maintenanceInterval", "500ms"
+            )  # Optimize state management
+            .config(
+                "spark.sql.adaptive.enabled", "true"
+            )  # Enable AQE for better query planning)
             .getOrCreate()
         )
 
@@ -94,6 +104,7 @@ class KafkaConsumer:
             .option("kafka.bootstrap.servers", self.kafka_bootstrap_servers)
             .option("subscribe", self.topic_name)
             .option("startingOffsets", "earliest")
+            .option("maxOffsetsPerTrigger", 5)  # 5 messages per trigger. 2Hz.
             .load()
         )
 
@@ -161,9 +172,14 @@ class KafkaConsumer:
                 "checkpointLocation",
                 f"s3a://lakehouse/delta/checkpoints/raw_{self.topic_name}",
             )
-            .option("mergeSchema", "true")
+            .option(
+                "mergeSchema", "false"
+            )  # Schema will not evolve, should provide better performance
             .option("delta.enableChangeDataFeed", "true")
             .outputMode("append")
+            .trigger(
+                processingTime="1 second"
+            )  # Trigger microbatch processing every second
             .start(raw_delta_path)
         )
 
