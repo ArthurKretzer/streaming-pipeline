@@ -1,0 +1,56 @@
+{
+    "type": "record",
+    "name": "control_power",
+    "fields": [
+        {
+            "name": "robot_action_id",
+            "type": "double",
+            "doc": "Identifier for the robot action"
+        },
+        {
+            "name": "apparent_power",
+            "type": "double",
+            "doc": "Apparent power in VA"
+        },
+        {
+            "name": "current",
+            "type": "double",
+            "doc": "Current in A"
+        },
+        {
+            "name": "frequency",
+            "type": "double",
+            "doc": "Frequency in Hz"
+        },
+        {
+            "name": "phase_angle",
+            "type": "double",
+            "doc": "Phase angle in degrees"
+        },
+        {
+            "name": "power",
+            "type": "double",
+            "doc": "Real power in W"
+        },
+        {
+            "name": "power_factor",
+            "type": "double",
+            "doc": "Power factor (unitless)"
+        },
+        {
+            "name": "reactive_power",
+            "type": "double",
+            "doc": "Reactive power in VAR"
+        },
+        {
+            "name": "voltage",
+            "type": "double",
+            "doc": "Voltage in V"
+        },
+        {
+            "name": "source_timestamp",
+            "type": "string",
+            "doc": "Timestamp of data collection in ISO 8601 format"
+        }
+    ]
+}
