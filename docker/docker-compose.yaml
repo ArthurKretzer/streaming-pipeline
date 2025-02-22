@@ -1,0 +1,12 @@
+services:
+  minio:
+    image: minio/minio
+    environment:
+      - MINIO_ROOT_USER=ark
+      - MINIO_ROOT_PASSWORD=123456789
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./data:/data
+    ports:
+      - 9000:9000
+      - 9001:9001

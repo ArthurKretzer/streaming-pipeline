@@ -5,16 +5,25 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "confluent-kafka>=2.8.0",
+    "avro-python3>=1.10.2",
+    "confluent-kafka[avro,schemaregistry]>=2.8.0",
+    "fastavro>=1.10.0",
     "pandas>=2.2.3",
     "pyspark>=3.5.4",
     "python-dotenv>=1.0.1",
     "road-dataset",
     "seaborn>=0.13.2",
+    "sparkmeasure>=0.24.0",
 ]
 
 [dependency-groups]
-dev = ["ipykernel>=6.29.5", "ruff>=0.9.3", "taskipy>=1.14.1"]
+dev = [
+    "ipykernel>=6.29.5",
+    "minio>=7.2.15",
+    "ruff>=0.9.3",
+    "setuptools>=75.8.0",
+    "taskipy>=1.14.1",
+]
 
 [tool.ruff]
 line-length = 79
