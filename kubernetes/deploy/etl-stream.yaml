@@ -1,0 +1,60 @@
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: etl-rides-stream
+  namespace: processing
+spec:
+  timeToLiveSeconds: 3600
+  deps:
+    repositories:
+      - https://repo1.maven.org/maven2
+    packages:
+      - org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1
+      - io.delta:delta-spark_2.12:3.2.0
+      - org.apache.spark:spark-avro_2.12:3.5.1
+      - org.apache.hadoop:hadoop-aws:3.3.4
+      - com.amazonaws:aws-java-sdk-bundle:1.12.262
+      - org.apache.hadoop:hadoop-common:3.3.4
+      - org.apache.hadoop:hadoop-hdfs-client:3.3.4
+      - org.apache.hadoop:hadoop-auth:3.3.4
+      - org.apache.hadoop:hadoop-annotations:3.3.4
+      - com.github.luben:zstd-jni:1.4.5-4
+      - org.xerial.snappy:snappy-java:1.1.7.3
+      - org.apache.commons:commons-compress:1.20
+      - org.apache.hadoop:hadoop-client-api:3.3.4
+      - org.apache.hadoop:hadoop-client-runtime:3.3.4
+  sparkConf:
+    spark.hadoop.fs.s3a.endpoint: "http://minio.deepstorage.svc.Cluster.local"
+    spark.hadoop.fs.s3a.access.key: "data-lake"
+    spark.hadoop.fs.s3a.secret.key: "12620ee6-2162-11ee-be56-0242ac120002"
+    spark.hadoop.fs.s3a.impl: "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    spark.sql.extensions: "io.delta.sql.DeltaSparkSessionExtension"
+    spark.sql.catalog.spark_catalog: "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+    spark.hadoop.fs.s3a.aws.credentials.provider: "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
+    spark.hadoop.fs.s3a.path.style.access: "True"
+    spark.hadoop.fs.s3a.fast.upload: "True"
+    spark.hadoop.fs.s3a.multipart.size: "104857600"
+    spark.hadoop.fs.s3a.connection.maximum: "100"
+    spark.driver.extraJavaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
+    spark.executor.extraJavaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
+  type: Python
+  mode: cluster
+  image: "owshq/etl-yelp-batch:latest"
+  imagePullPolicy: Always
+  mainApplicationFile: local:///app/etl-yelp-batch.py
+  sparkVersion: "3.5.4"
+  restartPolicy:
+    type: OnFailure
+    onFailureRetries: 3
+    onFailureRetryInterval: 10
+    onSubmissionFailureRetries: 5
+    onSubmissionFailureRetryInterval: 20
+  driver:
+    cores: 1
+    coreLimit: "1200m"
+    memory: "512m"
+    serviceAccount: spark-operator-spark
+  executor:
+    cores: 1
+    instances: 3
+    memory: "1g"

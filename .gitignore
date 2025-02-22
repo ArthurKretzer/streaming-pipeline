@@ -179,3 +179,4 @@ pyrightconfig.json
 
 /notebooks/spark-warehouse/
 /docker/data
+**secret.yaml

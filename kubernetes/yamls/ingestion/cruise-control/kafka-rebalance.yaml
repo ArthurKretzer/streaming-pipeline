@@ -1,0 +1,20 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaRebalance
+metadata:
+  name: master-kafka-rebalance
+  labels:
+    strimzi.io/cluster: master
+spec:
+  goals:
+    - NetworkInboundCapacityGoal
+    - DiskCapacityGoal
+    - RackAwareGoal
+    - NetworkOutboundCapacityGoal
+    - CpuCapacityGoal
+    - ReplicaCapacityGoal
+    - TopicReplicaDistributionGoal
+    - MinTopicLeadersPerBrokerGoal
+    - LeaderReplicaDistributionGoal
+    - DiskUsageDistributionGoal
+    - IntraBrokerDiskCapacityGoal
+    - IntraBrokerDiskUsageDistributionGoal
