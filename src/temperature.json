@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "SensorData",
+  "fields": [
+    {
+      "name": "source_timestamp",
+      "type": "long",
+      "doc": "Timestamp of the data source in epoch milliseconds"
+    },
+    {
+      "name": "temperature",
+      "type": "double",
+      "doc": "Temperature reading from the sensor"
+    }
+  ]
+}
