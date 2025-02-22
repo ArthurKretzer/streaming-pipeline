@@ -68,43 +68,31 @@ class KafkaConsumer:
             .config(
                 "spark.hadoop.fs.s3a.secret.key", os.getenv("MINIO_SECRET_KEY")
             )
-            .config("spark.hadoop.fs.s3a.attempts.maximum", "3")
-            .config("spark.hadoop.fs.s3a.connection.timeout", "10000")
-            .config("spark.hadoop.fs.s3a.connection.establish.timeout", "5000")
             .config("spark.hadoop.fs.s3a.path.style.access", "true")
+            .config("spark.hadoop.fs.s3a.fast.upload", True)
+            .config("spark.hadoop.fs.s3a.multipart.size", 104857600)
             .config(
                 "spark.hadoop.fs.s3a.impl",
                 "org.apache.hadoop.fs.s3a.S3AFileSystem",
             )
-            .config(
-                "spark.hadoop.fs.s3.impl",
-                "org.apache.hadoop.fs.s3a.S3AFileSystem",
-            )
-            .config(
-                "spark.hadoop.fs.s3n.impl",
-                "org.apache.hadoop.fs.s3a.S3AFileSystem",
-            )
-            # Stream optimizations
-            .config(
-                "spark.sql.execution.arrow.pyspark.enabled", "true"
-            )  # Enable Arrow
-            .config(
-                "spark.sql.streaming.stateStore.maintenanceInterval", "500ms"
-            )  # Optimize state management
-            .config(
-                "spark.sql.adaptive.enabled", "true"
-            )  # Enable AQE for better query planning)
+            .config("spark.executor.instances", "3")
+            .config("spark.executor.cores", "8")
+            .config("spark.executor.memory", "4g")
+            .config("spark.driver.memory", "4g")
             .getOrCreate()
         )
 
+        self.spark.sparkContext.setLogLevel("WARN")
+
     def consume(self):
         # Read data from Kafka
+        # .option("maxOffsetsPerTrigger", 5)  # 5 messages per trigger. 2Hz.
         kafka_stream = (
             self.spark.readStream.format("kafka")
             .option("kafka.bootstrap.servers", self.kafka_bootstrap_servers)
             .option("subscribe", self.topic_name)
             .option("startingOffsets", "earliest")
-            .option("maxOffsetsPerTrigger", 5)  # 5 messages per trigger. 2Hz.
+            .option("failOnDataLoss", "false")
             .load()
         )
 
@@ -134,8 +122,8 @@ class KafkaConsumer:
         # Parse the JSON from the `value` column into a structured format
         parsed_stream = (
             kafka_stream_with_timestamp.selectExpr(
-                "CAST(key AS STRING)",  # Preserve the Kafka key as a string
-                "CAST(value AS STRING)",  # Deserialize the Kafka value into a string
+                "CAST(key AS STRING) as key",  # Preserve the Kafka key as a string
+                "CAST(value AS STRING) as json_value",  # Deserialize the Kafka value into a string
                 "topic",
                 "partition",
                 "offset",
@@ -143,7 +131,7 @@ class KafkaConsumer:
                 "timestampType",
                 "landing_timestamp",
             ).withColumn(
-                "parsed_value", from_json(col("value"), json_schema)
+                "parsed_value", from_json(col("json_value"), json_schema)
             )  # Use provided JSON schema
         )
 
@@ -156,7 +144,7 @@ class KafkaConsumer:
             "timestamp",
             "timestampType",
             "landing_timestamp",
-            col("parsed_value.*"),  # Expand the JSON into separate columns
+            "parsed_value",
         )
 
         # Output the schema for verification
@@ -177,11 +165,22 @@ class KafkaConsumer:
             )  # Schema will not evolve, should provide better performance
             .option("delta.enableChangeDataFeed", "true")
             .outputMode("append")
-            .trigger(
-                processingTime="1 second"
-            )  # Trigger microbatch processing every second
+            .trigger(processingTime="1 seconds")
+            .option("truncate", "false")
             .start(raw_delta_path)
         )
+
+        # raw_stream_query = (
+        #     exploded_stream.writeStream.format("console")
+        #     .option(
+        #         "checkpointLocation",
+        #         f"s3a://lakehouse/delta/checkpoints/raw_{self.topic_name}_console",
+        #     )
+        #     .outputMode("append")
+        #     .option("truncate", "false")
+        #     .trigger(processingTime="100 milliseconds")
+        #     .start()
+        # )
 
         logger.info(
             f"Streaming Kafka data from {self.topic_name} into Delta Lake raw_{self.topic_name}..."
