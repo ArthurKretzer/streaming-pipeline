@@ -22,6 +22,12 @@ class KafkaProducer:
         self.producer_config = {
             "bootstrap.servers": bootstrap_servers,
             "client.id": f"{topic_name}-producer",
+            "acks": 1,
+            "enable.idempotence": False,
+            "linger.ms": 0,
+            "batch.num.messages": 1,
+            "compression.type": "none",
+            "max.in.flight.requests.per.connection": 1,
         }
         self.producer = Producer(self.producer_config)
         self.topic_name = topic_name
