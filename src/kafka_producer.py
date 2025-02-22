@@ -3,22 +3,16 @@ import time
 from datetime import datetime, timezone
 
 from confluent_kafka import Producer
-from dotenv import load_dotenv
 
 from common.logger import log
 from kafka_topic_configurator import KafkaTopicConfigurator
 from robot_dataset import RobotDataset
 
-logger = log("KafkaConsumer")
-load_dotenv()
+logger = log("KafkaProducer")
 
 
 class KafkaProducer:
     def __init__(self, bootstrap_servers, topic_name):
-        # TODO: Verificar quais configurações adequadas para o kafka.
-        # Tenho alguns artigos sobre isso.
-        # Verificar também o broker.
-
         self.producer_config = {
             "bootstrap.servers": bootstrap_servers,
             "client.id": f"{topic_name}-producer",
