@@ -20,8 +20,8 @@ class KafkaProducerAvro:
         self.bootstrap_servers = bootstrap_servers
         self.topic_name = topic_name
 
-    def get_producer(self, data_type: str):
-        key_serializer, value_serializer = self.get_serializers(data_type)
+    def get_producer(self, topic_name: str):
+        key_serializer, value_serializer = self.get_serializers(topic_name)
 
         self.producer_config = {
             "bootstrap.servers": self.bootstrap_servers,
@@ -40,34 +40,34 @@ class KafkaProducerAvro:
 
         return producer
 
-    def get_serializers(self, data_type):
+    def get_serializers(self, topic_name):
         schema_registry_conf = {"url": "http://kafka-cpc.certi.org.br:32081"}
 
         schema_registry_client = SchemaRegistryClient(schema_registry_conf)
 
         value_serializer = AvroSerializer(
-            schema_registry_client, self._get_schema(data_type)
+            schema_registry_client, self._get_schema(topic_name)
         )
 
         key_serializer = StringSerializer("utf_8")
 
         return key_serializer, value_serializer
 
-    def _get_schema(self, data_type: str):
-        if data_type == "control_power":
+    def _get_schema(self, topic_name: str):
+        if topic_name == "control_power-avro":
             with open("./src/schemas/control_power.json") as f:
                 schema = f.read()
             return schema
-        elif data_type == "accelerometer_gyro":
+        elif topic_name == "accelerometer_gyro-avro":
             with open("./src/schemas/accelerometer_gyro.json") as f:
                 schema = f.read()
             return schema
-        elif data_type == "mocked":
+        elif topic_name == "mocked-avro":
             with open("./src/schemas/temperature.json") as f:
                 schema = f.read()
             return schema
         else:
-            logger.error(f"Invalid data type ({data_type}) for schema.")
+            logger.error(f"Invalid data type ({topic_name}) for schema.")
 
     def _configure_topic(self):
         configurator = KafkaTopicConfigurator(self.bootstrap_servers)
@@ -75,13 +75,13 @@ class KafkaProducerAvro:
         configurator.configure_topic(self.topic_name, config_updates)
 
     def _produce_control_power_data(self):
-        producer = self.get_producer("control_power")
+        producer = self.get_producer(self.topic_name)
         dataset = RobotDataset(normalize=False)
         dataset = dataset.get_dataset(data_type="control_power")
         self._send_dataset(producer, dataset)
 
     def _produce_temperature_accelerometer_gyro_data(self):
-        producer = self.get_producer("accelerometer_gyro")
+        producer = self.get_producer(self.topic_name)
         dataset = RobotDataset(normalize=False)
         dataset = dataset.get_dataset(data_type="accelerometer_gyro")
         self._send_dataset(producer, dataset)
@@ -128,7 +128,7 @@ class KafkaProducerAvro:
     def _produce_mocked_data(self):
         i = 0
         msg_count = 10000
-        producer = self.get_producer("mocked")
+        producer = self.get_producer(self.topic_name)
         while i <= msg_count:
             # Creates random temperature data between 20.0
             # and 30.0 degrees Celsius.
@@ -152,7 +152,7 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    KafkaProducer(
+    KafkaProducerAvro(
         bootstrap_servers=os.getenv("KAFKA_BROKER"),
         topic_name="mocked-data",
     ).produce("mocked")

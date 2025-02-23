@@ -4,47 +4,47 @@
     "fields": [
         {
             "name": "robot_action_id",
-            "type": "double",
+            "type": "float",
             "doc": "Identifier for the robot action"
         },
         {
             "name": "apparent_power",
-            "type": "double",
+            "type": "float",
             "doc": "Apparent power in VA"
         },
         {
             "name": "current",
-            "type": "double",
+            "type": "float",
             "doc": "Current in A"
         },
         {
             "name": "frequency",
-            "type": "double",
+            "type": "float",
             "doc": "Frequency in Hz"
         },
         {
             "name": "phase_angle",
-            "type": "double",
+            "type": "float",
             "doc": "Phase angle in degrees"
         },
         {
             "name": "power",
-            "type": "double",
+            "type": "float",
             "doc": "Real power in W"
         },
         {
             "name": "power_factor",
-            "type": "double",
+            "type": "float",
             "doc": "Power factor (unitless)"
         },
         {
             "name": "reactive_power",
-            "type": "double",
+            "type": "float",
             "doc": "Reactive power in VAR"
         },
         {
             "name": "voltage",
-            "type": "double",
+            "type": "float",
             "doc": "Voltage in V"
         },
         {
