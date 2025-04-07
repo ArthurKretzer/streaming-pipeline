@@ -8,8 +8,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: "git@bitbucket.org:certi_repos/datalake-labfaber.git"
-    path: infrastructure/helm-charts/kafka-operator
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
+    path: kubernetes/helm-charts/kafka-operator
     targetRevision: development
     helm:
       valueFiles:
@@ -32,9 +32,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
-    path: infrastructure/yamls/ingestion/broker
+    path: kubernetes/yamls/ingestion/broker
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: ingestion
@@ -51,9 +51,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
-    path: infrastructure/yamls/ingestion/kafka-connect
+    path: kubernetes/yamls/ingestion/kafka-connect
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: ingestion
@@ -70,9 +70,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
-    path: infrastructure/yamls/ingestion/cruise-control
+    path: kubernetes/yamls/ingestion/cruise-control
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: ingestion
@@ -89,9 +89,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
-    path: infrastructure/yamls/ingestion/metrics
+    path: kubernetes/yamls/ingestion/metrics
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: ingestion
@@ -108,9 +108,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
-    path: infrastructure/helm-charts/cp-schema-registry
+    path: kubernetes/helm-charts/cp-schema-registry
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: ingestion
@@ -127,9 +127,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
-    path: infrastructure/helm-charts/kafka-ui
+    path: kubernetes/helm-charts/kafka-ui
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: ingestion
