@@ -270,14 +270,7 @@ tolerations:
     effect: "NoSchedule"
 
 affinity:
-  nodeAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: role
-              operator: In
-              values:
-                - storage
+  nodeAffinity: null
 
   podAntiAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
