@@ -130,6 +130,9 @@ spec:
     repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: main
     path: kubernetes/helm-charts/kafka-ui
+    helm:
+      valueFiles:
+        - values-cloud.yaml
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: ingestion
