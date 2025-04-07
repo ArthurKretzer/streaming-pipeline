@@ -198,7 +198,7 @@ service:
 ##
 
 ingress:
-  enabled: true
+  enabled: false
   ingressClassName: ~
   labels: {}
     # node-role.kubernetes.io/ingress: platform
@@ -215,12 +215,8 @@ ingress:
     # kubernetes.io/ingress.class: nginx
 
   path: /
-  hosts:
-    - datalake-cpc.certi.org.br
-  tls:
-    - secretName: certi-tls-secret
-      hosts:
-      - datalake-cpc.certi.org.br
+  hosts: []
+  tls: []
 
 consoleService:
   type: ClusterIP
