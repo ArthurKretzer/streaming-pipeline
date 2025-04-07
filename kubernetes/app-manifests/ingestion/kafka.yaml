@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     path: kubernetes/helm-charts/kafka-operator
-    targetRevision: development
+    targetRevision: main
     helm:
       valueFiles:
         - values.yaml
@@ -33,7 +33,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
-    targetRevision: development
+    targetRevision: main
     path: kubernetes/yamls/ingestion/broker
   destination:
     server: 'https://kubernetes.default.svc'
@@ -52,7 +52,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
-    targetRevision: development
+    targetRevision: main
     path: kubernetes/yamls/ingestion/kafka-connect
   destination:
     server: 'https://kubernetes.default.svc'
@@ -71,7 +71,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
-    targetRevision: development
+    targetRevision: main
     path: kubernetes/yamls/ingestion/cruise-control
   destination:
     server: 'https://kubernetes.default.svc'
@@ -90,7 +90,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
-    targetRevision: development
+    targetRevision: main
     path: kubernetes/yamls/ingestion/metrics
   destination:
     server: 'https://kubernetes.default.svc'
@@ -109,7 +109,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
-    targetRevision: development
+    targetRevision: main
     path: kubernetes/helm-charts/cp-schema-registry
   destination:
     server: 'https://kubernetes.default.svc'
@@ -128,7 +128,7 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
-    targetRevision: development
+    targetRevision: main
     path: kubernetes/helm-charts/kafka-ui
   destination:
     server: 'https://kubernetes.default.svc'
