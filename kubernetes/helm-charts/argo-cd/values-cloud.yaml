@@ -2111,7 +2111,7 @@ server:
     # -- Server service labels
     labels: {}
     # -- Server service type
-    type: loadBalancer
+    type: LoadBalancer
     # -- Server service http port for NodePort service type (only if `server.service.type` is set to "NodePort")
     nodePortHttp: 30180
     # -- Server service https port for NodePort service type (only if `server.service.type` is set to "NodePort")
