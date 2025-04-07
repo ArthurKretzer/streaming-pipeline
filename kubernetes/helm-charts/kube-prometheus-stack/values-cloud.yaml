@@ -543,7 +543,7 @@ alertmanager:
 
     ## Service type
     ##
-    type: ClusterIP
+    type: LoadBalancer
 
   ## Configuration for creating a separate Service for each statefulset Alertmanager replica
   ##
@@ -1277,7 +1277,7 @@ grafana:
   ## Passed to grafana subchart and used by servicemonitor below
   ##
   service:
-    type: ClusterIP # Specify NodePort as the service type
+    type: LoadBalancer # Specify NodePort as the service type
     nodePort: 30091 # Define the desired NodePort (between 30000-32767)
     portName: http-web
     ipFamilies: []
