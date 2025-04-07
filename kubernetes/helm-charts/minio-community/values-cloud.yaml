@@ -174,7 +174,7 @@ persistence:
 ## ref: http://kubernetes.io/docs/user-guide/services/
 ##
 service:
-  type: ClusterIP
+  type: LoadBalancer
   clusterIP: ~
   port: "9000"
   nodePort: 32000
@@ -219,7 +219,7 @@ ingress:
   tls: []
 
 consoleService:
-  type: ClusterIP
+  type: LoadBalancer
   clusterIP: ~
   port: "9001"
   nodePort: 32001
