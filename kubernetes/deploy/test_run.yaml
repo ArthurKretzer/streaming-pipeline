@@ -9,7 +9,7 @@ spec:
     repositories:
       - https://repo1.maven.org/maven2
     packages:
-      - org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1
+      # - org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1
       - io.delta:delta-spark_2.12:3.2.0
       - org.apache.spark:spark-avro_2.12:3.5.1
       - org.apache.hadoop:hadoop-aws:3.3.4
@@ -23,24 +23,33 @@ spec:
       - org.apache.commons:commons-compress:1.20
       - org.apache.hadoop:hadoop-client-api:3.3.4
       - org.apache.hadoop:hadoop-client-runtime:3.3.4
+
+  # Workaround
+  # sparkConf:
+  #   spark.jars.packages: "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0,org.apache.spark:spark-avro_2.12:3.0.0"
+  #   spark.jars.ivy: "/tmp/ivy"
   sparkConf:
-    spark.hadoop.fs.s3a.endpoint: "http://minio.deepstorage.svc.Cluster.local"
+    spark.eventLog.enabled: "true"
+    spark.eventLog.dir: "file:///opt/spark/logs/events"
+    spark.history.fs.logDirectory: "file:///opt/spark/logs/events"
+    spark.history.provider: "org.apache.spark.deploy.history.FsHistoryProvider"
+    spark.ui.enabled: "false"
+    spark.hadoop.fs.s3a.endpoint: "http://minio-community.deepstorage.svc.cluster.local:9000"
     spark.hadoop.fs.s3a.impl: "org.apache.hadoop.fs.s3a.S3AFileSystem"
     spark.sql.extensions: "io.delta.sql.DeltaSparkSessionExtension"
     spark.sql.catalog.spark_catalog: "org.apache.spark.sql.delta.catalog.DeltaCatalog"
     spark.hadoop.fs.s3a.path.style.access: "True"
+    spark.hadoop.fs.s3a.connection.ssl.enabled: "false"
     spark.hadoop.fs.s3a.fast.upload: "True"
     spark.hadoop.fs.s3a.multipart.size: "104857600"
     spark.hadoop.fs.s3a.connection.maximum: "100"
-    spark.driver.extraJavaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
-    spark.executor.extraJavaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
   type: Python
   mode: cluster
-  image: "docker.io/bitnami/spark:3.5.4"
+  image: arthurkretzer/spark:3.5.4
   imagePullPolicy: Always
-  mainApplicationFile: "local:///opt/spark/examples/src/main/python/pi.py"
+  mainApplicationFile: "s3a://spark-history/spark-basic.py"
   arguments:
-    - "10"
+    - "1000"
   sparkVersion: "3.5.4"
   restartPolicy:
     type: OnFailure
@@ -49,49 +58,63 @@ spec:
     onSubmissionFailureRetries: 5
     onSubmissionFailureRetryInterval: 20
   driver:
-    envSecretKeyRefs:
-      MINIO_ACCESS_KEY:
-        name: spark-minio-credentials
-        key: accessKey
-      MINIO_SECRET_KEY:
-        name: spark-minio-credentials
-        key: secretKey
+    javaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
+    env:
+      - name: MINIO_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: spark-minio-credentials
+            key: accessKey
+      - name: MINIO_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: spark-minio-credentials
+            key: secretKey
     cores: 1
     coreLimit: "1200m"
     memory: "512m"
     serviceAccount: spark-operator-spark
     volumeMounts:
       - name: spark-history-volume
-        mountPath: /opt/bitnami/spark/logs/events
+        mountPath: /opt/spark/logs/events
       - name: spark-history-volume
-        mountPath: /opt/bitnami/spark/metrics
-      - name: spark-defaults-config
-        mountPath: /opt/bitnami/spark/conf
+        mountPath: /opt/spark/metrics
+      - name: ivy-cache
+        mountPath: /tmp/ivy2
   executor:
-    envSecretKeyRefs:
-      MINIO_ACCESS_KEY:
-        name: spark-minio-credentials
-        key: accessKey
-      MINIO_SECRET_KEY:
-        name: spark-minio-credentials
-        key: secretKey
+    javaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
+    env:
+      - name: MINIO_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: spark-minio-credentials
+            key: accessKey
+      - name: MINIO_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: spark-minio-credentials
+            key: secretKey
     cores: 1
     instances: 3
     memory: "1g"
+    serviceAccount: spark-operator-spark
     volumeMounts:
       - name: spark-history-volume
-        mountPath: /opt/bitnami/spark/logs/events
+        mountPath: /opt/spark/logs/events
       - name: spark-history-volume
-        mountPath: /opt/bitnami/spark/metrics
-      - name: spark-defaults-config
-        mountPath: /opt/bitnami/spark/conf
+        mountPath: /opt/spark/metrics
+      - name: ivy-cache
+        mountPath: /tmp/ivy2
   monitoring:
     exposeDriverMetrics: true
     exposeExecutorMetrics: true
     prometheus:
-      jmxExporterJar: /opt/bitnami/spark/jars/jmx_prometheus_javaagent-0.12.0.jar
-      port: 8090
+      jmxExporterJar: /opt/spark/jars/io.prometheus.jmx_jmx_prometheus_javaagent-1.0.1.jar
+      port: 8080
   volumes:
     - name: spark-history-volume
       persistentVolumeClaim:
         claimName: pvc-spark-history-server
+    - name: "ivy-cache"
+      persistentVolumeClaim:
+        claimName: pvc-shared-spark-ivy-cache
