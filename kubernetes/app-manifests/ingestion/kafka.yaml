@@ -34,7 +34,7 @@ spec:
   source:
     repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: main
-    path: kubernetes/yamls/ingestion/broker
+    path: kubernetes/yamls/ingestion/broker-cloud
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: ingestion
