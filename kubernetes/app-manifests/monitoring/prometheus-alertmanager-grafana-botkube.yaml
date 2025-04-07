@@ -8,8 +8,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: "git@bitbucket.org:certi_repos/datalake-labfaber.git"
-    path: infrastructure/helm-charts/kube-prometheus-stack
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
+    path: kubernetes/helm-charts/kube-prometheus-stack
     targetRevision: development
     helm:
       valueFiles:

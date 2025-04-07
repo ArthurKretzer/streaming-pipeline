@@ -8,8 +8,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: "git@bitbucket.org:certi_repos/datalake-labfaber.git"
-    path: infrastructure/helm-charts/spark-operator
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
+    path: kubernetes/helm-charts/spark-operator
     targetRevision: development
     helm:
       valueFiles:
