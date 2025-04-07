@@ -13,7 +13,7 @@ spec:
     targetRevision: main
     helm:
       valueFiles:
-        - values.yaml
+        - values-cloud.yaml
   destination:
     server: "https://kubernetes.default.svc"
     namespace: deepstorage
