@@ -36,8 +36,6 @@ spec:
     spark.ui.enabled: "false"
     spark.hadoop.fs.s3a.endpoint: "http://minio-community.deepstorage.svc.cluster.local:9000"
     spark.hadoop.fs.s3a.impl: "org.apache.hadoop.fs.s3a.S3AFileSystem"
-    spark.hadoop.fs.s3a.access.key: "uy1bTJXuB6hZef8chMzK"
-    spark.hadoop.fs.s3a.secret.key: "avfpzuso3bZe0dDrW9ZRR1X2KgZRqNxsg8YFZSPW"
     spark.sql.extensions: "io.delta.sql.DeltaSparkSessionExtension"
     spark.sql.catalog.spark_catalog: "org.apache.spark.sql.delta.catalog.DeltaCatalog"
     spark.hadoop.fs.s3a.path.style.access: "True"
