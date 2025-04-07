@@ -1165,7 +1165,7 @@ grafana:
   persistence:
     enabled: true
     type: sts
-    storageClassName: "do-block-storage-retain"
+    storageClassName: ""
     accessModes:
       - ReadWriteOnce
     size: 5Gi
