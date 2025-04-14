@@ -543,7 +543,7 @@ alertmanager:
 
     ## Service type
     ##
-    type: LoadBalancer
+    type: NodePort
 
   ## Configuration for creating a separate Service for each statefulset Alertmanager replica
   ##
@@ -1121,7 +1121,7 @@ grafana:
   ingress:
     ## If true, Grafana Ingress will be created
     ##
-    enabled: false
+    enabled: true
 
     ## IngressClassName for Grafana Ingress.
     ## Should be provided if Ingress is enable.
@@ -1144,10 +1144,8 @@ grafana:
     ## Hostnames.
     ## Must be provided if Ingress is enable.
     ##
-    # hosts:
-    #   - grafana.domain.com
     hosts:
-        - grafana.domain.com
+        - grafana.nip.io
 
     ## Path for grafana ingress
     path: /
@@ -1277,7 +1275,7 @@ grafana:
   ## Passed to grafana subchart and used by servicemonitor below
   ##
   service:
-    type: LoadBalancer # Specify NodePort as the service type
+    type: NodePort # Specify NodePort as the service type
     nodePort: 30091 # Define the desired NodePort (between 30000-32767)
     portName: http-web
     ipFamilies: []
@@ -3227,7 +3225,7 @@ prometheus:
 
     ## Service type
     ##
-    type: LoadBalancer
+    type: NodePort
 
     ## Port to expose on each node
     ##
@@ -3404,7 +3402,7 @@ prometheus:
   #     someoneelse:$apr1$DMZX2Z4q$6SbQIfyuLQd.xmo/P0m2c.
 
   ingress:
-    enabled: false
+    enabled: true
 
     # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
     # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
@@ -3423,10 +3421,8 @@ prometheus:
     ## Hostnames.
     ## Must be provided if Ingress is enabled.
     ##
-    # hosts:
-    #   - prometheus.domain.com
     hosts:
-        - prometheus.domain.com
+        - prometheus.nip.io
 
     ## Paths to use for ingress rules - one path should match the prometheusSpec.routePrefix
     ##

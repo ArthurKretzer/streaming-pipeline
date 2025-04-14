@@ -3227,7 +3227,7 @@ prometheus:
 
     ## Service type
     ##
-    type: LoadBalancer
+    type: NodePort
 
     ## Port to expose on each node
     ##

@@ -2112,7 +2112,7 @@ server:
     # -- Server service labels
     labels: {}
     # -- Server service type
-    type: LoadBalancer
+    type: NodePort
     # -- Server service http port for NodePort service type (only if `server.service.type` is set to "NodePort")
     nodePortHttp: 30180
     # -- Server service https port for NodePort service type (only if `server.service.type` is set to "NodePort")
@@ -2207,7 +2207,7 @@ server:
   # Argo CD server ingress configuration
   ingress:
     # -- Enable an ingress resource for the Argo CD server
-    enabled: false
+    enabled: true
     # -- Specific implementation for ingress controller. One of `generic`, `aws` or `gke`
     ## Additional configuration might be required in related configuration sections
     controller: generic
@@ -2225,7 +2225,7 @@ server:
 
     # -- Argo CD server hostname
     # @default -- `""` (defaults to global.domain)
-    hostname: "cicd-kube-cpc.certi.org.br"
+    hostname: argocd.nip.io
 
     # -- The path to Argo CD server
     path: /
