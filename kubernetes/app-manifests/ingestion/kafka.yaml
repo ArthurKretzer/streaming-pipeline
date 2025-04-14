@@ -27,7 +27,7 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: labfaber-kafka-broker
+  name: kafka-broker
   namespace: cicd
 spec:
   project: default
@@ -46,7 +46,7 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: labfaber-kafka-connect
+  name: kafka-connect
   namespace: cicd
 spec:
   project: default
@@ -65,7 +65,7 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: labfaber-kafka-rebalance
+  name: kafka-rebalance
   namespace: cicd
 spec:
   project: default
@@ -84,7 +84,7 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: labfaber-kafka-metrics
+  name: kafka-metrics
   namespace: cicd
 spec:
   project: default
@@ -103,7 +103,7 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: labfaber-kafka-schema-registry
+  name: kafka-schema-registry
   namespace: cicd
 spec:
   project: default
@@ -122,7 +122,7 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: labfaber-kafka-ui
+  name: kafka-ui
   namespace: cicd
 spec:
   project: default
