@@ -518,7 +518,8 @@ configs:
   ## Creates a secret for each key/value specified below to create repositories
   ## Note: the last example in the list would use a repository credential template, configured under "configs.credentialTemplates".
   repositories:
-    {}
+    data-lake-repo:
+      url: https://github.com/ArthurKretzer/streaming-pipeline.git
     # istio-helm-repo:
     #   url: https://storage.googleapis.com/istio-prerelease/daily-build/master-latest-daily/charts
     #   name: istio.io
