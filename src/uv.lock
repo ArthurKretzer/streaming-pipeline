@@ -1300,47 +1300,61 @@ wheels = [
 name = "streaming-pipeline"
 version = "0.1.0"
 source = { virtual = "." }
-dependencies = [
+
+[package.dev-dependencies]
+consumer = [
+    { name = "pyspark" },
+    { name = "sparkmeasure" },
+]
+dev = [
     { name = "avro-python3" },
     { name = "confluent-kafka", extra = ["avro", "schemaregistry"] },
     { name = "fastavro" },
+    { name = "ipykernel" },
+    { name = "minio" },
     { name = "pandas" },
     { name = "pyspark" },
     { name = "python-dotenv" },
     { name = "road-dataset" },
-    { name = "seaborn" },
-    { name = "sparkmeasure" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ipykernel" },
-    { name = "minio" },
     { name = "ruff" },
+    { name = "seaborn" },
     { name = "setuptools" },
     { name = "taskipy" },
 ]
+producer = [
+    { name = "avro-python3" },
+    { name = "confluent-kafka", extra = ["avro", "schemaregistry"] },
+    { name = "fastavro" },
+    { name = "road-dataset" },
+]
 
 [package.metadata]
-requires-dist = [
+
+[package.metadata.requires-dev]
+consumer = [
+    { name = "pyspark", specifier = ">=3.5.4" },
+    { name = "sparkmeasure", specifier = ">=0.24.0" },
+]
+dev = [
     { name = "avro-python3", specifier = ">=1.10.2" },
     { name = "confluent-kafka", extras = ["avro", "schemaregistry"], specifier = ">=2.8.0" },
     { name = "fastavro", specifier = ">=1.10.0" },
+    { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "minio", specifier = ">=7.2.15" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "pyspark", specifier = ">=3.5.4" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "road-dataset", git = "https://gitlab.com/AlessioMascolini/roaddataset/" },
-    { name = "seaborn", specifier = ">=0.13.2" },
-    { name = "sparkmeasure", specifier = ">=0.24.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "ipykernel", specifier = ">=6.29.5" },
-    { name = "minio", specifier = ">=7.2.15" },
     { name = "ruff", specifier = ">=0.9.3" },
+    { name = "seaborn", specifier = ">=0.13.2" },
     { name = "setuptools", specifier = ">=75.8.0" },
     { name = "taskipy", specifier = ">=1.14.1" },
+]
+producer = [
+    { name = "avro-python3", specifier = ">=1.10.2" },
+    { name = "confluent-kafka", extras = ["avro", "schemaregistry"], specifier = ">=2.8.0" },
+    { name = "fastavro", specifier = ">=1.10.0" },
+    { name = "road-dataset", git = "https://gitlab.com/AlessioMascolini/roaddataset/" },
 ]
 
 [[package]]
