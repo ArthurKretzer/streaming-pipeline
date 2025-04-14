@@ -31,7 +31,7 @@ resource "null_resource" "argocd-password" {
 
 resource "null_resource" "minio" {
   provisioner "local-exec" {
-    command = "kubectl create namespace deepstorage && kubectl apply -f ../kubernetes/app-manifests/deepstorage/"
+    command = "kubectl create namespace deepstorage --dry-run=client -o yaml | kubectl apply -f - && kubectl apply -f ../kubernetes/app-manifests/deepstorage/"
   }
 
   depends_on = [helm_release.argocd]
@@ -39,7 +39,7 @@ resource "null_resource" "minio" {
 
 resource "null_resource" "ingestion" {
   provisioner "local-exec" {
-    command = "kubectl create namespace ingestion && kubectl apply -f ../kubernetes/app-manifests/ingestion/"
+    command = "kubectl create namespace ingestion --dry-run=client -o yaml | kubectl apply -f - && kubectl apply -f ../kubernetes/app-manifests/ingestion/"
   }
 
   depends_on = [helm_release.argocd]
@@ -47,7 +47,7 @@ resource "null_resource" "ingestion" {
 
 resource "null_resource" "monitoring" {
   provisioner "local-exec" {
-    command = "kubectl create namespace monitoring && kubectl apply -f ../kubernetes/app-manifests/monitoring/"
+    command = "kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f - && kubectl apply -f ../kubernetes/app-manifests/monitoring/"
   }
 
   depends_on = [helm_release.argocd]
@@ -55,7 +55,7 @@ resource "null_resource" "monitoring" {
 
 resource "null_resource" "spark-operator" {
   provisioner "local-exec" {
-    command = "kubectl create namespace spark-operator && kubectl create namespace spark-jobs && kubectl apply -f ../kubernetes/app-manifests/spark-operator/"
+    command = "kubectl create namespace spark-operator --dry-run=client -o yaml | kubectl apply -f - && kubectl create namespace spark-jobs --dry-run=client -o yaml | kubectl apply -f - && kubectl apply -f ../kubernetes/app-manifests/spark-operator/"
   }
 
   depends_on = [helm_release.argocd]
@@ -63,10 +63,8 @@ resource "null_resource" "spark-operator" {
 
 resource "null_resource" "deploy" {
   provisioner "local-exec" {
-    command = "kubectl apply -f ../kubernetes/deploy/"
+    command = "kubectl create namespace spark-operator --dry-run=client -o yaml | kubectl apply -f - && kubectl create namespace spark-jobs --dry-run=client -o yaml | kubectl apply -f - && kubectl apply -f ../kubernetes/deploy/"
   }
 
   depends_on = [helm_release.argocd]
 }
-
-
