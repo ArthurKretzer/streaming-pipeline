@@ -5,9 +5,11 @@ clean:
 
 terraform-init:
 	cd terraform && terraform init
+	cd terraform && terraform plan -target=helm_release.argocd
+	cd terraform && terraform apply -target=helm_release.argocd
 	cd terraform && terraform plan
 	cd terraform && terraform apply
-
+	
 services-external-ips:
 	@echo "\033[0;34mFetching ArgoCD password..."
 	@kubectl get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' -n cicd | base64 -d && echo
