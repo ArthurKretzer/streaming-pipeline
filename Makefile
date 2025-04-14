@@ -9,8 +9,10 @@ terraform-init:
 	cd terraform && terraform apply
 
 services-external-ips:
-	@echo "ArgoCD Password"
+	@echo "\033[0;34mFetching ArgoCD password..."
 	@kubectl get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' -n cicd | base64 -d && echo
-	@echo "Listing all services with External IPs:"
-	@kubectl get svc --all-namespaces -o custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name,TYPE:.spec.type,EXTERNAL-IP:.status.loadBalancer.ingress[0].ip,PORT(S):.spec.ports[*].port" | \
-		grep -v '<none>' | column -t
+	@echo "\033[0m\033[0;32mListing all services with Nodeports:"
+	@kubectl get svc --all-namespaces -o custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name,TYPE:.spec.type,PORT(S):.spec.ports[*].nodePort" | \
+		grep NodePort | column -t
+	@echo "\033[0m\033[0;33mListing all droplets public IPs:"
+	@doctl compute droplet list --format Name,PublicIPv4
