@@ -1,7 +1,7 @@
 import os
 import random
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from confluent_kafka import SerializingProducer
 from confluent_kafka.schema_registry import SchemaRegistryClient
@@ -13,6 +13,8 @@ from kafka_topic_configurator import KafkaTopicConfigurator
 from robot_dataset import RobotDataset
 
 logger = log("KafkaProducerAvro")
+
+SCHEMA_REGISTRY_URI = os.getenv("SCHEMA_REGISTRY_URI")
 
 
 class KafkaProducerAvro:
@@ -41,7 +43,7 @@ class KafkaProducerAvro:
         return producer
 
     def get_serializers(self, topic_name):
-        schema_registry_conf = {"url": "http://kafka-cpc.certi.org.br:32081"}
+        schema_registry_conf = {"url": SCHEMA_REGISTRY_URI}
 
         schema_registry_client = SchemaRegistryClient(schema_registry_conf)
 
@@ -88,7 +90,7 @@ class KafkaProducerAvro:
 
     def _send_dataset(self, producer, dataset):
         for i in range(len(dataset)):
-            timestamp = datetime.now(timezone.utc).isoformat()
+            timestamp = datetime.now(UTC).isoformat()
             row = dataset.iloc[i, :]
             row["source_timestamp"] = timestamp
             message = row.to_dict()
@@ -135,7 +137,7 @@ class KafkaProducerAvro:
             temperature = round(random.uniform(20.0, 30.0), 2)
 
             timestamp = int(
-                datetime.now(timezone.utc).timestamp() * 1000
+                datetime.now(UTC).timestamp() * 1000
             )  # Convert to milliseconds
             message = {
                 "source_timestamp": timestamp,

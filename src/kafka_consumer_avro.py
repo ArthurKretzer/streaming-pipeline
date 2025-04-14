@@ -19,6 +19,8 @@ from common.logger import log
 load_dotenv()
 logger = log("KafkaConsumerAvro")
 
+SCHEMA_REGISTRY_URI = os.getenv("SCHEMA_REGISTRY_URI")
+
 
 class KafkaConsumerAvro:
     def __init__(
@@ -140,7 +142,7 @@ class KafkaConsumerAvro:
         )
 
         struct_schema, avro_schema_str = self.get_spark_schema_from_registry(
-            "http://kafka-cpc.certi.org.br:32081", self.topic_name
+            SCHEMA_REGISTRY_URI, self.topic_name
         )
 
         # Parse the JSON from the `value` column into a structured format
