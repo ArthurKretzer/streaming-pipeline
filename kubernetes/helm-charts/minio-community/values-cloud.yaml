@@ -174,7 +174,7 @@ persistence:
 ## ref: http://kubernetes.io/docs/user-guide/services/
 ##
 service:
-  type: LoadBalancer
+  type: NodePort
   clusterIP: ~
   port: "9000"
   nodePort: 32000
@@ -198,7 +198,7 @@ service:
 ##
 
 ingress:
-  enabled: false
+  enabled: true
   ingressClassName: ~
   labels: {}
     # node-role.kubernetes.io/ingress: platform
@@ -215,11 +215,12 @@ ingress:
     # kubernetes.io/ingress.class: nginx
 
   path: /
-  hosts: []
+  hosts:
+    - datalake.nip.io
   tls: []
 
 consoleService:
-  type: LoadBalancer
+  type: NodePort
   clusterIP: ~
   port: "9001"
   nodePort: 32001
@@ -239,7 +240,7 @@ consoleService:
   externalTrafficPolicy: Cluster
 
 consoleIngress:
-  enabled: false
+  enabled: true
   ingressClassName: ~
   labels: {}
     # node-role.kubernetes.io/ingress: platform
@@ -254,7 +255,8 @@ consoleIngress:
     traefik.ingress.kubernetes.io/backend-protocol: "HTTPS"
     traefik.ingress.kubernetes.io/whitelist-source-range: 0.0.0.0/0
   path: /
-  hosts: []
+  hosts:
+    - datalake-console.nip.io
   tls: []
 
 ## Node labels for pod assignment

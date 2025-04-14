@@ -24,19 +24,18 @@ spec:
         tls: true
       - name: external
         port: 9094
-        type: loadbalancer  
+        type: nodeport
         tls: false
         configuration:
           bootstrap:
-            loadBalancer:
-              domain: ""
+            nodePort: 32289
           brokers:
-            - broker: 0
-              advertisedHost: master-kafka-0.ingestion.svc
-            - broker: 1
-              advertisedHost: master-kafka-1.ingestion.svc
-            - broker: 2
-              advertisedHost: master-kafka-2.ingestion.svc
+          - broker: 0
+            nodePort: 32290
+          - broker: 1
+            nodePort: 32291
+          - broker: 2
+            nodePort: 32292
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
