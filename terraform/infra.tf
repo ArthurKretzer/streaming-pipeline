@@ -1,10 +1,27 @@
+terraform {
+  required_providers {
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = ">= 1.14.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = ">= 2.0.0"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = ">= 2.0.0"
+    }
+  }
+}
+
 provider "kubernetes" {
-  config_path = "~/.kube/config" # or a path to a kubeconfig file
+  config_path = "~/.kube/config"
 }
 
 provider "helm" {
   kubernetes {
-    config_path = "~/.kube/config" # or an absolute path like "/home/youruser/.kube/config"
+    config_path = "~/.kube/config"
   }
 }
 
@@ -12,7 +29,7 @@ resource "helm_release" "argocd" {
   name      = "argocd"
   namespace = "cicd"
   chart     = "../kubernetes/helm-charts/argo-cd"
-  version   = "5.51.6" # check for the latest stable
+  version   = "5.51.6"
 
   create_namespace = true
 
@@ -21,50 +38,130 @@ resource "helm_release" "argocd" {
   ]
 }
 
-resource "null_resource" "argocd-password" {
-  provisioner "local-exec" {
-    command = "kubectl get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' -n cicd | base64 -d && echo"
-  }
-
+# Wait for Argo CD CRDs to be available
+resource "time_sleep" "wait_for_crds" {
   depends_on = [helm_release.argocd]
+
+  create_duration = "30s"
 }
 
-resource "null_resource" "minio" {
-  provisioner "local-exec" {
-    command = "kubectl create namespace deepstorage --dry-run=client -o yaml | kubectl apply -f - && kubectl apply -f ../kubernetes/app-manifests/deepstorage/"
+# Create required namespaces
+resource "kubernetes_namespace" "deepstorage" {
+  metadata {
+    name = "deepstorage"
   }
 
-  depends_on = [helm_release.argocd]
+  lifecycle {
+    ignore_changes = [
+      metadata[0].labels,
+      metadata[0].annotations,
+    ]
+  }
 }
 
-resource "null_resource" "ingestion" {
-  provisioner "local-exec" {
-    command = "kubectl create namespace ingestion --dry-run=client -o yaml | kubectl apply -f - && kubectl apply -f ../kubernetes/app-manifests/ingestion/"
+resource "kubernetes_namespace" "ingestion" {
+  metadata {
+    name = "ingestion"
   }
 
-  depends_on = [helm_release.argocd]
+  lifecycle {
+    ignore_changes = [
+      metadata[0].labels,
+      metadata[0].annotations,
+    ]
+  }
 }
 
-resource "null_resource" "monitoring" {
-  provisioner "local-exec" {
-    command = "kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f - && kubectl apply -f ../kubernetes/app-manifests/monitoring/"
+resource "kubernetes_namespace" "monitoring" {
+  metadata {
+    name = "monitoring"
   }
 
-  depends_on = [helm_release.argocd]
+  lifecycle {
+    ignore_changes = [
+      metadata[0].labels,
+      metadata[0].annotations,
+    ]
+  }
 }
 
-resource "null_resource" "spark-operator" {
-  provisioner "local-exec" {
-    command = "kubectl create namespace spark-operator --dry-run=client -o yaml | kubectl apply -f - && kubectl create namespace spark-jobs --dry-run=client -o yaml | kubectl apply -f - && kubectl apply -f ../kubernetes/app-manifests/spark-operator/"
+resource "kubernetes_namespace" "spark_operator" {
+  metadata {
+    name = "spark-operator"
   }
 
-  depends_on = [helm_release.argocd]
+  lifecycle {
+    ignore_changes = [
+      metadata[0].labels,
+      metadata[0].annotations,
+    ]
+  }
 }
 
-resource "null_resource" "deploy" {
-  provisioner "local-exec" {
-    command = "kubectl create namespace spark-operator --dry-run=client -o yaml | kubectl apply -f - && kubectl create namespace spark-jobs --dry-run=client -o yaml | kubectl apply -f - && kubectl apply -f ../kubernetes/deploy/"
+resource "kubernetes_namespace" "spark_jobs" {
+  metadata {
+    name = "spark-jobs"
   }
 
-  depends_on = [helm_release.argocd]
+  lifecycle {
+    ignore_changes = [
+      metadata[0].labels,
+      metadata[0].annotations,
+    ]
+  }
+}
+
+# Load and apply all YAML files from deepstorage directory
+data "kubectl_file_documents" "deepstorage" {
+  content = join("\n---\n", [for f in fileset("../kubernetes/app-manifests/deepstorage", "*.yaml") : file("../kubernetes/app-manifests/deepstorage/${f}")])
+}
+
+resource "kubernetes_manifest" "deepstorage" {
+  for_each   = data.kubectl_file_documents.deepstorage.manifests
+  manifest   = yamldecode(each.value)
+  depends_on = [kubernetes_namespace.deepstorage, helm_release.argocd]
+}
+
+# Load and apply all YAML files from ingestion directory
+data "kubectl_file_documents" "ingestion" {
+  content = join("\n---\n", [for f in fileset("../kubernetes/app-manifests/ingestion", "*.yaml") : file("../kubernetes/app-manifests/ingestion/${f}")])
+}
+
+resource "kubernetes_manifest" "ingestion" {
+  for_each   = data.kubectl_file_documents.ingestion.manifests
+  manifest   = yamldecode(each.value)
+  depends_on = [kubernetes_namespace.ingestion, helm_release.argocd]
+}
+
+# Load and apply all YAML files from monitoring directory
+data "kubectl_file_documents" "monitoring" {
+  content = join("\n---\n", [for f in fileset("../kubernetes/app-manifests/monitoring", "*.yaml") : file("../kubernetes/app-manifests/monitoring/${f}")])
+}
+
+resource "kubernetes_manifest" "monitoring" {
+  for_each   = data.kubectl_file_documents.monitoring.manifests
+  manifest   = yamldecode(each.value)
+  depends_on = [kubernetes_namespace.monitoring, helm_release.argocd]
+}
+
+# Load and apply all YAML files from spark-operator directory
+data "kubectl_file_documents" "spark_operator" {
+  content = join("\n---\n", [for f in fileset("../kubernetes/app-manifests/spark-operator", "*.yaml") : file("../kubernetes/app-manifests/spark-operator/${f}")])
+}
+
+resource "kubernetes_manifest" "spark_operator" {
+  for_each   = data.kubectl_file_documents.spark_operator.manifests
+  manifest   = yamldecode(each.value)
+  depends_on = [kubernetes_namespace.spark_operator, kubernetes_namespace.spark_jobs, helm_release.argocd]
+}
+
+# Load and apply all YAML files from deploy directory
+data "kubectl_file_documents" "deploy" {
+  content = join("\n---\n", [for f in fileset("../kubernetes/deploy", "*.yaml") : file("../kubernetes/deploy/${f}")])
+}
+
+resource "kubernetes_manifest" "deploy" {
+  for_each   = data.kubectl_file_documents.deploy.manifests
+  manifest   = yamldecode(each.value)
+  depends_on = [kubernetes_namespace.spark_operator, kubernetes_namespace.spark_jobs, helm_release.argocd]
 }
