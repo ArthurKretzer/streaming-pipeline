@@ -32,11 +32,11 @@ spec:
               domain: ""
           brokers:
             - broker: 0
-              loadBalancer: {}
+              advertisedHost: master-kafka-0.ingestion.svc
             - broker: 1
-              loadBalancer: {}
+              advertisedHost: master-kafka-1.ingestion.svc
             - broker: 2
-              loadBalancer: {}
+              advertisedHost: master-kafka-2.ingestion.svc
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
