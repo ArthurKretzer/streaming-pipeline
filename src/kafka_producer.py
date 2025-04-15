@@ -1,6 +1,6 @@
 import random
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 
 from confluent_kafka import Producer
 
@@ -56,7 +56,7 @@ class KafkaProducer:
 
     def _send_dataset(self, dataset):
         for i in range(len(dataset)):
-            timestamp = datetime.now(timezone.utc).isoformat()
+            timestamp = datetime.now(datetime.utc).isoformat()
             row = dataset.iloc[i, :]
             row["source_timestamp"] = timestamp
             message = row.to_json()
@@ -71,7 +71,7 @@ class KafkaProducer:
             # and 30.0 degrees Celsius.
             temperature = round(random.uniform(20.0, 30.0), 2)
 
-            timestamp = datetime.now(timezone.utc).isoformat()
+            timestamp = datetime.now(datetime.utc).isoformat()
             message = f"""{
                 {"source_timestamp": {timestamp}, "temperature": {temperature}}
             }"""
