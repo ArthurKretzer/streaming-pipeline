@@ -1,0 +1,128 @@
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: streaming-pipeline-kafka-avro-to-delta
+  namespace: spark-jobs
+spec:
+  timeToLiveSeconds: 3600
+  deps:
+    repositories:
+      - https://repo1.maven.org/maven2
+    packages:
+      - org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.4
+      - org.apache.kafka:kafka-clients:3.9.0
+      - io.delta:delta-spark_2.12:3.2.0
+      - org.apache.spark:spark-avro_2.12:3.5.1
+      - org.apache.hadoop:hadoop-aws:3.3.4
+      - com.amazonaws:aws-java-sdk-bundle:1.12.262
+      - org.apache.hadoop:hadoop-common:3.3.4
+      - org.apache.hadoop:hadoop-hdfs-client:3.3.4
+      - org.apache.hadoop:hadoop-auth:3.3.4
+      - org.apache.hadoop:hadoop-annotations:3.3.4
+      - com.github.luben:zstd-jni:1.4.5-4
+      - org.xerial.snappy:snappy-java:1.1.7.3
+      - org.apache.commons:commons-compress:1.20
+      - org.apache.hadoop:hadoop-client-api:3.3.4
+      - org.apache.hadoop:hadoop-client-runtime:3.3.4
+
+  # Workaround
+  # sparkConf:
+  #   spark.jars.packages: "org.apache.spark:spark-sql-kafka-0-10_2.12:3.0.0,org.apache.spark:spark-avro_2.12:3.0.0"
+  #   spark.jars.ivy: "/tmp/ivy"
+  sparkConf:
+    spark.eventLog.enabled: "true"
+    spark.eventLog.dir: "file:///opt/spark/logs/events"
+    spark.history.fs.logDirectory: "file:///opt/spark/logs/events"
+    spark.history.provider: "org.apache.spark.deploy.history.FsHistoryProvider"
+    spark.ui.enabled: "false"
+    spark.hadoop.fs.s3a.endpoint: "http://minio-community.deepstorage.svc.cluster.local:9000"
+    spark.hadoop.fs.s3a.impl: "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    spark.sql.extensions: "io.delta.sql.DeltaSparkSessionExtension"
+    spark.sql.catalog.spark_catalog: "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+    delta.autoOptimize.optimizeWrite: "true"
+    delta.autoOptimize.autoCompact: "true"
+    spark.delta.logStore.class: "org.apache.spark.sql.delta.storage.S3SingleDriverLogStore"
+    spark.hadoop.fs.s3a.path.style.access: "True"
+    spark.hadoop.fs.s3a.connection.ssl.enabled: "false"
+    spark.hadoop.fs.s3a.fast.upload: "True"
+    spark.hadoop.fs.s3a.multipart.size: "104857600"
+    spark.hadoop.fs.s3a.connection.maximum: "100"
+    spark.streaming.concurrentJobs: "5"
+  type: Python
+  mode: cluster
+  image: arthurkretzer/streaming-consumer:3.5.4
+  imagePullPolicy: Always
+  mainApplicationFile: "local:///app/src/kafka_consumer_avro.py"
+  arguments:
+    - "--kafka-topic"
+    - "control_power"
+  sparkVersion: "3.5.4"
+  restartPolicy:
+    type: OnFailure
+    onFailureRetries: 3
+    onFailureRetryInterval: 10
+    onSubmissionFailureRetries: 5
+    onSubmissionFailureRetryInterval: 20
+  driver:
+    javaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
+    env:
+      - name: SCHEMA_REGISTRY_URI
+        value: http://kafka-schema-registry-cp-schema-registry.ingestion.svc.cluster.local:9000
+      - name: MINIO_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: spark-minio-credentials
+            key: accessKey
+      - name: MINIO_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: spark-minio-credentials
+            key: secretKey
+    cores: 1
+    coreLimit: "1200m"
+    memory: "6g"
+    serviceAccount: spark-operator-spark
+    volumeMounts:
+      - name: spark-history-volume
+        mountPath: /opt/spark/logs/events
+      - name: spark-history-volume
+        mountPath: /opt/spark/metrics
+      - name: ivy-cache
+        mountPath: /tmp/ivy2
+  executor:
+    javaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
+    env:
+      - name: MINIO_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: spark-minio-credentials
+            key: accessKey
+      - name: MINIO_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: spark-minio-credentials
+            key: secretKey
+    cores: 15
+    instances: 1
+    memory: "12g"
+    serviceAccount: spark-operator-spark
+    volumeMounts:
+      - name: spark-history-volume
+        mountPath: /opt/spark/logs/events
+      - name: spark-history-volume
+        mountPath: /opt/spark/metrics
+      - name: ivy-cache
+        mountPath: /tmp/ivy2
+  monitoring:
+    exposeDriverMetrics: true
+    exposeExecutorMetrics: true
+    prometheus:
+      jmxExporterJar: /opt/spark/jars/io.prometheus.jmx_jmx_prometheus_javaagent-1.0.1.jar
+      port: 8080
+  volumes:
+    - name: spark-history-volume
+      persistentVolumeClaim:
+        claimName: pvc-spark-history-server
+    - name: "ivy-cache"
+      persistentVolumeClaim:
+        claimName: pvc-shared-spark-ivy-cache
