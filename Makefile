@@ -18,3 +18,15 @@ services-external-ips:
 		grep NodePort | column -t
 	@echo "\033[0m\033[0;33mListing all droplets public IPs:"
 	@doctl compute droplet list --format Name,PublicIPv4
+
+build-consumer:
+	docker build -t arthurkretzer/streaming-consumer:3.5.4 -f ./docker/streaming-consumer.Dockerfile ./src
+	docker push arthurkretzer/streaming-consumer:3.5.4
+
+build-producer:
+	docker build -t arthurkretzer/streaming-producer:3.5.4 -f ./docker/streaming-producer.Dockerfile ./src
+	docker push arthurkretzer/streaming-producer:3.5.4
+
+produce-control-power:
+	docker rm -f producer-control-power
+	docker run -d --name producer-control-power --env-file=./src/.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power avro
