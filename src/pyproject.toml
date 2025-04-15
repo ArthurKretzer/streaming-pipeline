@@ -25,6 +25,7 @@ dev = [
 
 producer = [
     "road-dataset",
+    "python-dotenv>=1.0.1",
     "confluent-kafka[avro,schemaregistry]>=2.8.0",
     "avro-python3>=1.10.2",
     "fastavro>=1.10.0",
