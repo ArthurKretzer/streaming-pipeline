@@ -31,7 +31,11 @@ producer = [
     "fastavro>=1.10.0",
 ]
 
-consumer = ["pyspark>=3.5.4", "sparkmeasure>=0.24.0"]
+consumer = [
+    "pyspark>=3.5.4",
+    "sparkmeasure>=0.24.0",
+    "confluent-kafka[avro,schemaregistry]>=2.8.0",
+]
 
 [tool.ruff]
 line-length = 79
