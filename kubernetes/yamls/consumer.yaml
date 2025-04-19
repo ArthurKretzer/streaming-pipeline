@@ -52,7 +52,7 @@ spec:
   mode: cluster
   image: arthurkretzer/streaming-consumer:3.5.4
   imagePullPolicy: Always
-  mainApplicationFile: "local:///app/src/kafka_consumer_avro.py"
+  mainApplicationFile: "local:///app/deploy/kafka_consumer_avro.py"
   arguments:
     - "--kafka-topic"
     - "control_power"
