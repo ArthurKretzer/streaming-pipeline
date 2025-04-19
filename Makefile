@@ -19,6 +19,10 @@ services-external-ips:
 	@echo "\033[0m\033[0;33mListing all droplets public IPs:"
 	@doctl compute droplet list --format Name,PublicIPv4
 
+build-spark:
+	docker build -t arthurkretzer/spark:3.5.4 -f ./docker/spark.Dockerfile
+	docker push arthurkretzer/spark:3.5.4
+
 build-consumer:
 	docker build -t arthurkretzer/streaming-consumer:3.5.4 -f ./docker/streaming-consumer.Dockerfile ./src
 	docker push arthurkretzer/streaming-consumer:3.5.4
