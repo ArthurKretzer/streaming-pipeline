@@ -33,4 +33,6 @@ RUN /opt/spark/bin/spark-shell --packages \
 
 RUN cp -r /tmp/ivy2/jars/* /opt/spark/jars/
 
+RUN rm -r /tmp/ivy2
+
 EXPOSE 8080 18080

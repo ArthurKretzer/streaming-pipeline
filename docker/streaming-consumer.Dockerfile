@@ -15,15 +15,15 @@ RUN apt-get update && \
 
 ENV WORK_DIR=/app
 
+# Install dependencies as root
+RUN pip install pyspark>=3.5.4 sparkmeasure>=0.24.0 confluent-kafka[avro,schemaregistry]>=2.8.0
+
 # Create directories
 RUN mkdir -p ${WORK_DIR}
 WORKDIR ${WORK_DIR}
 
 # Copy project files
 COPY . /app
-
-# Install dependencies as root
-RUN pip install pyspark>=3.5.4 sparkmeasure>=0.24.0 confluent-kafka[avro,schemaregistry]>=2.8.0
 
 # Fix permissions after installation
 RUN chown -R spark:spark ${WORK_DIR}

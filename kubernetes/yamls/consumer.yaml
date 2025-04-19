@@ -67,7 +67,7 @@ spec:
     javaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
     env:
       - name: SCHEMA_REGISTRY_URI
-        value: http://kafka-schema-registry-cp-schema-registry.ingestion.svc.cluster.local:9000
+        value: http://kafka-schema-registry-cp-schema-registry.ingestion.svc.cluster.local:8081
       - name: MINIO_ACCESS_KEY
         valueFrom:
           secretKeyRef:
@@ -82,16 +82,11 @@ spec:
     coreLimit: "1200m"
     memory: "6g"
     serviceAccount: spark-operator-spark
-    volumeMounts:
-      - name: spark-history-volume
-        mountPath: /opt/spark/logs/events
-      - name: spark-history-volume
-        mountPath: /opt/spark/metrics
-      - name: ivy-cache
-        mountPath: /tmp/ivy2
   executor:
     javaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
     env:
+      - name: SCHEMA_REGISTRY_URI
+        value: http://kafka-schema-registry-cp-schema-registry.ingestion.svc.cluster.local:8081
       - name: MINIO_ACCESS_KEY
         valueFrom:
           secretKeyRef:
@@ -102,27 +97,13 @@ spec:
           secretKeyRef:
             name: spark-minio-credentials
             key: secretKey
-    cores: 15
-    instances: 1
-    memory: "12g"
+    cores: 3
+    instances: 4
+    memory: "6g"
     serviceAccount: spark-operator-spark
-    volumeMounts:
-      - name: spark-history-volume
-        mountPath: /opt/spark/logs/events
-      - name: spark-history-volume
-        mountPath: /opt/spark/metrics
-      - name: ivy-cache
-        mountPath: /tmp/ivy2
   monitoring:
     exposeDriverMetrics: true
     exposeExecutorMetrics: true
     prometheus:
       jmxExporterJar: /opt/spark/jars/io.prometheus.jmx_jmx_prometheus_javaagent-1.0.1.jar
       port: 8080
-  volumes:
-    - name: spark-history-volume
-      persistentVolumeClaim:
-        claimName: pvc-spark-history-server
-    - name: "ivy-cache"
-      persistentVolumeClaim:
-        claimName: pvc-shared-spark-ivy-cache
