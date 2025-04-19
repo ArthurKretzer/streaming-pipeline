@@ -56,20 +56,21 @@ class KafkaProducerAvro:
         return key_serializer, value_serializer
 
     def _get_schema(self, topic_name: str):
-        if topic_name == "control_power-avro":
-            with open("./src/schemas/control_power.json") as f:
-                schema = f.read()
-            return schema
-        elif topic_name == "accelerometer_gyro-avro":
-            with open("./src/schemas/accelerometer_gyro.json") as f:
-                schema = f.read()
-            return schema
-        elif topic_name == "mocked-avro":
-            with open("./src/schemas/temperature.json") as f:
-                schema = f.read()
-            return schema
-        else:
-            logger.error(f"Invalid data type ({topic_name}) for schema.")
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        schema_dir = os.path.join(current_dir, "schemas")
+
+        schema_mapping = {
+            "control_power-avro": "control_power.json",
+            "accelerometer_gyro-avro": "accelerometer_gyro.json",
+            "mocked-avro": "temperature.json",
+        }
+
+        if topic_name in schema_mapping:
+            schema_path = os.path.join(schema_dir, schema_mapping[topic_name])
+            with open(schema_path) as f:
+                return f.read()
+
+        raise ValueError(f"No schema found for topic: {topic_name}")
 
     def _configure_topic(self):
         configurator = KafkaTopicConfigurator(self.bootstrap_servers)
