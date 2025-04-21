@@ -1,12 +1,15 @@
-start: terraform-init services-external-ips
+start: kube-context terraform-init services-external-ips
 
 clean:
 	cd terraform && terraform destroy
 
+kube-context:
+	kubectx do-nyc1-k8s-cluster
+
 terraform-init:
 	cd terraform && terraform init
-	cd terraform && terraform plan -target=helm_release.argocd
-	cd terraform && terraform apply -target=helm_release.argocd
+	cd terraform && terraform plan -target=kubernetes_namespace.monitoring -target=helm_release.argocd 
+	cd terraform && terraform apply -target=kubernetes_namespace.monitoring -target=helm_release.argocd
 	cd terraform && terraform plan
 	cd terraform && terraform apply
 	
