@@ -16,6 +16,7 @@ from pyspark.sql.types import (
 )
 
 SCHEMA_REGISTRY_URI = os.getenv("SCHEMA_REGISTRY_URI")
+KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
 
 
 class KafkaConsumerAvro:
@@ -169,7 +170,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     consumer = KafkaConsumerAvro(
-        kafka_bootstrap_servers="master-kafka-external-bootstrap.ingestion.svc.cluster.local:9094",
+        kafka_bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
         kafka_topic=args.kafka_topic,
     )
     stream_query = consumer.consume()
