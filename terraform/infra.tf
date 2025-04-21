@@ -16,12 +16,14 @@ terraform {
 }
 
 provider "kubernetes" {
-  config_path = "~/.kube/config"
+  config_path    = "~/.kube/config"
+  config_context = "do-nyc1-k8s-cluster"
 }
 
 provider "helm" {
   kubernetes {
-    config_path = "~/.kube/config"
+    config_path    = "~/.kube/config"
+    config_context = "do-nyc1-k8s-cluster"
   }
 }
 
