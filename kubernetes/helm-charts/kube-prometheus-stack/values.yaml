@@ -435,7 +435,7 @@ alertmanager:
     tls:
       - secretName: certi-tls-secret
         hosts:
-        - alertmanager-kube-cpc.certi.org.br
+          - alertmanager-kube-cpc.certi.org.br
 
   ## Configuration for Alertmanager secret
   ##
@@ -1055,6 +1055,21 @@ grafana:
   ##
   dashboards:
     default:
+      minio-dashboard:
+        url: https://github.com/ArthurKretzer/streaming-pipeline/tree/main/kubernetes/helm-charts/kube-prometheus-stack/grafana-dashboards/minio/minio-dashboard.json
+        datasource: Prometheus
+      kafka-cruise-control:
+        url: https://github.com/ArthurKretzer/streaming-pipeline/tree/main/kubernetes/helm-charts/kube-prometheus-stack/grafana-dashboards/strimzi-kafka/strimzi-cruise-control.json
+        datasource: Prometheus
+      kafka:
+        url: https://github.com/ArthurKretzer/streaming-pipeline/tree/main/kubernetes/helm-charts/kube-prometheus-stack/grafana-dashboards/strimzi-kafka/strimzi-kafka.json
+        datasource: Prometheus
+      kafka-zookeeper:
+        url: https://github.com/ArthurKretzer/streaming-pipeline/tree/main/kubernetes/helm-charts/kube-prometheus-stack/grafana-dashboards/strimzi-kafka/strimzi-kafka-zookeeper.json
+        datasource: Prometheus
+      spark:
+        url: https://github.com/ArthurKretzer/streaming-pipeline/tree/main/kubernetes/helm-charts/kube-prometheus-stack/grafana-dashboards/spark/spark.json
+        datasource: Prometheus
     # default:
     #   some-dashboard:
     #     json: |
@@ -1147,7 +1162,7 @@ grafana:
     # hosts:
     #   - grafana.domain.com
     hosts:
-        - monitoring-kube-cpc.certi.org.br
+      - monitoring-kube-cpc.certi.org.br
 
     ## Path for grafana ingress
     path: /
@@ -1158,7 +1173,7 @@ grafana:
     tls:
       - secretName: certi-tls-secret
         hosts:
-        - monitoring-kube-cpc.certi.org.br
+          - monitoring-kube-cpc.certi.org.br
 
   # # To make Grafana persistent (Using Statefulset)
   # #
@@ -3426,7 +3441,7 @@ prometheus:
     # hosts:
     #   - prometheus.domain.com
     hosts:
-        - prometheus-kube-cpc.certi.org.br
+      - prometheus-kube-cpc.certi.org.br
 
     ## Paths to use for ingress rules - one path should match the prometheusSpec.routePrefix
     ##
