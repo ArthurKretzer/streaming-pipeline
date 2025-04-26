@@ -5,7 +5,7 @@ metadata:
   labels:
     strimzi.io/cluster: kafka
 spec:
-  topicName: _schemas
+  topicName: schema-registry-schemas-topic
   partitions: 1
   replicas: 3
   config:
