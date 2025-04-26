@@ -3152,7 +3152,7 @@ prometheus:
 
     ## Service type
     ##
-    type: ClusterIP
+    type: NodePort
 
     ## Service dual stack
     ##
