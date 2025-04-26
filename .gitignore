@@ -220,3 +220,4 @@ override.tf.json
 terraform.rc
 
 **.env
+./data/raw/execution_metrics/*
