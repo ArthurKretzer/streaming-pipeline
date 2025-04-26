@@ -1059,6 +1059,9 @@ grafana:
       spark:
         url: https://github.com/ArthurKretzer/streaming-pipeline/tree/main/kubernetes/helm-charts/kube-prometheus-stack/grafana-dashboards/spark/spark.json
         datasource: Prometheus
+      master-dashboard:
+        url: https://github.com/ArthurKretzer/streaming-pipeline/tree/main/kubernetes/helm-charts/kube-prometheus-stack/grafana-dashboards/master-dashboard.json
+        datasource: Prometheus
     # default:
     #   some-dashboard:
     #     json: |
