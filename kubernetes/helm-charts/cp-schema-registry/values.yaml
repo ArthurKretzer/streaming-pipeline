@@ -25,7 +25,8 @@ imagePullSecrets:
 
 ## Schema Registry Settings Overrides
 ## Configuration Options can be found here: https://docs.confluent.io/current/schema-registry/docs/config.html
-configurationOverrides: {}
+configurationOverrides:
+  kafkastore.topic: schema-registry-schemas-topic
 
 ## Additional env variables
 customEnv: {}
@@ -35,8 +36,8 @@ servicePort: 8081
 
 service:
   type: NodePort
-  nodePort: 32081  # Choose a port within the range 30000-32767
-  
+  nodePort: 32081 # Choose a port within the range 30000-32767
+
 ## Schema registry JVM Heap Option
 heapOptions: "-Xms512M -Xmx512M"
 
