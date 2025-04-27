@@ -47,7 +47,12 @@ spec:
     spark.hadoop.fs.s3a.fast.upload: "True"
     spark.hadoop.fs.s3a.multipart.size: "104857600"
     spark.hadoop.fs.s3a.connection.maximum: "100"
-    spark.streaming.concurrentJobs: "5"
+    spark.sql.shuffle.partitions: "24"
+    spark.default.parallelism: "24"
+    spark.streaming.backpressure.enabled: "true"
+    spark.streaming.kafka.maxRatePerPartition: "1000"
+    spark.executor.memoryOverhead: "1024"
+    spark.sql.streaming.stateStore.maintenanceInterval: "30s"
   type: Python
   mode: cluster
   image: arthurkretzer/streaming-consumer:3.5.4
@@ -82,7 +87,7 @@ spec:
             key: secretKey
     cores: 1
     coreLimit: "1200m"
-    memory: "6g"
+    memory: "2g"
     serviceAccount: spark-operator-spark
   executor:
     javaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
@@ -101,10 +106,9 @@ spec:
           secretKeyRef:
             name: spark-minio-credentials
             key: secretKey
-    cores: 1
-    coreLimit: "3000m"
-    instances: 4
-    memory: "6g"
+    cores: 2
+    instances: 3
+    memory: "3g"
     serviceAccount: spark-operator-spark
   monitoring:
     exposeDriverMetrics: true
