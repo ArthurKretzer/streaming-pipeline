@@ -182,7 +182,7 @@ def summarize_jobs_stages(df_jobs, df_stages):
 
 # Example Usage
 if __name__ == "__main__":
-    experiment_name = "third_experiment"
+    experiment_name = "fourth_experiment"
 
     eventlog_path = f"./data/raw/{experiment_name}/eventLogs.json"  # <- Change this
 
