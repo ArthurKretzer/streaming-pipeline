@@ -337,9 +337,6 @@ tests:
           requests:
             memory: "64Mi"
             cpu: "250m"
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
     asserts:
       - equal:
           path: spec.template.spec.containers[0].resources
@@ -630,9 +627,9 @@ tests:
   - it: Should contain `--workqueue-ratelimiter-max-delay` arg if `controller.workqueueRateLimiter.maxDelay.enable` is set to `true`
     set:
       controller:
-          maxDelay:
-            enable: false
-            duration: 1h
+        maxDelay:
+          enable: false
+          duration: 1h
     asserts:
       - notContains:
           path: spec.template.spec.containers[?(@.name=="spark-operator-controller")].args

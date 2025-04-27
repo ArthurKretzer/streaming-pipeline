@@ -159,9 +159,6 @@ mavenBuilder:
     name: maven-builder
     tag: ""
 resources:
-  limits:
-    memory: 384Mi
-    cpu: 1000m
   requests:
     memory: 384Mi
     cpu: 200m

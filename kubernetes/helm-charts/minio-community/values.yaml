@@ -45,7 +45,7 @@ ignoreChartChecksums: false
 
 ## Additional arguments to pass to minio binary
 extraArgs:
-# example for enabling FTP:
+  # example for enabling FTP:
   - --ftp=\"address=:8021\"
   - --ftp=\"passive-port-range=10000-10010\"
 
@@ -200,7 +200,8 @@ service:
 ingress:
   enabled: true
   ingressClassName: ~
-  labels: {}
+  labels:
+    {}
     # node-role.kubernetes.io/ingress: platform
   annotations:
     # cert-manager.io/cluster-issuer: dev-selfsigned
@@ -220,7 +221,7 @@ ingress:
   tls:
     - secretName: certi-tls-secret
       hosts:
-      - datalake-cpc.certi.org.br
+        - datalake-cpc.certi.org.br
 
 consoleService:
   type: ClusterIP
@@ -245,9 +246,10 @@ consoleService:
 consoleIngress:
   enabled: true
   ingressClassName: ~
-  labels: {}
+  labels:
+    {}
     # node-role.kubernetes.io/ingress: platform
-  annotations: 
+  annotations:
     # cert-manager.io/cluster-issuer: dev-selfsigned
     traefik.ingress.kubernetes.io/force-ssl-redirect: "true"
     traefik.ingress.kubernetes.io/ssl-passthrough: "true"
@@ -263,7 +265,7 @@ consoleIngress:
   tls:
     - secretName: certi-tls-secret
       hosts:
-      - console-datalake-cpc.certi.org.br
+        - console-datalake-cpc.certi.org.br
 
 ## Node labels for pod assignment
 ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
@@ -293,7 +295,7 @@ affinity:
           matchLabels:
             app: minio
         topologyKey: kubernetes.io/hostname
-        
+
 topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: kubernetes.io/hostname
@@ -327,9 +329,6 @@ resources:
   requests:
     memory: "1Gi"
     cpu: "500m"
-  limits:
-    memory: "4Gi"
-    cpu: "2000m"
 
 ## List of policies to be created after minio install
 ##
@@ -431,7 +430,8 @@ makeUserJob:
 
 ## List of service accounts to be created after minio install
 ##
-svcaccts: []
+svcaccts:
+  []
   ## accessKey, secretKey and parent user to be assigned to the service accounts
   ## Add new service accounts as explained here https://min.io/docs/minio/kubernetes/upstream/administration/identity-access-management/minio-user-management.html#service-accounts
   # - accessKey: console-svcacct
@@ -559,13 +559,15 @@ customCommandJob:
     requests:
       memory: 128Mi
   ## Additional volumes to add to the post-job.
-  extraVolumes: []
+  extraVolumes:
+    []
     # - name: extra-policies
     #   configMap:
     #     name: my-extra-policies-cm
   ## Additional volumeMounts to add to the custom commands container when
   ## running the post-job.
-  extraVolumeMounts: []
+  extraVolumeMounts:
+    []
     # - name: extra-policies
     #   mountPath: /mnt/extras/
   # Command to run after the main command on exit

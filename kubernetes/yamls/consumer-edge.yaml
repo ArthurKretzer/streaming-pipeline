@@ -118,7 +118,7 @@ spec:
             key: secretKey
     cores: 2
     instances: 2
-    memory: "4g"
+    memory: "2g"
     serviceAccount: spark-operator-spark
     volumeMounts:
       - name: spark-history-volume
