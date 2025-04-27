@@ -83,7 +83,7 @@ def collect_metrics(prometheus_uri: str, experiment_name: str):
 
     # Intervalo de tempo: última hora
     end_time = datetime.now(timezone.utc)
-    start_time = end_time - timedelta(hours=2)
+    start_time = end_time - timedelta(minutes=50)
 
     collected_dfs = {}
     for metric in METRICS:
@@ -109,5 +109,10 @@ def collect_metrics(prometheus_uri: str, experiment_name: str):
 
 
 if __name__ == "__main__":
-    collect_metrics("https://prometheus-kube-cpc.certi.org.br", "experiment2_edge")
-    collect_metrics("http://137.184.102.222:30090", "experiment2_cloud")
+    experiment_name = "experiment3"
+    cloud_ip = "161.35.14.145"
+
+    collect_metrics(
+        "https://prometheus-kube-cpc.certi.org.br", f"{experiment_name}_edge"
+    )
+    collect_metrics(f"http://{cloud_ip}:30090", f"{experiment_name}_cloud")
