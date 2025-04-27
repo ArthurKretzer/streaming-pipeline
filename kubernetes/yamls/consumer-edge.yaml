@@ -116,9 +116,9 @@ spec:
           secretKeyRef:
             name: spark-minio-credentials
             key: secretKey
-    cores: 1
-    instances: 3
-    memory: "3g"
+    cores: 2
+    instances: 2
+    memory: "4g"
     serviceAccount: spark-operator-spark
     volumeMounts:
       - name: spark-history-volume
