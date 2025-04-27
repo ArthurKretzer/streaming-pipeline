@@ -87,7 +87,7 @@ class KafkaTopicConfigurator:
             logger.warning(
                 f"Topic '{topic_name}' does not exist. Creating it..."
             )
-            creation_result = self.create_topic(topic_name)
+            creation_result = self.create_topic(topic_name, num_partitions=6)
             logger.warning(f"Topic creation result: {creation_result}")
 
         # Create a ConfigResource for the topic
