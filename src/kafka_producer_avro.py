@@ -35,7 +35,7 @@ class KafkaProducerAvro:
             "linger.ms": 0,
             "batch.num.messages": 1,
             "compression.type": "none",
-            "max.in.flight.requests.per.connection": 1,
+            "max.in.flight.requests.per.connection": 5,
         }
 
         producer = SerializingProducer(self.producer_config)
@@ -106,7 +106,6 @@ class KafkaProducerAvro:
             on_delivery=self._delivery_report,
         )
         logger.info(f"Message sent: {value}")
-        producer.flush()
 
     def produce(self, data_type: str):
         self._configure_topic()
@@ -148,6 +147,7 @@ class KafkaProducerAvro:
             self._send_message(producer, key=timestamp, value=message)
             i += 1
             time.sleep(0.1)  # 10Hz
+        producer.flush()
 
 
 if __name__ == "__main__":
