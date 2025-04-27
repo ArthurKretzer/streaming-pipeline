@@ -32,30 +32,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
     path: kubernetes/yamls/ingestion/broker-cloud
   destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: ingestion
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: kafka-connect
-  namespace: cicd
-spec:
-  project: default
-  source:
-    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
-    targetRevision: main
-    path: kubernetes/yamls/ingestion/kafka-connect
-  destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: ingestion
   syncPolicy:
     automated:
@@ -70,11 +51,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
     path: kubernetes/yamls/ingestion/cruise-control
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: ingestion
   syncPolicy:
     automated:
@@ -89,11 +70,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
     path: kubernetes/yamls/ingestion/metrics
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: ingestion
   syncPolicy:
     automated:
@@ -108,11 +89,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
     path: kubernetes/helm-charts/cp-schema-registry
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: ingestion
   syncPolicy:
     automated:
@@ -127,14 +108,14 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
     path: kubernetes/helm-charts/kafka-ui
     helm:
       valueFiles:
         - values-cloud.yaml
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: ingestion
   syncPolicy:
     automated:
