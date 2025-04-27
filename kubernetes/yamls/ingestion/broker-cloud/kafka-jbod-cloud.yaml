@@ -30,12 +30,12 @@ spec:
           bootstrap:
             nodePort: 32289
           brokers:
-          - broker: 0
-            nodePort: 32290
-          - broker: 1
-            nodePort: 32291
-          - broker: 2
-            nodePort: 32292
+            - broker: 0
+              nodePort: 32290
+            - broker: 1
+              nodePort: 32291
+            - broker: 2
+              nodePort: 32292
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
@@ -55,19 +55,16 @@ spec:
     storage:
       type: jbod
       volumes:
-      - id: 0
-        type: persistent-claim
-        size: 15Gi
-        deleteClaim: true
+        - id: 0
+          type: persistent-claim
+          size: 15Gi
+          deleteClaim: true
     # resource limitation
     # -xms -xmx set as same as resources [limit]
     resources:
       requests:
         memory: 256Mi
         cpu: "500m"
-      limits:
-        memory: 2Gi
-        cpu: "1500m"
     metricsConfig:
       type: jmxPrometheusExporter
       valueFrom:
@@ -78,17 +75,14 @@ spec:
   zookeeper:
     replicas: 3
     storage:
-        type: persistent-claim
-        size: 10Gi
-        deleteClaim: true
+      type: persistent-claim
+      size: 10Gi
+      deleteClaim: true
     resources:
       # requests and limits
       requests:
         memory: 100Mi
         cpu: "250m"
-      limits:
-        memory: 1Gi
-        cpu: "1500m"
     metricsConfig:
       type: jmxPrometheusExporter
       valueFrom:
