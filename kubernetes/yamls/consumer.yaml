@@ -111,7 +111,6 @@ spec:
             name: spark-minio-credentials
             key: secretKey
     cores: 1
-    coreLimit: "2000m"
     instances: 3
     memory: "3g"
     serviceAccount: spark-operator-spark
