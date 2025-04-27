@@ -35,7 +35,7 @@ class KafkaProducerAvro:
             "linger.ms": 0,
             "batch.num.messages": 1,
             "compression.type": "none",
-            "max.in.flight.requests.per.connection": 5,
+            "max.in.flight.requests.per.connection": 1,
         }
 
         producer = SerializingProducer(self.producer_config)
