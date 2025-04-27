@@ -87,7 +87,11 @@ class KafkaConsumerAvro:
             .option("subscribe", self.topic_name)
             .option("startingOffsets", "earliest")
             .option("failOnDataLoss", "false")
-            .option("minPartitions", "15")
+            .option("minPartitions", "12")
+            .option("maxOffsetsPerTrigger", "500")
+            .option("fetchMaxWaitMs", "20")
+            .option("fetchMinBytes", "1")
+            .option("maxPollRecords", "500")
             .load()
         )
 
@@ -128,9 +132,11 @@ class KafkaConsumerAvro:
                 "mergeSchema", "false"
             )  # Schema will not evolve, should provide better performance
             .option("delta.enableChangeDataFeed", "false")
+            .option("delta.autoOptimize.optimizeWrite", "true")
+            .option("delta.autoOptimize.autoCompact", "true")
             .outputMode("append")
             .option("delta.logRetentionDuration", "interval 1 day")
-            .option("delta.checkpointInterval", "5")
+            .option("delta.checkpointInterval", "10")
             .trigger(processingTime="1 seconds")
             .option("truncate", "false")
             .start(raw_delta_path)
