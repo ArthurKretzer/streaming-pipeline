@@ -6,6 +6,22 @@ import pytz
 import seaborn as sns
 from utils import get_true_spark_run_starts
 
+NODE_CPU_LIMITS = {
+    "flncpcsrv-k8s-w01": 400,
+    "flncpcsrv-k8s-w02": 400,
+    "flncpcsrv-k8s-w03": 400,
+    "flncpcsrv-k8s-w04": 400,
+    "flncpcsrv-k8s-w11": 800,
+}
+
+NODE_MEMORY_LIMITS = {
+    "flncpcsrv-k8s-w01": 16.384,  # 16 GiB
+    "flncpcsrv-k8s-w02": 16.384,
+    "flncpcsrv-k8s-w03": 16.384,
+    "flncpcsrv-k8s-w04": 16.384,
+    "flncpcsrv-k8s-w11": 40.960,  # 40 GiB
+}
+
 
 def annotate_spark_starts(
     ax,
@@ -81,7 +97,10 @@ def annotate_spark_starts(
 
 
 def cpu_chart(
-    df: pd.DataFrame, df_status: pd.DataFrame, title: str = "CPU Usage by Pod"
+    df: pd.DataFrame,
+    df_status: pd.DataFrame,
+    title: str = "CPU Usage by Pod",
+    node_cpu_limits=NODE_CPU_LIMITS,
 ):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
@@ -102,13 +121,6 @@ def cpu_chart(
     )
 
     # === Step 2: Clip CPU usage based on node limits ===
-    node_cpu_limits = {
-        "flncpcsrv-k8s-w01": 400,
-        "flncpcsrv-k8s-w02": 400,
-        "flncpcsrv-k8s-w03": 400,
-        "flncpcsrv-k8s-w04": 400,
-        "flncpcsrv-k8s-w11": 800,
-    }
     df["cpu_limit"] = df["node"].map(node_cpu_limits)
 
     # === Step 3: Assign consistent categorical colors to pods ===
@@ -158,7 +170,10 @@ def cpu_chart(
 
 
 def cpu_chart_stacked(
-    df: pd.DataFrame, df_status: pd.DataFrame, title: str = "CPU Usage by Pod"
+    df: pd.DataFrame,
+    df_status: pd.DataFrame,
+    title: str = "CPU Usage by Pod",
+    node_cpu_limits=NODE_CPU_LIMITS,
 ):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
@@ -176,13 +191,6 @@ def cpu_chart_stacked(
         lambda x: x.rolling(window=3, min_periods=1).mean()
     )
 
-    node_cpu_limits = {
-        "flncpcsrv-k8s-w01": 400,
-        "flncpcsrv-k8s-w02": 400,
-        "flncpcsrv-k8s-w03": 400,
-        "flncpcsrv-k8s-w04": 400,
-        "flncpcsrv-k8s-w11": 800,
-    }
     df["cpu_limit"] = df["node"].map(node_cpu_limits)
 
     # === Step 2: Keep only necessary columns and resample ===
@@ -299,7 +307,10 @@ def cpu_chart_nodes(df: pd.DataFrame, title: str = "Total CPU Usage per Node"):
 
 
 def memory_chart(
-    df: pd.DataFrame, df_status: pd.DataFrame, title: str = "Memory Usage by Pod"
+    df: pd.DataFrame,
+    df_status: pd.DataFrame,
+    title: str = "Memory Usage by Pod",
+    node_memory_limits=NODE_MEMORY_LIMITS,
 ):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
@@ -316,14 +327,6 @@ def memory_chart(
         lambda x: x.rolling(window=3, min_periods=1).mean()
     )
 
-    # Add memory limits in MiB
-    node_memory_limits = {
-        "flncpcsrv-k8s-w01": 16.384,  # 16 GiB
-        "flncpcsrv-k8s-w02": 16.384,
-        "flncpcsrv-k8s-w03": 16.384,
-        "flncpcsrv-k8s-w04": 16.384,
-        "flncpcsrv-k8s-w11": 40.960,  # 40 GiB
-    }
     memory_df["memory_limit"] = memory_df["node"].map(node_memory_limits)
 
     # === Step 2: Assign consistent categorical colors to pods ===
@@ -374,7 +377,10 @@ def memory_chart(
 
 
 def memory_chart_stacked(
-    df: pd.DataFrame, df_status: pd.DataFrame, title: str = "Memory Usage by Pod"
+    df: pd.DataFrame,
+    df_status: pd.DataFrame,
+    title: str = "Memory Usage by Pod",
+    node_memory_limits=NODE_MEMORY_LIMITS,
 ):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
@@ -392,14 +398,6 @@ def memory_chart_stacked(
         lambda x: x.rolling(window=3, min_periods=1).mean()
     )
 
-    # Add memory limits in MiB
-    node_memory_limits = {
-        "flncpcsrv-k8s-w01": 16.384,  # 16 GiB
-        "flncpcsrv-k8s-w02": 16.384,
-        "flncpcsrv-k8s-w03": 16.384,
-        "flncpcsrv-k8s-w04": 16.384,
-        "flncpcsrv-k8s-w11": 40.960,  # 40 GiB
-    }
     memory_df["memory_limit"] = memory_df["node"].map(node_memory_limits)
 
     # === Step 2: Resample every 30 seconds ===
@@ -523,7 +521,7 @@ def memory_chart_nodes(df: pd.DataFrame, title: str = "Memory Usage by Pod"):
     plt.show()
 
 
-def gantt_chart(df_status: pd.DataFrame):
+def gantt_chart(df_status: pd.DataFrame, title="Pod Exeution Gantt Chart"):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
 
@@ -540,6 +538,11 @@ def gantt_chart(df_status: pd.DataFrame):
             "labfaber-kafka-schema-registry",
             "labfaber-kafka-ui",
             "labfaber-zookeeper",
+            "master-cruise-control",
+            "master-kafka",
+            "master-kafka-schema-registry",
+            "master-kafka-ui",
+            "master-zookeeper",
             "strimzi-cluster-operator",
         ],
         "Spark": [
@@ -604,13 +607,15 @@ def gantt_chart(df_status: pd.DataFrame):
         ax.grid(True, axis="x")
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
 
+    fig.suptitle(title, fontsize=24)
+
     # Label and legend
     axes[-1].set_xlabel("Time")
     handles, labels = axes[0].get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     axes[0].legend(by_label.values(), by_label.keys(), title="Phase", loc="upper right")
 
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.show()
 
 
@@ -622,6 +627,7 @@ def minio_charts(
     df_minio_received_bytes: pd.DataFrame,
     df_cpu: pd.DataFrame,
     df_status: pd.DataFrame,
+    title: str = "Minio Charts",
 ):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
@@ -807,22 +813,25 @@ def minio_charts(
         "KiB/sec",
     )
 
+    fig.suptitle(title, fontsize=24)
+
     axes[-1].set_xlabel("Time")
     axes[-1].xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
     axes[0].legend(loc="upper right", fontsize="x-small", title="Pods")
-    plt.tight_layout()
+
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.show()
 
 
 def kafka_charts(
-    kafka_bytes_in,
-    kafka_bytes_out,
-    kafka_requests,
-    kafka_requests_errors,
-    kafka_messages_in,
-    kafka_consumer_outgoing,
-    df_cpu,
-    df_status,
+    kafka_bytes_in: pd.DataFrame,
+    kafka_bytes_out: pd.DataFrame,
+    kafka_requests: pd.DataFrame,
+    kafka_requests_errors: pd.DataFrame,
+    kafka_messages_in: pd.DataFrame,
+    df_cpu: pd.DataFrame,
+    df_status: pd.DataFrame,
+    title: str = "Kafka Charts",
 ):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
@@ -928,7 +937,6 @@ def kafka_charts(
     df_messages_in = process_rate(
         kafka_messages_in[kafka_messages_in["topic"] == "control_power-avro"]
     )
-    df_consumer_outgoing = aggregate_and_process(kafka_consumer_outgoing)
 
     # === CPU usage ===
     cpu_df = df_cpu.sort_values(by=["pod", "timestamp"]).dropna(subset=["container"])
@@ -939,7 +947,10 @@ def kafka_charts(
     cpu_df["cpu_percent_smoothed"] = cpu_df.groupby("pod")["rate"].transform(
         lambda x: x.rolling(window=3, min_periods=1).mean()
     )
-    kafka_cpu_df = cpu_df[cpu_df["pod"].str.contains("labfaber-kafka", case=False)]
+    kafka_cpu_df = cpu_df[
+        cpu_df["pod"].str.contains("labfaber-kafka", case=False)
+        | cpu_df["pod"].str.contains("master-kafka", case=False)
+    ]
     kafka_cpu_df = kafka_cpu_df[kafka_cpu_df["container"] == "kafka"]
 
     # === Pod restarts ===
@@ -949,6 +960,8 @@ def kafka_charts(
         df = df[
             df["pod"].str.startswith("labfaber-kafka")
             | df["pod"].str.startswith("labfaber-zookeeper")
+            | df["pod"].str.startswith("master-kafka")
+            | df["pod"].str.startswith("master-zookeeper")
         ]
         df = df[df["value"] == 1.0]
         df = df.sort_values(["pod", "timestamp"])
@@ -1041,13 +1054,14 @@ def kafka_charts(
         color_map,
     )
 
-    # === Format ===
+    fig.suptitle(title, fontsize=24)
     axes[-1].set_xlabel("Time")
     for ax in axes:
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
 
     axes[0].legend(loc="upper right", fontsize="x-small", title="Kafka Pods")
-    plt.tight_layout()
+
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.show()
 
 
