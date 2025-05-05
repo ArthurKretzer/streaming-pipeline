@@ -3,6 +3,21 @@ import re
 import pandas as pd
 
 
+def fix_timestamps_timezone(df: pd.DataFrame) -> pd.DataFrame:
+    # Corrigindo 'source_timestamp' que está como São Paulo mas deveria ser UTC
+    df["source_timestamp"] = (
+        df["source_timestamp"]
+        .dt.tz_convert(None)  # Remove o timezone mantendo o horário
+        .dt.tz_localize("UTC")  # Aplica UTC como se o horário fosse UTC mesmo
+    )
+    # Adiciona 3 horas e seta fuso como UTC
+    df["source_timestamp"] = df["source_timestamp"] - pd.Timedelta(hours=3)
+    df["timestamp"] = df["timestamp"].dt.tz_convert("UTC")
+    df["landing_timestamp"] = df["landing_timestamp"].dt.tz_convert("UTC")
+
+    return df
+
+
 def time_filter(
     df: pd.DataFrame, start_time: pd.Timestamp, end_time: pd.Timestamp
 ) -> pd.DataFrame:

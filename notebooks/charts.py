@@ -3,6 +3,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
 import pytz
+import seaborn as sns
 from utils import get_true_spark_run_starts
 
 
@@ -1046,5 +1047,113 @@ def kafka_charts(
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
 
     axes[0].legend(loc="upper right", fontsize="x-small", title="Kafka Pods")
+    plt.tight_layout()
+    plt.show()
+
+
+def latency_box_plot(
+    df_cloud: pd.DataFrame,
+    df_edge: pd.DataFrame,
+    y: str = "source_kafka_latency",
+    title: str = "Latency Comparison of Kafka Messages (Cloud vs Edge)",
+):
+    # Custom colors for each category
+    custom_palette = {
+        "Cloud": "#1f77b4",  # blue
+        "Edge": "#ff7f0e",  # orange
+    }
+
+    # 1. Criar cópias dos dataframes com coluna de origem
+    df_cloud_box = df_cloud[[y]].copy()
+    df_cloud_box["Environment"] = "Cloud"
+
+    df_edge_box = df_edge[[y]].copy()
+    df_edge_box["Environment"] = "Edge"
+
+    # 2. Concatenar os dois
+    df_boxplot = pd.concat([df_cloud_box, df_edge_box], ignore_index=True)
+
+    # 3. Plotar com Seaborn
+    plt.figure(figsize=(8, 6))
+    sns.boxplot(
+        data=df_boxplot,
+        x="Environment",
+        y=y,
+        palette=custom_palette,
+    )
+    plt.title(title)
+    plt.ylabel("Latency (seconds)")
+    plt.grid(True, axis="y", linestyle="--", alpha=0.7)
+    plt.tight_layout()
+    plt.show()
+
+
+def latency_line_plot(
+    df_cloud: pd.DataFrame,
+    df_edge: pd.DataFrame,
+    x: str = "source_timestamp",
+    y: str = "source_kafka_latency",
+    title: str = "Latency of Kafka Messages (Cloud vs Edge)",
+    linestyle: str = "none",
+):
+    plt.figure(figsize=(12, 6))
+    plt.plot(
+        df_cloud[x],
+        df_cloud[y],
+        label="Cloud",
+        marker="o",
+        linestyle=linestyle,
+        markersize=1,
+    )
+    plt.plot(
+        df_edge[x],
+        df_edge[y],
+        label="Edge",
+        marker="o",
+        linestyle=linestyle,
+        markersize=1,
+    )
+    plt.xlabel("Source Timestamp")
+    plt.ylabel("Latency (Seconds)")
+    plt.title(title)
+    plt.legend()
+    plt.grid(True)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+
+def latency_distribution_plot(
+    df_cloud: pd.DataFrame,
+    df_edge: pd.DataFrame,
+    x: str = "source_kafka_latency",
+    title: str = "Latency Distribution to Kafka (Cloud vs Edge)",
+):
+    df_cloud_kde = df_cloud[[x]].copy()
+    df_cloud_kde["Environment"] = "Cloud"
+
+    df_edge_kde = df_edge[[x]].copy()
+    df_edge_kde["Environment"] = "Edge"
+
+    df_kde = pd.concat([df_cloud_kde, df_edge_kde], ignore_index=True)
+
+    stats = df_kde.groupby("Environment")[x].agg(["mean", "median", "std"])
+    print("📊 Statistics:")
+    print(stats)
+
+    plt.figure(figsize=(10, 6))
+    sns.kdeplot(
+        data=df_kde,
+        x=x,
+        hue="Environment",
+        fill=True,
+        common_norm=False,
+        alpha=0.4,
+    )
+
+    plt.title(title)
+    plt.xlabel("Latency (seconds)")
+    plt.ylabel("Density")
+    plt.grid(True, linestyle="--", alpha=0.6)
     plt.tight_layout()
     plt.show()
