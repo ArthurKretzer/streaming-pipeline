@@ -1166,8 +1166,8 @@ def plot_spark_eventlog_charts(df_jobs: pd.DataFrame, df_stages: pd.DataFrame):
     plt.figure(figsize=(14, 6))
     if "SubmissionTime" in df_jobs.columns:
         df_jobs["SubmissionTime_dt"] = pd.to_datetime(
-            df_jobs["SubmissionTime"], unit="ms"
-        )
+            df_jobs["SubmissionTime"], unit="ms", utc=True
+        ).dt.tz_convert("America/Sao_Paulo")
         df_jobs_sorted = df_jobs.sort_values(by="SubmissionTime_dt")
         plt.plot(
             df_jobs_sorted["SubmissionTime_dt"],
