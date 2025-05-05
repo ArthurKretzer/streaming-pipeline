@@ -1157,3 +1157,130 @@ def latency_distribution_plot(
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.tight_layout()
     plt.show()
+
+
+def plot_spark_eventlog_charts(df_jobs: pd.DataFrame, df_stages: pd.DataFrame):
+    sns.set_theme(style="whitegrid")
+
+    # Heatmap of Job Durations over Time
+    plt.figure(figsize=(14, 6))
+    if "SubmissionTime" in df_jobs.columns:
+        df_jobs["SubmissionTime_dt"] = pd.to_datetime(
+            df_jobs["SubmissionTime"], unit="ms"
+        )
+        df_jobs_sorted = df_jobs.sort_values(by="SubmissionTime_dt")
+        plt.plot(
+            df_jobs_sorted["SubmissionTime_dt"],
+            df_jobs_sorted["DurationSec"],
+            marker="o",
+            linestyle="-",
+        )
+        plt.title("Job Duration Over Submission Time")
+        plt.xlabel("Submission Time")
+        plt.ylabel("Duration (seconds)")
+        plt.xticks(rotation=45)
+        plt.grid(True)
+        plt.show()
+
+    # KDE Plot (Density) of Stage Durations
+    plt.figure(figsize=(12, 6))
+    sns.kdeplot(df_stages["DurationSec"], shade=True, color="purple")
+    plt.title("Density Plot of Stage Durations")
+    plt.xlabel("Duration (seconds)")
+    plt.ylabel("Density")
+    plt.grid(True)
+    plt.show()
+
+    # Bonus: Histogram of Stage Durations
+    plt.figure(figsize=(12, 6))
+    sns.histplot(df_stages["DurationSec"], bins=50, kde=False, color="orange")
+    plt.title("Histogram of Stage Durations")
+    plt.xlabel("Duration (seconds)")
+    plt.ylabel("Count")
+    plt.grid(True)
+    plt.show()
+
+    # Intelligent mapping using modulo
+    def map_job_type(job_id):
+        job_type_mapping = {
+            0: "Planning",  # Job 1
+            1: "Kafka Fetch",  # Job 2
+            2: "Transformations",  # Job 3
+            3: "Sink Write",  # Job 4
+        }
+        return job_type_mapping.get(job_id % 4, "Unknown Job")
+
+    # Apply mapping
+    df_jobs["JobType"] = df_jobs["JobID"].apply(map_job_type)
+
+    # If df_stages also has JobID (if not, we would need to fix differently)
+    if "JobID" in df_stages.columns:
+        df_stages["JobType"] = df_stages["JobID"].apply(map_job_type)
+    else:
+        df_stages["JobType"] = "Unknown Job"
+
+    # --- Plot 1: Stage Duration vs Stage ID (colored by JobType) ---
+    plt.figure(figsize=(12, 6))
+    sns.scatterplot(
+        x="StageID",
+        y="DurationSec",
+        hue="JobType",
+        palette="tab10",
+        data=df_stages,
+        legend="full",
+    )
+    plt.title("Stage Duration vs Stage ID (Colored by Job Type)")
+    plt.xlabel("Stage ID")
+    plt.ylabel("Duration (seconds)")
+    plt.axhline(
+        df_stages["DurationSec"].mean(),
+        color="red",
+        linestyle="--",
+        label="Mean Duration",
+    )
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
+    plt.show()
+
+    # --- Plot 2: Job Duration vs Job ID (colored by JobType) ---
+    plt.figure(figsize=(12, 6))
+    sns.scatterplot(
+        x="JobID",
+        y="DurationSec",
+        hue="JobType",
+        palette="tab10",
+        data=df_jobs,
+        legend="full",
+    )
+    plt.title("Job Duration vs Job ID (Colored by Job Type)")
+    plt.xlabel("Job ID")
+    plt.ylabel("Duration (seconds)")
+    plt.axhline(
+        df_jobs["DurationSec"].mean(),
+        color="red",
+        linestyle="--",
+        label="Mean Duration",
+    )
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
+    plt.show()
+
+    # --- Plot 3: Stage Duration vs Number of Tasks (colored by JobType) ---
+    plt.figure(figsize=(12, 6))
+    sns.scatterplot(
+        x="NumTasks",
+        y="DurationSec",
+        hue="JobType",
+        palette="tab10",
+        data=df_stages,
+        legend="full",
+    )
+    plt.title("Stage Duration vs Number of Tasks (Colored by Job Type)")
+    plt.xlabel("Number of Tasks")
+    plt.ylabel("Duration (seconds)")
+    plt.axhline(
+        df_stages["DurationSec"].mean(),
+        color="red",
+        linestyle="--",
+        label="Mean Duration",
+    )
+    plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
+    plt.show()
