@@ -221,3 +221,4 @@ terraform.rc
 
 **.env
 ./data/raw/execution_metrics/*
+**eventLogs.json
