@@ -531,7 +531,7 @@ def gantt_chart(df_status: pd.DataFrame, title="Pod Exeution Gantt Chart"):
 
     # === Step 1: Group definitions ===
     group_definitions = {
-        "MinIO": ["minio-community"],
+        "MinIO": ["minio-community", "minio-master"],
         "Kafka": [
             "labfaber-cruise-control",
             "labfaber-kafka",
@@ -674,10 +674,16 @@ def minio_charts(
     cpu_df["cpu_percent_smoothed"] = cpu_df.groupby("pod")["rate"].transform(
         lambda x: x.rolling(window=3, min_periods=1).mean()
     )
-    minio_cpu_df = cpu_df[cpu_df["pod"].str.startswith("minio-community")].copy()
+    minio_cpu_df = cpu_df[
+        cpu_df["pod"].str.startswith("minio-community")
+        | cpu_df["pod"].str.startswith("minio-master")
+    ].copy()
 
     # === Detect actual pod restart cycles: Pending → Running ===
-    status_df = df_status[df_status["pod"].str.startswith("minio-community")].copy()
+    status_df = df_status[
+        df_status["pod"].str.startswith("minio-community")
+        | df_status["pod"].str.startswith("minio-master")
+    ].copy()
     status_df = status_df[status_df["value"] == 1.0].sort_values(["pod", "timestamp"])
 
     restart_events = []
