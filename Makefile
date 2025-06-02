@@ -1,6 +1,6 @@
 start: kube-context terraform-init services-external-ips
 
-clean:
+clean: kube-context
 	cd terraform && terraform destroy
 
 kube-context:
@@ -68,6 +68,6 @@ stop-consume-control-power-edge:
 	kubectx labfaber
 	kubectl delete -f ./kubernetes/yamls/consumer-edge.yaml
 
-start-consume: consume-control-power-cloud consume-control-power-edge
+start-consume: consume-control-power-edge consume-control-power-cloud 
 
 stop-consume: stop-consume-control-power-cloud stop-consume-control-power-edge
