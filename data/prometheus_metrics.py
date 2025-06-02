@@ -109,8 +109,8 @@ def collect_metrics(prometheus_uri: str, experiment_name: str):
 
 
 if __name__ == "__main__":
-    experiment_name = "experiment4"
-    cloud_ip = "161.35.14.145"
+    experiment_name = "experiment06"
+    cloud_ip = "192.241.148.103"
 
     collect_metrics(
         "https://prometheus-kube-cpc.certi.org.br", f"{experiment_name}_edge"
