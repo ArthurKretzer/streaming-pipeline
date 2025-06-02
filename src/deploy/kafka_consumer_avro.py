@@ -87,7 +87,7 @@ class KafkaConsumerAvro:
             .option("subscribe", self.topic_name)
             .option("startingOffsets", "earliest")
             .option("failOnDataLoss", "false")
-            .option("minPartitions", "12")
+            .option("minPartitions", "4")
             .option("maxOffsetsPerTrigger", "500")
             .option("fetchMaxWaitMs", "20")
             .option("fetchMinBytes", "1")

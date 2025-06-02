@@ -182,9 +182,15 @@ def summarize_jobs_stages(df_jobs, df_stages):
 
 # Example Usage
 if __name__ == "__main__":
-    experiment_name = "fourth_experiment"
+    from pathlib import Path
 
-    eventlog_path = f"./data/raw/{experiment_name}/eventLogs.json"  # <- Change this
+    project_root = Path.cwd()
+
+    experiment_name = "experiment06"
+
+    eventlog_path = (
+        f"{project_root}/data/raw/{experiment_name}/eventLogs.json"  # <- Change this
+    )
 
     print("Reading Logs...")
     events = load_eventlog(eventlog_path)
