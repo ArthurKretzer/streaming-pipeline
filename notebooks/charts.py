@@ -90,7 +90,10 @@ def annotate_spark_starts(
             ha="left",
             va="top",
             bbox=dict(
-                facecolor="white", edgecolor="none", alpha=0.6, boxstyle="round,pad=0.2"
+                facecolor="white",
+                edgecolor="none",
+                alpha=0.6,
+                boxstyle="round,pad=0.2",
             ),
         )
         top_offset += top_offset_inc
@@ -105,7 +108,9 @@ def cpu_chart(
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
 
-    df = df.sort_values(by=["id", "pod", "timestamp"]).dropna(subset="container")
+    df = df.sort_values(by=["id", "pod", "timestamp"]).dropna(
+        subset="container"
+    )
     # df["pod"] = df["pod"].apply(simplify_pod_name)
     # df_status["pod"] = df_status["pod"].apply(simplify_pod_name)
 
@@ -125,7 +130,9 @@ def cpu_chart(
 
     # === Step 3: Assign consistent categorical colors to pods ===
     unique_pods = sorted(df["pod"].unique())
-    palette = plt.get_cmap("tab20")  # can use 'Set1', 'Dark2', etc. for more contrast
+    palette = plt.get_cmap(
+        "tab20"
+    )  # can use 'Set1', 'Dark2', etc. for more contrast
     colors = [palette(i % palette.N) for i in range(len(unique_pods))]
     pod_color_map = dict(zip(unique_pods, colors))
 
@@ -148,7 +155,10 @@ def cpu_chart(
         ax.set_title(f"CPU Usage on {node}")
         ax.set_ylabel("CPU Usage (%)")
         ax.axhline(
-            y=node_cpu_limits[node], color="red", linestyle="--", label="CPU Limit"
+            y=node_cpu_limits[node],
+            color="red",
+            linestyle="--",
+            label="CPU Limit",
         )
 
         # === Reusable annotation call ===
@@ -156,7 +166,9 @@ def cpu_chart(
 
         ax.legend(loc="upper right", fontsize="x-small")
         ax.grid(True)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter("%H:%M", tz=local_tz)
+        )
 
     # Hide unused subplot
     if len(axes) > len(node_cpu_limits):
@@ -179,7 +191,9 @@ def cpu_chart_stacked(
     local_tz = pytz.timezone("America/Sao_Paulo")
 
     # === Step 1: Preprocess Raw Data ===
-    df = df.sort_values(by=["id", "pod", "timestamp"]).dropna(subset="container")
+    df = df.sort_values(by=["id", "pod", "timestamp"]).dropna(
+        subset="container"
+    )
     # df["pod"] = df["pod"].apply(simplify_pod_name)
 
     df["value_diff"] = df.groupby("id")["value"].diff()
@@ -222,7 +236,10 @@ def cpu_chart_stacked(
 
         pivot_df = (
             node_data.pivot_table(
-                index="timestamp", columns="pod", values="cpu_percent", aggfunc="mean"
+                index="timestamp",
+                columns="pod",
+                values="cpu_percent",
+                aggfunc="mean",
             )
             .fillna(0)
             .sort_index()
@@ -241,7 +258,10 @@ def cpu_chart_stacked(
         ax.set_title(f"CPU Usage on {node}")
         ax.set_ylabel("CPU Usage (%)")
         ax.axhline(
-            y=node_cpu_limits[node], color="red", linestyle="--", label="CPU Limit"
+            y=node_cpu_limits[node],
+            color="red",
+            linestyle="--",
+            label="CPU Limit",
         )
 
         # === Reusable annotation call ===
@@ -249,7 +269,9 @@ def cpu_chart_stacked(
 
         ax.legend(loc="upper right", fontsize="x-small", ncol=2)
         ax.grid(True)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter("%H:%M", tz=local_tz)
+        )
 
     # Hide unused subplots
     for j in range(len(node_cpu_limits), len(axes)):
@@ -263,12 +285,18 @@ def cpu_chart_stacked(
 
 def cpu_chart_nodes(df: pd.DataFrame, title: str = "Total CPU Usage per Node"):
     # Load your CPU dataset
-    cpu_df = df.sort_values(by=["id", "pod", "timestamp"]).dropna(subset="container")
+    cpu_df = df.sort_values(by=["id", "pod", "timestamp"]).dropna(
+        subset="container"
+    )
 
     # === Preprocess CPU usage ===
     cpu_df["value_diff"] = cpu_df.groupby("id")["value"].diff()
-    cpu_df["time_diff"] = cpu_df.groupby("id")["timestamp"].diff().dt.total_seconds()
-    cpu_df = cpu_df[(cpu_df["value_diff"] > 0) & (cpu_df["time_diff"] > 0)].copy()
+    cpu_df["time_diff"] = (
+        cpu_df.groupby("id")["timestamp"].diff().dt.total_seconds()
+    )
+    cpu_df = cpu_df[
+        (cpu_df["value_diff"] > 0) & (cpu_df["time_diff"] > 0)
+    ].copy()
 
     cpu_df["rate"] = (cpu_df["value_diff"] / cpu_df["time_diff"]) * 100
     cpu_df["cpu_percent"] = cpu_df.groupby("pod")["rate"].transform(
@@ -316,16 +344,18 @@ def memory_chart(
     local_tz = pytz.timezone("America/Sao_Paulo")
 
     memory_df = (
-        df.sort_values(by=["pod", "timestamp"]).dropna(subset="container").copy()
+        df.sort_values(by=["pod", "timestamp"])
+        .dropna(subset="container")
+        .copy()
     )
 
     # Convert from bytes to MiB
     memory_df["memory_gib"] = memory_df["value"] / (1024 * 1024 * 1024)  # Gib
 
     # Apply 3-point rolling average to smooth
-    memory_df["memory_gib_smoothed"] = memory_df.groupby("pod")["memory_gib"].transform(
-        lambda x: x.rolling(window=3, min_periods=1).mean()
-    )
+    memory_df["memory_gib_smoothed"] = memory_df.groupby("pod")[
+        "memory_gib"
+    ].transform(lambda x: x.rolling(window=3, min_periods=1).mean())
 
     memory_df["memory_limit"] = memory_df["node"].map(node_memory_limits)
 
@@ -356,14 +386,19 @@ def memory_chart(
         ax.legend(loc="upper right", fontsize="x-small")
 
         ax.axhline(
-            y=node_memory_limits[node], color="red", linestyle="--", label="CPU Limit"
+            y=node_memory_limits[node],
+            color="red",
+            linestyle="--",
+            label="CPU Limit",
         )
 
         # === Reusable annotation call ===
         annotate_spark_starts(ax, memory_df, df_status, node, pod_color_map)
 
         ax.grid(True)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter("%H:%M", tz=local_tz)
+        )
 
     # Hide any unused subplot
     if len(axes) > len(node_memory_limits):
@@ -387,16 +422,18 @@ def memory_chart_stacked(
 
     # === Step 1: Preprocessing ===
     memory_df = (
-        df.sort_values(by=["timestamp", "pod"]).dropna(subset="container").copy()
+        df.sort_values(by=["timestamp", "pod"])
+        .dropna(subset="container")
+        .copy()
     )
 
     # Convert bytes to MiB
     memory_df["memory_gib"] = memory_df["value"] / (1024 * 1024 * 1024)  # Gib
 
     # Smooth using rolling average
-    memory_df["memory_gib_smoothed"] = memory_df.groupby("pod")["memory_gib"].transform(
-        lambda x: x.rolling(window=3, min_periods=1).mean()
-    )
+    memory_df["memory_gib_smoothed"] = memory_df.groupby("pod")[
+        "memory_gib"
+    ].transform(lambda x: x.rolling(window=3, min_periods=1).mean())
 
     memory_df["memory_limit"] = memory_df["node"].map(node_memory_limits)
 
@@ -463,7 +500,9 @@ def memory_chart_stacked(
 
         ax.legend(loc="upper right", fontsize="x-small", ncol=2)
         ax.grid(True)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter("%H:%M", tz=local_tz)
+        )
 
     # Remove unused plots
     for j in range(len(node_memory_limits), len(axes)):
@@ -478,12 +517,16 @@ def memory_chart_stacked(
 def memory_chart_nodes(df: pd.DataFrame, title: str = "Memory Usage by Pod"):
     # Load your memory dataset
     memory_df = (
-        df.sort_values(by=["timestamp", "pod"]).dropna(subset="container").copy()
+        df.sort_values(by=["timestamp", "pod"])
+        .dropna(subset="container")
+        .copy()
     )
 
     # === Preprocess Memory usage ===
     memory_df_proc = memory_df.sort_values(by=["timestamp", "pod"]).copy()
-    memory_df_proc["memory_gib"] = memory_df_proc["value"] / (1024**3)  # bytes → GiB
+    memory_df_proc["memory_gib"] = memory_df_proc["value"] / (
+        1024**3
+    )  # bytes → GiB
     memory_df_proc["memory_gib_smoothed"] = memory_df_proc.groupby("pod")[
         "memory_gib"
     ].transform(lambda x: x.rolling(window=3, min_periods=1).mean())
@@ -492,7 +535,9 @@ def memory_chart_nodes(df: pd.DataFrame, title: str = "Memory Usage by Pod"):
     memory_df_proc["node"] = memory_df_proc["node"].astype(str)
 
     memory_resampled = (
-        memory_df_proc[["timestamp", "node", "pod", "id", "memory_gib_smoothed"]]
+        memory_df_proc[
+            ["timestamp", "node", "pod", "id", "memory_gib_smoothed"]
+        ]
         .set_index("timestamp")
         .groupby(["node", "pod", "id"])
         .resample("40s")
@@ -510,7 +555,9 @@ def memory_chart_nodes(df: pd.DataFrame, title: str = "Memory Usage by Pod"):
     # === Plot Memory ===
     plt.figure(figsize=(14, 6))
     for node in total_mem_per_node.columns:
-        plt.plot(total_mem_per_node.index, total_mem_per_node[node], label=node)
+        plt.plot(
+            total_mem_per_node.index, total_mem_per_node[node], label=node
+        )
 
     plt.title(title)
     plt.xlabel("Time")
@@ -566,7 +613,9 @@ def gantt_chart(df_status: pd.DataFrame, title="Pod Exeution Gantt Chart"):
 
     for ax, (group_name, prefixes) in zip(axes, group_definitions.items()):
         group_df = df[
-            df["pod"].apply(lambda p: any(p.startswith(prefix) for prefix in prefixes))
+            df["pod"].apply(
+                lambda p: any(p.startswith(prefix) for prefix in prefixes)
+            )
         ].copy()
 
         # Assign y positions
@@ -605,7 +654,9 @@ def gantt_chart(df_status: pd.DataFrame, title="Pod Exeution Gantt Chart"):
         ax.set_title(f"{group_name} Pods Status Over Time")
         ax.set_ylabel("Pods")
         ax.grid(True, axis="x")
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter("%H:%M", tz=local_tz)
+        )
 
     fig.suptitle(title, fontsize=24)
 
@@ -613,7 +664,9 @@ def gantt_chart(df_status: pd.DataFrame, title="Pod Exeution Gantt Chart"):
     axes[-1].set_xlabel("Time")
     handles, labels = axes[0].get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
-    axes[0].legend(by_label.values(), by_label.keys(), title="Phase", loc="upper right")
+    axes[0].legend(
+        by_label.values(), by_label.keys(), title="Phase", loc="upper right"
+    )
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.show()
@@ -636,7 +689,9 @@ def minio_charts(
     def process_rate(df):
         df = df.sort_values(by=["timestamp", "pod"]).dropna(subset="container")
         df["value_diff"] = df.groupby("pod")["value"].diff()
-        df["time_diff"] = df.groupby("pod")["timestamp"].diff().dt.total_seconds()
+        df["time_diff"] = (
+            df.groupby("pod")["timestamp"].diff().dt.total_seconds()
+        )
         df = df[(df["value_diff"] >= 0) & (df["time_diff"] > 0)].copy()
         df["rate"] = df["value_diff"] / df["time_diff"]
         df["rate_smoothed"] = df.groupby("pod")["rate"].transform(
@@ -668,8 +723,12 @@ def minio_charts(
         .copy()
     )
     cpu_df["value_diff"] = cpu_df.groupby("id")["value"].diff()
-    cpu_df["time_diff"] = cpu_df.groupby("id")["timestamp"].diff().dt.total_seconds()
-    cpu_df = cpu_df[(cpu_df["value_diff"] > 0) & (cpu_df["time_diff"] > 0)].copy()
+    cpu_df["time_diff"] = (
+        cpu_df.groupby("id")["timestamp"].diff().dt.total_seconds()
+    )
+    cpu_df = cpu_df[
+        (cpu_df["value_diff"] > 0) & (cpu_df["time_diff"] > 0)
+    ].copy()
     cpu_df["rate"] = (cpu_df["value_diff"] / cpu_df["time_diff"]) * 100
     cpu_df["cpu_percent_smoothed"] = cpu_df.groupby("pod")["rate"].transform(
         lambda x: x.rolling(window=3, min_periods=1).mean()
@@ -684,7 +743,9 @@ def minio_charts(
         df_status["pod"].str.startswith("minio-community")
         | df_status["pod"].str.startswith("minio-master")
     ].copy()
-    status_df = status_df[status_df["value"] == 1.0].sort_values(["pod", "timestamp"])
+    status_df = status_df[status_df["value"] == 1.0].sort_values(
+        ["pod", "timestamp"]
+    )
 
     restart_events = []
 
@@ -694,7 +755,10 @@ def minio_charts(
             prev_row = pod_df.iloc[i - 1]
             curr_row = pod_df.iloc[i]
 
-            if prev_row["phase"] != "Pending" and curr_row["phase"] == "Pending":
+            if (
+                prev_row["phase"] != "Pending"
+                and curr_row["phase"] == "Pending"
+            ):
                 # Start of a restart
                 restart_time = curr_row["timestamp"]
 
@@ -722,7 +786,12 @@ def minio_charts(
     def plot_with_cpu_overlay(ax, metric_df, cpu_df, title, ylabel_left):
         ax
         for pod, pod_df in metric_df.groupby("pod"):
-            ax.plot(pod_df["timestamp"], pod_df["rate_smoothed"], label=pod, alpha=0.7)
+            ax.plot(
+                pod_df["timestamp"],
+                pod_df["rate_smoothed"],
+                label=pod,
+                alpha=0.7,
+            )
         ax.set_ylabel(ylabel_left)
         ax.grid(True)
 
@@ -745,7 +814,9 @@ def minio_charts(
             running_time = row["running_time"]
 
             if restart_time:
-                ax.axvline(x=restart_time, color="red", linestyle=":", alpha=0.7)
+                ax.axvline(
+                    x=restart_time, color="red", linestyle=":", alpha=0.7
+                )
                 ax.text(
                     restart_time + pd.Timedelta(seconds=10),
                     ax.get_ylim()[1],
@@ -757,7 +828,9 @@ def minio_charts(
                 )
 
             if pd.notna(running_time):
-                ax.axvline(x=running_time, color="green", linestyle=":", alpha=0.7)
+                ax.axvline(
+                    x=running_time, color="green", linestyle=":", alpha=0.7
+                )
                 ax.text(
                     running_time + pd.Timedelta(seconds=10),
                     ax.get_ylim()[1],
@@ -822,7 +895,9 @@ def minio_charts(
     fig.suptitle(title, fontsize=24)
 
     axes[-1].set_xlabel("Time")
-    axes[-1].xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
+    axes[-1].xaxis.set_major_formatter(
+        mdates.DateFormatter("%H:%M", tz=local_tz)
+    )
     axes[0].legend(loc="upper right", fontsize="x-small", title="Pods")
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
@@ -843,9 +918,13 @@ def kafka_charts(
     local_tz = pytz.timezone("America/Sao_Paulo")
 
     def process_rate(df):
-        df = df.sort_values(by=["timestamp", "pod"]).dropna(subset=["container"])
+        df = df.sort_values(by=["timestamp", "pod"]).dropna(
+            subset=["container"]
+        )
         df["value_diff"] = df.groupby("pod")["value"].diff()
-        df["time_diff"] = df.groupby("pod")["timestamp"].diff().dt.total_seconds()
+        df["time_diff"] = (
+            df.groupby("pod")["timestamp"].diff().dt.total_seconds()
+        )
         df = df[(df["value_diff"] >= 0) & (df["time_diff"] > 0)].copy()
         df["rate"] = df["value_diff"] / df["time_diff"]
         df["rate_smoothed"] = df.groupby("pod")["rate"].transform(
@@ -863,7 +942,12 @@ def kafka_charts(
     def annotate_kafka_restarts(ax, restart_df):
         for _, row in restart_df.iterrows():
             try:
-                ax.axvline(x=row["restart_time"], color="red", linestyle=":", alpha=0.7)
+                ax.axvline(
+                    x=row["restart_time"],
+                    color="red",
+                    linestyle=":",
+                    alpha=0.7,
+                )
                 ax.text(
                     row["restart_time"] + pd.Timedelta(seconds=10),
                     ax.get_ylim()[1],
@@ -876,7 +960,12 @@ def kafka_charts(
             except KeyError:
                 pass
             try:
-                ax.axvline(x=row["start_time"], color="green", linestyle=":", alpha=0.7)
+                ax.axvline(
+                    x=row["start_time"],
+                    color="green",
+                    linestyle=":",
+                    alpha=0.7,
+                )
                 ax.text(
                     row["start_time"] + pd.Timedelta(seconds=10),
                     ax.get_ylim()[1] * 0.95,
@@ -945,10 +1034,16 @@ def kafka_charts(
     )
 
     # === CPU usage ===
-    cpu_df = df_cpu.sort_values(by=["pod", "timestamp"]).dropna(subset=["container"])
+    cpu_df = df_cpu.sort_values(by=["pod", "timestamp"]).dropna(
+        subset=["container"]
+    )
     cpu_df["value_diff"] = cpu_df.groupby("id")["value"].diff()
-    cpu_df["time_diff"] = cpu_df.groupby("id")["timestamp"].diff().dt.total_seconds()
-    cpu_df = cpu_df[(cpu_df["value_diff"] > 0) & (cpu_df["time_diff"] > 0)].copy()
+    cpu_df["time_diff"] = (
+        cpu_df.groupby("id")["timestamp"].diff().dt.total_seconds()
+    )
+    cpu_df = cpu_df[
+        (cpu_df["value_diff"] > 0) & (cpu_df["time_diff"] > 0)
+    ].copy()
     cpu_df["rate"] = (cpu_df["value_diff"] / cpu_df["time_diff"]) * 100
     cpu_df["cpu_percent_smoothed"] = cpu_df.groupby("pod")["rate"].transform(
         lambda x: x.rolling(window=3, min_periods=1).mean()
@@ -980,7 +1075,10 @@ def kafka_charts(
                 prev_row = pod_df.iloc[i - 1]
                 curr_row = pod_df.iloc[i]
 
-                if prev_row["phase"] != "Pending" and curr_row["phase"] == "Pending":
+                if (
+                    prev_row["phase"] != "Pending"
+                    and curr_row["phase"] == "Pending"
+                ):
                     # Start of a restart
                     restart_time = curr_row["timestamp"]
 
@@ -1063,7 +1161,9 @@ def kafka_charts(
     fig.suptitle(title, fontsize=24)
     axes[-1].set_xlabel("Time")
     for ax in axes:
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter("%H:%M", tz=local_tz)
+        )
 
     axes[0].legend(loc="upper right", fontsize="x-small", title="Kafka Pods")
 
@@ -1075,7 +1175,8 @@ def latency_box_plot(
     df_cloud: pd.DataFrame,
     df_edge: pd.DataFrame,
     y: str = "source_kafka_latency",
-    title: str = "Latency Comparison of Kafka Messages (Cloud vs Edge)",
+    title: str = "Distribution of Kafka Ingestion Latency (Cloud vs Edge)",
+    save_path: str = None,
 ):
     # Custom colors for each category
     custom_palette = {
@@ -1105,6 +1206,8 @@ def latency_box_plot(
     plt.ylabel("Latency (seconds)")
     plt.grid(True, axis="y", linestyle="--", alpha=0.7)
     plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
     plt.show()
 
 
@@ -1113,8 +1216,9 @@ def latency_line_plot(
     df_edge: pd.DataFrame,
     x: str = "source_timestamp",
     y: str = "source_kafka_latency",
-    title: str = "Latency of Kafka Messages (Cloud vs Edge)",
+    title: str = "Latency from Source to Kafka Broker (Cloud vs Edge)",
     linestyle: str = "none",
+    save_path: str = None,
 ):
     plt.figure(figsize=(12, 6))
     plt.plot(
@@ -1140,6 +1244,8 @@ def latency_line_plot(
     plt.grid(True)
     plt.xticks(rotation=45)
     plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
     plt.show()
 
 
@@ -1147,7 +1253,8 @@ def latency_distribution_plot(
     df_cloud: pd.DataFrame,
     df_edge: pd.DataFrame,
     x: str = "source_kafka_latency",
-    title: str = "Latency Distribution to Kafka (Cloud vs Edge)",
+    title: str = "Latency Density of Kafka Ingestion (Cloud vs Edge)",
+    save_path: str = None,
 ):
     df_cloud_kde = df_cloud[[x]].copy()
     df_cloud_kde["Environment"] = "Cloud"
@@ -1176,6 +1283,8 @@ def latency_distribution_plot(
     plt.ylabel("Density")
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
     plt.show()
 
 
