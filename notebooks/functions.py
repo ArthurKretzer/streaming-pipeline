@@ -8,5 +8,8 @@ def calculate_latencies(df: pd.DataFrame) -> pd.DataFrame:
     df["kafka_landing_latency"] = (
         df["landing_timestamp"] - df["timestamp"]
     ).dt.total_seconds()
+    df["total_latency"] = (
+        df["source_kafka_latency"] + df["kafka_landing_latency"]
+    )
 
     return df
