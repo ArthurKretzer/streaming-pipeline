@@ -186,6 +186,7 @@ def cpu_chart_stacked(
     df_status: pd.DataFrame,
     title: str = "CPU Usage by Pod",
     node_cpu_limits=NODE_CPU_LIMITS,
+    save_path: str = None,
 ):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
@@ -280,10 +281,16 @@ def cpu_chart_stacked(
     axes[-1].set_xlabel("Time")
     fig.suptitle(title, fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
     plt.show()
 
 
-def cpu_chart_nodes(df: pd.DataFrame, title: str = "Total CPU Usage per Node"):
+def cpu_chart_nodes(
+    df: pd.DataFrame,
+    title: str = "Total CPU Usage per Node",
+    save_path: str = None,
+):
     # Load your CPU dataset
     cpu_df = df.sort_values(by=["id", "pod", "timestamp"]).dropna(
         subset="container"
@@ -339,6 +346,7 @@ def memory_chart(
     df_status: pd.DataFrame,
     title: str = "Memory Usage by Pod",
     node_memory_limits=NODE_MEMORY_LIMITS,
+    save_path: str = None,
 ):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
@@ -408,6 +416,8 @@ def memory_chart(
     axes[-1].set_xlabel("Time")
     fig.suptitle(title, fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
     plt.show()
 
 
@@ -416,6 +426,7 @@ def memory_chart_stacked(
     df_status: pd.DataFrame,
     title: str = "Memory Usage by Pod",
     node_memory_limits=NODE_MEMORY_LIMITS,
+    save_path: str = None,
 ):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
@@ -511,10 +522,14 @@ def memory_chart_stacked(
     axes[-1].set_xlabel("Time")
     fig.suptitle(title, fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
     plt.show()
 
 
-def memory_chart_nodes(df: pd.DataFrame, title: str = "Memory Usage by Pod"):
+def memory_chart_nodes(
+    df: pd.DataFrame, title: str = "Memory Usage by Pod", save_path: str = None
+):
     # Load your memory dataset
     memory_df = (
         df.sort_values(by=["timestamp", "pod"])
@@ -565,10 +580,16 @@ def memory_chart_nodes(df: pd.DataFrame, title: str = "Memory Usage by Pod"):
     plt.legend(title="Node")
     plt.grid(True)
     plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
     plt.show()
 
 
-def gantt_chart(df_status: pd.DataFrame, title="Pod Exeution Gantt Chart"):
+def gantt_chart(
+    df_status: pd.DataFrame,
+    title="Pod Exeution Gantt Chart",
+    save_path: str = None,
+):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
 
@@ -669,6 +690,8 @@ def gantt_chart(df_status: pd.DataFrame, title="Pod Exeution Gantt Chart"):
     )
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
     plt.show()
 
 
@@ -681,6 +704,7 @@ def minio_charts(
     df_cpu: pd.DataFrame,
     df_status: pd.DataFrame,
     title: str = "Minio Charts",
+    save_path: str = None,
 ):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
@@ -901,6 +925,8 @@ def minio_charts(
     axes[0].legend(loc="upper right", fontsize="x-small", title="Pods")
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
     plt.show()
 
 
@@ -913,6 +939,7 @@ def kafka_charts(
     df_cpu: pd.DataFrame,
     df_status: pd.DataFrame,
     title: str = "Kafka Charts",
+    save_path: str = None,
 ):
     # Define your desired timezone
     local_tz = pytz.timezone("America/Sao_Paulo")
@@ -1168,6 +1195,8 @@ def kafka_charts(
     axes[0].legend(loc="upper right", fontsize="x-small", title="Kafka Pods")
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
     plt.show()
 
 
@@ -1288,7 +1317,9 @@ def latency_distribution_plot(
     plt.show()
 
 
-def plot_spark_eventlog_charts(df_jobs: pd.DataFrame, df_stages: pd.DataFrame):
+def plot_spark_eventlog_charts(
+    df_jobs: pd.DataFrame, df_stages: pd.DataFrame
+) -> pd.DataFrame:
     sns.set_theme(style="whitegrid")
 
     # Heatmap of Job Durations over Time
@@ -1337,7 +1368,7 @@ def plot_spark_eventlog_charts(df_jobs: pd.DataFrame, df_stages: pd.DataFrame):
             2: "Transformations",  # Job 3
             3: "Sink Write",  # Job 4
         }
-        return job_type_mapping.get(job_id % 4, "Unknown Job")
+        return job_type_mapping.get(job_id % 3, "Unknown Job")
 
     # Apply mapping
     df_jobs["JobType"] = df_jobs["JobID"].apply(map_job_type)
@@ -1413,3 +1444,5 @@ def plot_spark_eventlog_charts(df_jobs: pd.DataFrame, df_stages: pd.DataFrame):
     )
     plt.legend(bbox_to_anchor=(1.05, 1), loc=2)
     plt.show()
+
+    return df_jobs
