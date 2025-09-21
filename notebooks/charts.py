@@ -1,9 +1,11 @@
 import matplotlib.colors as mcolors
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import pytz
 import seaborn as sns
+from matplotlib.patches import Patch
 from utils import get_true_spark_run_starts
 
 NODE_CPU_LIMITS = {
@@ -1446,3 +1448,176 @@ def plot_spark_eventlog_charts(
     plt.show()
 
     return df_jobs
+
+# --------------------------------------------------------------------
+# Helpers
+# --------------------------------------------------------------------
+
+_CLOUD = "#1f77b4"  # blue
+_EDGE  = "#ff7f0e"  # orange
+
+def _prepare_latency_long(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Reshape a wide dataframe with latency columns into long form with
+    columns: ['environment', 'stage', 'latency_s'].
+
+    Required columns:
+      - environment
+      - source_kafka_latency  → stage 'Kafka'
+      - kafka_landing_latency → stage 'Spark' (persistence)
+      - total_latency         → stage 'Total'
+    """
+    required = {"environment", "source_kafka_latency", "kafka_landing_latency", "total_latency"}
+    missing = required - set(df.columns)
+    if missing:
+        raise KeyError(f"Missing required columns: {sorted(missing)}")
+
+    long_df = df.melt(
+        id_vars=["environment"],
+        value_vars=["source_kafka_latency", "kafka_landing_latency", "total_latency"],
+        var_name="metric",
+        value_name="latency_s",
+    )
+    stage_map = {
+        "source_kafka_latency": "Kafka",
+        "kafka_landing_latency": "Spark",
+        "total_latency": "Total",
+    }
+    long_df["stage"] = pd.Categorical(long_df["metric"].map(stage_map),
+                                      categories=["Kafka", "Spark", "Total"], ordered=True)
+    return long_df.drop(columns=["metric"])
+
+
+# --------------------------------------------------------------------
+# 1) Grouped bar chart (Edge=orange, Cloud=blue; tones for median vs P95)
+# --------------------------------------------------------------------
+
+def latency_summary_bar_chart(
+    df: pd.DataFrame,
+    save_path: str | None = None,
+    stages: list[str] | None = None,
+):
+    """
+    Grouped bar chart with Median and 95th percentile for Kafka, Spark, Total.
+    Colors: Edge=orange, Cloud=blue. Median uses lighter tone; 95th uses solid tone.
+
+    Parameters
+    ----------
+    df : DataFrame with columns:
+         ['environment', 'source_kafka_latency', 'kafka_landing_latency', 'total_latency']
+    save_path : optional file path to save the figure
+    stages : optional ordering subset (default: ["Kafka","Spark","Total"])
+    """
+    long_df = _prepare_latency_long(df)
+    if stages is None:
+        stages = ["Kafka", "Spark", "Total"]
+
+    summary = (
+        long_df.groupby(["stage", "environment"])["latency_s"]
+        .agg(median="median", p95=lambda s: np.percentile(s, 95))
+        .reset_index()
+    )
+    med = summary.pivot(index="stage", columns="environment", values="median").reindex(stages)
+    p95 = summary.pivot(index="stage", columns="environment", values="p95").reindex(stages)
+
+    x = np.arange(len(stages))
+    w = 0.18
+    gap = 0.22
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    # Edge (orange): median (lighter), 95th (solid)
+    ax.bar(x - gap, med.get("Edge"), width=w, label="Edge Median", color=_EDGE, alpha=0.55)
+    ax.bar(x - gap + w, p95.get("Edge"), width=w, label="Edge 95th", color=_EDGE, alpha=1.0)
+
+    # Cloud (blue): median (lighter), 95th (solid)
+    ax.bar(x + gap, med.get("Cloud"), width=w, label="Cloud Median", color=_CLOUD, alpha=0.55)
+    ax.bar(x + gap + w, p95.get("Cloud"), width=w, label="Cloud 95th", color=_CLOUD, alpha=1.0)
+
+    ax.set_xticks(x + w/2)
+    ax.set_xticklabels(stages)
+    ax.set_ylabel("Latency (seconds)")
+    ax.set_title("Latency Summary by Stage and Environment")
+    ax.grid(True, axis="y", linestyle="--", alpha=0.6)
+
+    # Legend: two-color with tone explanation
+    legend_patches = [
+        Patch(facecolor=_EDGE,  edgecolor="none", alpha=1.0,  label="Edge 95th"),
+        Patch(facecolor=_EDGE,  edgecolor="none", alpha=0.55, label="Edge Median"),
+        Patch(facecolor=_CLOUD, edgecolor="none", alpha=1.0,  label="Cloud 95th"),
+        Patch(facecolor=_CLOUD, edgecolor="none", alpha=0.55, label="Cloud Median"),
+    ]
+    ax.legend(handles=legend_patches, ncols=2, frameon=True)
+
+    fig.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
+    plt.show()
+
+
+# --------------------------------------------------------------------
+# 2) Violin + box overlay with robust Y-limits (clip by percentile)
+# --------------------------------------------------------------------
+
+def latency_violin_box_overlay(
+    df: pd.DataFrame,
+    save_path: str | None = None,
+    stages: list[str] | None = None,
+    clip_percentile: float = 99.0,
+):
+    """
+    Violin plots + boxplots for Kafka, Spark, Total comparing Cloud vs Edge.
+    Uses robust y-limits per panel based on the given percentile to avoid
+    extreme outliers making the axis unusable.
+
+    Parameters
+    ----------
+    df : DataFrame with columns:
+         ['environment', 'source_kafka_latency', 'kafka_landing_latency', 'total_latency']
+    save_path : optional file path to save the figure
+    stages : optional ordering subset (default: ["Kafka","Spark","Total"])
+    clip_percentile : float in (0,100]; y-axis upper bound per panel is set to
+                      max(Pclip_edge, Pclip_cloud) where Pclip = given percentile.
+    """
+    long_df = _prepare_latency_long(df)
+    if stages is None:
+        stages = ["Kafka", "Spark", "Total"]
+
+    fig, axes = plt.subplots(1, len(stages), figsize=(14, 4), sharey=False)
+
+    for ax, stage in zip(axes, stages):
+        dat_cloud = long_df[(long_df["stage"] == stage) & (long_df["environment"] == "Cloud")]["latency_s"].values
+        dat_edge  = long_df[(long_df["stage"] == stage) & (long_df["environment"] == "Edge")]["latency_s"].values
+
+        parts = ax.violinplot([dat_cloud, dat_edge], showmeans=False, showmedians=False,
+                              showextrema=False, positions=[1, 2])
+        # Color violins
+        bodies = parts["bodies"]
+        if len(bodies) >= 2:
+            bodies[0].set_facecolor(_CLOUD); bodies[0].set_edgecolor("black"); bodies[0].set_alpha(0.25)
+            bodies[1].set_facecolor(_EDGE);  bodies[1].set_edgecolor("black"); bodies[1].set_alpha(0.25)
+
+        # Boxplot overlay (colored medians)
+        bp = ax.boxplot([dat_cloud, dat_edge], positions=[1, 2], widths=0.25,
+                        vert=True, showfliers=False, patch_artist=True,
+                        boxprops=dict(facecolor="white", edgecolor="black"),
+                        medianprops=dict(color="black", linewidth=1.5))
+        # Color the boxes' edges to match environments
+        for patch, color in zip(bp["boxes"], (_CLOUD, _EDGE)):
+            patch.set_edgecolor(color)
+
+        # Robust y-limit to avoid huge outliers squeezing the plot
+        upper = max(np.nanpercentile(dat_cloud, clip_percentile),
+                    np.nanpercentile(dat_edge,  clip_percentile))
+        ax.set_ylim(0, upper * 1.05)
+
+        ax.set_title(f"{stage} Latency Distribution")
+        ax.set_xticks([1, 2])
+        ax.set_xticklabels(["Cloud", "Edge"])
+        ax.set_ylabel("Latency (seconds)")
+        ax.grid(True, axis="y", linestyle="--", alpha=0.6)
+
+    fig.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
+    plt.show()
