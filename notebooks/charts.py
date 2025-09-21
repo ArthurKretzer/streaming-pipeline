@@ -343,6 +343,8 @@ def cpu_chart_nodes(
     plt.legend(title="Node")
     plt.grid(True)
     plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
     plt.show()
 
 
@@ -1939,6 +1941,170 @@ def spark_gantt_edge_cloud(
     axes[0].set_xlabel("Time")
     axes[1].set_xlabel("Time")
     fig.tight_layout(rect=[0.02, 0.06, 1, 0.92])
+
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
+    plt.show()
+
+
+def node_resources_2x2(
+    df_cpu: pd.DataFrame,
+    df_mem: pd.DataFrame,
+    *,
+    time_freq: str = "40s",
+    cpu_limit_pct: float = 400.0,
+    mem_limit_gib: float = 16.0,
+    title: str = "Edge vs Cloud — CPU and Memory by Node",
+    save_path: str | None = None,
+):
+    """
+    Build a 2x2 figure with:
+      (0,0) CPU Edge    (0,1) CPU Cloud
+      (1,0) Mem Edge    (1,1) Mem Cloud
+
+    Expected columns:
+      df_cpu: ['timestamp','id','pod','node','container','value','environment']
+              where 'value' is cumulative CPU time (e.g., millicores-seconds or CPU seconds)
+      df_mem: ['timestamp','id','pod','node','container','value','environment']
+              where 'value' is memory in bytes
+
+    Notes:
+      - We treat 'environment' values as 'Edge' and 'Cloud'.
+      - CPU is computed as a per-id derivative over time, smoothed and then
+        aggregated per node; units are percent.
+      - Memory is converted to GiB, smoothed, then aggregated per node.
+    """
+
+    # Define your desired timezone
+    local_tz = pytz.timezone("America/Sao_Paulo")
+
+    # ---------------- CPU preprocessing (per your code) ----------------
+    def _cpu_per_node(df: pd.DataFrame) -> pd.DataFrame:
+        cpu_df = (
+            df.sort_values(["id", "pod", "timestamp"])
+            .dropna(subset=["container"])
+            .copy()
+        )
+        cpu_df["value_diff"] = cpu_df.groupby("id")["value"].diff()
+        cpu_df["time_diff"] = (
+            cpu_df.groupby("id")["timestamp"].diff().dt.total_seconds()
+        )
+        cpu_df = cpu_df[
+            (cpu_df["value_diff"] > 0) & (cpu_df["time_diff"] > 0)
+        ].copy()
+        cpu_df["rate"] = (cpu_df["value_diff"] / cpu_df["time_diff"]) * 100.0
+        cpu_df["cpu_percent"] = cpu_df.groupby("pod")["rate"].transform(
+            lambda x: x.rolling(window=3, min_periods=1).mean()
+        )
+        df_resampled = (
+            cpu_df[["timestamp", "node", "pod", "cpu_percent"]]
+            .set_index("timestamp")
+            .groupby(["node", "pod"])
+            .resample(time_freq)
+            .mean(numeric_only=True)
+            .reset_index()
+        )
+        node_total = (
+            df_resampled.groupby(["timestamp", "node"])["cpu_percent"]
+            .sum()
+            .unstack("node")
+            .sort_index()
+            .fillna(0.0)
+        )
+        return node_total
+
+    # ---------------- Memory preprocessing (per your code) ----------------
+    def _mem_per_node(df: pd.DataFrame) -> pd.DataFrame:
+        mem_df = (
+            df.sort_values(["timestamp", "pod"])
+            .dropna(subset=["container"])
+            .copy()
+        )
+        mem_df["memory_gib"] = mem_df["value"] / (1024.0**3)
+        mem_df["memory_gib_smoothed"] = mem_df.groupby("pod")[
+            "memory_gib"
+        ].transform(lambda x: x.rolling(window=3, min_periods=1).mean())
+        mem_resampled = (
+            mem_df[["timestamp", "node", "pod", "id", "memory_gib_smoothed"]]
+            .set_index("timestamp")
+            .groupby(["node", "pod", "id"])
+            .resample(time_freq)
+            .mean(numeric_only=True)
+            .reset_index()
+        )
+        node_total = (
+            mem_resampled.groupby(["timestamp", "node"])["memory_gib_smoothed"]
+            .sum()
+            .unstack("node")
+            .sort_index()
+            .fillna(0.0)
+        )
+        return node_total
+
+    # Split by environment
+    cpu_edge = _cpu_per_node(df_cpu[df_cpu["environment"] == "Edge"])
+    cpu_cloud = _cpu_per_node(df_cpu[df_cpu["environment"] == "Cloud"])
+    mem_edge = _mem_per_node(df_mem[df_mem["environment"] == "Edge"])
+    mem_cloud = _mem_per_node(df_mem[df_mem["environment"] == "Cloud"])
+
+    # ---------------- Plotting ----------------
+    fig, axes = plt.subplots(2, 2, figsize=(16, 9), sharex=False)
+    (ax_ce, ax_cc), (ax_me, ax_mc) = axes
+
+    def _plot_lines(ax, frame: pd.DataFrame, ylabel: str, title: str):
+        for node in frame.columns if frame is not None else []:
+            ax.plot(frame.index, frame[node], label=str(node), linewidth=1.8)
+        ax.set_title(title)
+        ax.set_ylabel(ylabel)
+        ax.grid(True, alpha=0.4, linestyle="--")
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter("%H:%M", tz=local_tz)
+        )
+        if frame.shape[1] <= 10:
+            ax.legend(title="Node", loc="upper left", fontsize=9)
+
+    # CPU: add y=cpu_limit_pct reference
+    _plot_lines(ax_ce, cpu_edge, "CPU Usage (%)", "CPU — Edge")
+    ax_ce.axhline(
+        cpu_limit_pct,
+        color="red",
+        linestyle="--",
+        linewidth=1.2,
+        label=f"Limit {cpu_limit_pct:.0f}%",
+    )
+    _plot_lines(ax_cc, cpu_cloud, "CPU Usage (%)", "CPU — Cloud")
+    ax_cc.axhline(
+        cpu_limit_pct,
+        color="red",
+        linestyle="--",
+        linewidth=1.2,
+        label=f"Limit {cpu_limit_pct:.0f}%",
+    )
+
+    # Memory: add y=mem_limit_gib reference
+    _plot_lines(ax_me, mem_edge, "Memory Usage (GiB)", "Memory — Edge")
+    ax_me.axhline(
+        mem_limit_gib,
+        color="purple",
+        linestyle="--",
+        linewidth=1.2,
+        label=f"Limit {mem_limit_gib:.0f} GiB",
+    )
+    _plot_lines(ax_mc, mem_cloud, "Memory Usage (GiB)", "Memory — Cloud")
+    ax_mc.axhline(
+        mem_limit_gib,
+        color="purple",
+        linestyle="--",
+        linewidth=1.2,
+        label=f"Limit {mem_limit_gib:.0f} GiB",
+    )
+
+    # X labels only on bottom row
+    ax_me.set_xlabel("Time")
+    ax_mc.set_xlabel("Time")
+
+    fig.suptitle(title, fontsize=16)
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
 
     if save_path:
         plt.savefig(save_path, dpi=400, bbox_inches="tight")
