@@ -1643,15 +1643,15 @@ def latency_violin_box_overlay(
     fig, axes = plt.subplots(1, len(stages), figsize=(14, 4), sharey=False)
 
     for ax, stage in zip(axes, stages):
-        dat_cloud = long_df[
-            (long_df["stage"] == stage) & (long_df["environment"] == "Cloud")
-        ]["latency_s"].values
         dat_edge = long_df[
             (long_df["stage"] == stage) & (long_df["environment"] == "Edge")
         ]["latency_s"].values
+        dat_cloud = long_df[
+            (long_df["stage"] == stage) & (long_df["environment"] == "Cloud")
+        ]["latency_s"].values
 
         parts = ax.violinplot(
-            [dat_cloud, dat_edge],
+            [dat_edge, dat_cloud],
             showmeans=False,
             showmedians=False,
             showextrema=False,
@@ -1660,16 +1660,16 @@ def latency_violin_box_overlay(
         # Color violins
         bodies = parts["bodies"]
         if len(bodies) >= 2:
-            bodies[0].set_facecolor(_CLOUD)
+            bodies[0].set_facecolor(_EDGE)
             bodies[0].set_edgecolor("black")
             bodies[0].set_alpha(0.25)
-            bodies[1].set_facecolor(_EDGE)
+            bodies[1].set_facecolor(_CLOUD)
             bodies[1].set_edgecolor("black")
             bodies[1].set_alpha(0.25)
 
         # Boxplot overlay (colored medians)
         bp = ax.boxplot(
-            [dat_cloud, dat_edge],
+            [dat_edge, dat_cloud],
             positions=[1, 2],
             widths=0.25,
             vert=True,
@@ -1679,19 +1679,19 @@ def latency_violin_box_overlay(
             medianprops=dict(color="black", linewidth=1.5),
         )
         # Color the boxes' edges to match environments
-        for patch, color in zip(bp["boxes"], (_CLOUD, _EDGE)):
+        for patch, color in zip(bp["boxes"], (_EDGE, _CLOUD)):
             patch.set_edgecolor(color)
 
         # Robust y-limit to avoid huge outliers squeezing the plot
         upper = max(
-            np.nanpercentile(dat_cloud, clip_percentile),
             np.nanpercentile(dat_edge, clip_percentile),
+            np.nanpercentile(dat_cloud, clip_percentile),
         )
         ax.set_ylim(0, upper * 1.05)
 
         ax.set_title(f"{stage} Latency Distribution")
         ax.set_xticks([1, 2])
-        ax.set_xticklabels(["Cloud", "Edge"])
+        ax.set_xticklabels(["Edge", "Cloud"])
         ax.set_ylabel("Latency (seconds)")
         ax.grid(True, axis="y", linestyle="--", alpha=0.6)
 
