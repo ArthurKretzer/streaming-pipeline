@@ -1,3 +1,5 @@
+import re
+
 import matplotlib.colors as mcolors
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -1696,6 +1698,180 @@ def latency_violin_box_overlay(
         ax.grid(True, axis="y", linestyle="--", alpha=0.6)
 
     fig.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=400, bbox_inches="tight")
+    plt.show()
+
+
+# Spark-only Gantt with Edge/Cloud subplots and warm-up highlighting
+# Expected schema for each df_*:
+#   columns=['timestamp','pod','phase','value', ...]
+#     - timestamp: pandas.Timestamp (timezone-aware or naive)
+#     - pod: string (full pod name)
+#     - phase: string (e.g., 'Running', 'Pending', 'Succeeded', etc.)
+#     - value: float (1.0 for active / selected rows, as in your existing code)
+#
+# Call:
+#   spark_gantt_edge_cloud(df_edge, df_cloud, save_path="spark_gantt.png")
+def spark_gantt_edge_cloud(
+    df_edge: pd.DataFrame,
+    df_cloud: pd.DataFrame,
+    title: str = "Spark Pods Execution (Edge vs Cloud)",
+    save_path: str | None = None,
+    tz: str = "America/Sao_Paulo",
+    phase_colors: dict | None = None,
+    # Adjust these patterns to your naming scheme if needed:
+    driver_patterns: list[str] = (
+        # include any Spark driver names you use
+        [r"driver$", r"streaming.*-driver$", r"^spark-.*-driver$"]
+    ),
+    worker_patterns: list[str] = (
+        # executors typically contain "-exec-"
+        [r"-exec-\d+$", r"^spark-.*-exec-\d+$"]
+    ),
+    spark_prefixes: list[str] = (
+        # restrict to Spark-related pods only
+        [
+            "deltalakewithminio",
+            "streaming-pipeline-kafka-avro-to-delta-driver",
+        ]
+    ),
+):
+    local_tz = pytz.timezone(tz)
+
+    if phase_colors is None:
+        phase_colors = {
+            "Running": "green",
+            "Pending": "orange",
+            "Failed": "red",
+            "Succeeded": "blue",
+            "Unknown": "gray",
+        }
+
+    def _only_spark(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df = df[df["value"] == 1.0]
+        return df[
+            df["pod"].apply(
+                lambda p: any(p.startswith(pref) for pref in spark_prefixes)
+            )
+        ]
+
+    def _is_match(name: str, patterns: list[str]) -> bool:
+        return any(re.search(pat, name) for pat in patterns)
+
+    def _compute_warmup(
+        df: pd.DataFrame,
+    ) -> tuple[pd.Timestamp | None, pd.Timestamp | None]:
+        """
+        Warm-up = [ first_driver_running , first_executor_running )
+        Returns (start, end); either can be None if not found.
+        """
+        if df.empty:
+            return None, None
+        # find first Running time for any driver pod
+        dvr = df[
+            (df["phase"] == "Running")
+            & (df["pod"].apply(lambda p: _is_match(p, driver_patterns)))
+        ]
+        exe = df[
+            (df["phase"] == "Running")
+            & (df["pod"].apply(lambda p: _is_match(p, worker_patterns)))
+        ]
+        start = dvr["timestamp"].min() if not dvr.empty else None
+        end = exe["timestamp"].min() if not exe.empty else None
+        # Only consider warm-up if end is after start
+        if (
+            start is not None
+            and end is not None
+            and pd.to_datetime(end) > pd.to_datetime(start)
+        ):
+            return pd.to_datetime(start), pd.to_datetime(end)
+        return (
+            start,
+            None,
+        )  # no executor seen; return start so you notice the missing end
+
+    def _plot_env(ax, df_env: pd.DataFrame, panel_title: str):
+        df_env = _only_spark(df_env).sort_values(["pod", "timestamp"]).copy()
+        if df_env.empty:
+            ax.set_title(panel_title + " (no data)")
+            ax.set_axis_off()
+            return
+
+        unique_pods = sorted(df_env["pod"].unique())
+        pod_to_y = {pod: i for i, pod in enumerate(unique_pods)}
+
+        seen = set()
+        for pod in unique_pods:
+            sub = df_env[df_env["pod"] == pod].copy()
+            # segment by phase changes
+            sub["phase_shift"] = (
+                sub["phase"] != sub["phase"].shift()
+            ).cumsum()
+            for _, seg in sub.groupby("phase_shift"):
+                if seg.empty:
+                    continue
+                phase = seg["phase"].iloc[0]
+                label = phase if phase not in seen else None
+                seen.add(phase)
+                start = seg["timestamp"].iloc[0]
+                end = seg["timestamp"].iloc[-1]
+                ax.hlines(
+                    y=pod_to_y[pod],
+                    xmin=start,
+                    xmax=end,
+                    colors=phase_colors.get(phase, "black"),
+                    linewidth=6,
+                    label=label,
+                )
+
+        # Warm-up highlight
+        w_start, w_end = _compute_warmup(df_env)
+        if w_start is not None and w_end is not None:
+            ax.axvspan(
+                w_start, w_end, alpha=0.2, color="gold", label="Warm-up"
+            )
+        elif w_start is not None:
+            # driver started but we never saw an executor; mark a thin line so it is visible
+            ax.axvline(
+                w_start,
+                color="gold",
+                linestyle="--",
+                linewidth=2,
+                label="Driver start (no executor)",
+            )
+
+        ax.set_yticks(list(pod_to_y.values()))
+        ax.set_yticklabels(list(pod_to_y.keys()))
+        ax.set_title(panel_title)
+        ax.set_ylabel("Pods")
+        ax.grid(True, axis="x", alpha=0.4)
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter("%H:%M", tz=local_tz)
+        )
+
+    # Build figure
+    fig, axes = plt.subplots(1, 2, figsize=(18, 6), sharey=True)
+    _plot_env(axes[0], df_edge, "Edge — Spark Pods")
+    _plot_env(axes[1], df_cloud, "Cloud — Spark Pods")
+
+    # Compose a single legend from left axis
+    handles, labels = axes[0].get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    fig.legend(
+        by_label.values(),
+        by_label.keys(),
+        ncols=min(4, len(by_label)),
+        loc="upper center",
+        frameon=True,
+    )
+
+    fig.suptitle(title, fontsize=18)
+    axes[0].set_xlabel("Time")
+    axes[1].set_xlabel("Time")
+    fig.tight_layout(rect=[0, 0, 1, 0.90])
+
     if save_path:
         plt.savefig(save_path, dpi=400, bbox_inches="tight")
     plt.show()
