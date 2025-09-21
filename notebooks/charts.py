@@ -1721,7 +1721,6 @@ def spark_gantt_edge_cloud(
     save_path: str | None = None,
     tz: str = "America/Sao_Paulo",
     phase_colors: dict | None = None,
-    # Adjust these patterns if your names differ
     driver_patterns: list[str] = [
         r"driver$",
         r"streaming.*-driver$",
@@ -1732,6 +1731,7 @@ def spark_gantt_edge_cloud(
         "deltalakewithminio",
         "streaming-pipeline-kafka-avro-to-delta-driver",
     ],
+    dur_offset_pts: int = 20,  # horizontal text offset (points) from the center of the gold band; use negative to shift left
 ):
     local_tz = pytz.timezone(tz)
 
@@ -1744,7 +1744,6 @@ def spark_gantt_edge_cloud(
             "Unknown": "gray",
         }
 
-    # -------- helpers --------
     def _starts_with_any(name: str, prefixes: list[str]) -> bool:
         return any(name.startswith(p) for p in prefixes)
 
@@ -1778,12 +1777,10 @@ def spark_gantt_edge_cloud(
         return pd.to_datetime(firsts["timestamp"].max())
 
     def _build_display_labels(df_env: pd.DataFrame) -> dict:
-        """Map raw names to spark-driver, spark-worker-1, spark-worker-2, ..."""
         pods = sorted(df_env["pod"].unique())
         driver = [p for p in pods if _matches_any(p, driver_patterns)]
         workers = [p for p in pods if _matches_any(p, worker_patterns)]
         others = [p for p in pods if p not in set(driver) | set(workers)]
-
         mapping = {}
         if driver:
             mapping[driver[0]] = "spark-driver"
@@ -1811,7 +1808,14 @@ def spark_gantt_edge_cloud(
             return f"{m}m{sec:04.1f}s"
         return f"{s:.1f}s"
 
-    # -------- plotting of one environment --------
+    def _fmt_clock(ts: pd.Timestamp) -> str:
+        t = pd.to_datetime(ts)
+        if t.tzinfo is None:
+            t = local_tz.localize(t)
+        else:
+            t = t.tz_convert(local_tz)
+        return t.strftime("%Hh%Mm%Ss")
+
     def _plot_env(ax, df_env: pd.DataFrame, panel_title: str):
         df_env = _only_spark(df_env).sort_values(["pod", "timestamp"]).copy()
         if df_env.empty:
@@ -1819,13 +1823,11 @@ def spark_gantt_edge_cloud(
             ax.set_axis_off()
             return
 
-        # Warm-up: driver first Running → latest first Running among executors
         warm_start = _first_running_time(
             df_env, lambda p: _matches_any(p, driver_patterns)
         )
         warm_end = _latest_first_running_executor(df_env)
 
-        # Display labels and y-positions
         label_map = _build_display_labels(df_env)
         y_pods = sorted(
             df_env["pod"].unique(), key=lambda p: label_map.get(p, p)
@@ -1851,7 +1853,7 @@ def spark_gantt_edge_cloud(
                     label=label,
                 )
 
-        # Warm-up highlight with duration text centered INSIDE the gold band
+        # Gold band with duration text; text is horizontally offset from the true center by dur_offset_pts
         if (
             (warm_start is not None)
             and (warm_end is not None)
@@ -1861,20 +1863,22 @@ def spark_gantt_edge_cloud(
                 warm_start, warm_end, alpha=0.20, color="gold", label="Warm-up"
             )
             dur = warm_end - warm_start
-            mid_x = warm_start + dur
+            mid_x = warm_start + dur / 2
             trans = mtransforms.blended_transform_factory(
                 ax.transData, ax.transAxes
             )
             ax.text(
                 mid_x,
-                0.25,
-                "Warmup:\n" + _fmt_td(dur),
-                transform=trans,
+                0.45,
+                "Warmup Duration:\n" + _fmt_td(dur),
+                transform=trans
+                + mtransforms.ScaledTranslation(
+                    dur_offset_pts / 72.0, 0, ax.figure.dpi_scale_trans
+                ),
                 ha="center",
                 va="center",
-                fontsize=10,
-                fontweight="bold",
-                color="gray",
+                fontsize=9,
+                color="black",
                 zorder=5,
             )
         elif warm_start is not None:
@@ -1886,7 +1890,25 @@ def spark_gantt_edge_cloud(
                 label="Driver start",
             )
 
-        # Cosmetics
+        # Driver start time printed right below the driver's line
+        driver_pods = [p for p in y_pods if _matches_any(p, driver_patterns)]
+        if warm_start is not None and driver_pods:
+            dpod = driver_pods[0]
+            y = pod_to_y[dpod]
+            ax.annotate(
+                "Driver Start:" + _fmt_clock(warm_start),
+                xy=(warm_start, y),
+                xytext=(
+                    30,
+                    -4,
+                ),  # move a bit below the line; increase magnitude to go farther
+                textcoords="offset points",
+                ha="center",
+                va="top",
+                fontsize=9,
+                color="black",
+            )
+
         ax.set_yticks(list(pod_to_y.values()))
         ax.set_yticklabels([label_map[p] for p in y_pods])
         ax.set_title(panel_title)
@@ -1896,14 +1918,12 @@ def spark_gantt_edge_cloud(
             mdates.DateFormatter("%H:%M", tz=local_tz)
         )
 
-    # -------- figure layout --------
     fig, axes = plt.subplots(1, 2, figsize=(18, 6), sharey=True)
     _plot_env(axes[0], df_edge.copy(), "Edge")
     _plot_env(axes[1], df_cloud.copy(), "Cloud")
 
     fig.suptitle(title, fontsize=18, y=0.97)
 
-    # legend at bottom (not above title)
     handles0, labels0 = axes[0].get_legend_handles_labels()
     handles1, labels1 = axes[1].get_legend_handles_labels()
     by_label = dict(zip(labels0 + labels1, handles0 + handles1))
