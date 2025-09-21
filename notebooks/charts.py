@@ -1871,7 +1871,7 @@ def spark_gantt_edge_cloud(
             )
             ax.text(
                 mid_x,
-                0.45,
+                0.40,
                 "Warmup Duration:\n" + _fmt_td(dur),
                 transform=trans
                 + mtransforms.ScaledTranslation(
@@ -1902,7 +1902,7 @@ def spark_gantt_edge_cloud(
                 xy=(warm_start, y),
                 xytext=(
                     30,
-                    -4,
+                    12,
                 ),  # move a bit below the line; increase magnitude to go farther
                 textcoords="offset points",
                 ha="center",
@@ -1920,7 +1920,7 @@ def spark_gantt_edge_cloud(
             mdates.DateFormatter("%H:%M", tz=local_tz)
         )
 
-    fig, axes = plt.subplots(1, 2, figsize=(18, 6), sharey=True)
+    fig, axes = plt.subplots(2, 1, figsize=(10, 8), sharey=True)
     _plot_env(axes[0], df_edge.copy(), "Edge")
     _plot_env(axes[1], df_cloud.copy(), "Cloud")
 
