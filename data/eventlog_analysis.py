@@ -6,7 +6,7 @@ import pandas as pd
 # Function to load event log file
 def load_eventlog(filepath):
     events = []
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         for line in f:
             line = line.strip()
             if not line:
