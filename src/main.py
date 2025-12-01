@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from dotenv import load_dotenv
 
 from common.logger import log
+from common.tcpdump_manager import TcpDumpManager
 from data_process import DataProcess
 from kafka_consumer import KafkaConsumer
 from kafka_producer import KafkaProducer
@@ -16,6 +17,11 @@ load_dotenv()
 logger = log("Main")
 
 KAFKA_BROKER = os.getenv("KAFKA_BROKER")
+
+# TCPDump Configuration
+ENABLE_TCPDUMP = os.getenv("ENABLE_TCPDUMP", "False").lower() == "true"
+TCPDUMP_INTERFACE = os.getenv("TCPDUMP_INTERFACE", "eth0")
+TCPDUMP_OUTPUT_PATH = os.getenv("TCPDUMP_OUTPUT_PATH", "./data")
 
 
 def produce(
@@ -30,12 +36,22 @@ def produce(
         num_robots (int): The number of robots to simulate. Defaults to 1.
     """
     topic_name = f"{topic_name}-avro"
+
+    # Extract host from KAFKA_BROKER (remove port if present)
+    target_host = KAFKA_BROKER.split(":")[0] if KAFKA_BROKER else "localhost"
+
     try:
-        producer = KafkaProducer(KAFKA_BROKER, topic_name)
-        producer.produce(data_type, num_robots)
-        logger.info(
-            f"Produced data of type '{data_type}' to topic '{topic_name}' with {num_robots} robots."
-        )
+        with TcpDumpManager(
+            interface=TCPDUMP_INTERFACE,
+            output_path=TCPDUMP_OUTPUT_PATH,
+            target_host=target_host,
+            enabled=ENABLE_TCPDUMP,
+        ):
+            producer = KafkaProducer(KAFKA_BROKER, topic_name)
+            producer.produce(data_type, num_robots)
+            logger.info(
+                f"Produced data of type '{data_type}' to topic '{topic_name}' with {num_robots} robots."
+            )
     except Exception as e:
         logger.error(f"Failed to produce to topic '{topic_name}': {e}")
         traceback.print_exc()
