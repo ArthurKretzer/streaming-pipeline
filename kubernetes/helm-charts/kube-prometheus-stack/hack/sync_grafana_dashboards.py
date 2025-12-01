@@ -270,17 +270,17 @@ def main():
             if 'branch' in chart:
                 branch = chart['branch']
 
-            subprocess.run(["git", "init", "--initial-branch", "main", checkout_dir, "--quiet"])
-            subprocess.run(["git", "-C", checkout_dir, "remote", "add", "origin", chart['git']])
-            subprocess.run(["git", "-C", checkout_dir, "fetch", "--depth", "1", "origin", branch, "--quiet"])
-            subprocess.run(["git", "-c", "advice.detachedHead=false", "-C", checkout_dir, "checkout", "FETCH_HEAD", "--quiet"])
+            subprocess.run(["git", "init", "--initial-branch", "main", checkout_dir, "--quiet"], check=False)
+            subprocess.run(["git", "-C", checkout_dir, "remote", "add", "origin", chart['git']], check=False)
+            subprocess.run(["git", "-C", checkout_dir, "fetch", "--depth", "1", "origin", branch, "--quiet"], check=False)
+            subprocess.run(["git", "-c", "advice.detachedHead=false", "-C", checkout_dir, "checkout", "FETCH_HEAD", "--quiet"], check=False)
             print("Generating rules from %s" % chart['source'])
 
             mixin_file = chart['source']
             mixin_dir = checkout_dir + '/' + chart['cwd'] + '/'
             if os.path.exists(mixin_dir + "jsonnetfile.json"):
                 print("Running jsonnet-bundler, because jsonnetfile.json exists")
-                subprocess.run(["jb", "install"], cwd=mixin_dir)
+                subprocess.run(["jb", "install"], cwd=mixin_dir, check=False)
 
             if 'content' in chart:
                 f = open(mixin_dir + mixin_file, "w")
