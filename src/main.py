@@ -50,7 +50,8 @@ def produce(
             producer = KafkaProducer(KAFKA_BROKER, topic_name)
             producer.produce(data_type, num_robots)
             logger.info(
-                f"Produced data of type '{data_type}' to topic '{topic_name}' with {num_robots} robots."
+                f"Produced data of type '{data_type}' to topic '{topic_name}' "
+                f"with {num_robots} robots."
             )
     except Exception as e:
         logger.error(f"Failed to produce to topic '{topic_name}': {e}")

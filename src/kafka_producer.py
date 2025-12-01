@@ -132,7 +132,8 @@ class KafkaProducer:
         Produces data to the Kafka topic, simulating multiple robots.
 
         Args:
-            data_type (str): Type of data to produce ('control_power', 'accelerometer_gyro', 'mocked').
+            data_type (str): Type of data to produce ('control_power',
+                'accelerometer_gyro', 'mocked').
             num_robots (int): Number of robots to simulate concurrently.
         """
         self._configure_topic()
@@ -203,7 +204,8 @@ class KafkaProducer:
             timestamp = datetime.now(UTC).isoformat()
             row = dataset.iloc[i, :]
             row["source_timestamp"] = timestamp
-            # Ideally we would add robot_id to the message, but schema might not support it.
+            # Ideally we would add robot_id to the message, but schema might
+            # not support it.
             # For now, we just simulate the load.
             message = row.to_dict()
             self._send_message(producer, key=timestamp, value=message)
@@ -224,7 +226,7 @@ class KafkaProducer:
             value=value,
             on_delivery=self._delivery_report,
         )
-        # logger.info(f"Message sent: {value}") # Reduced logging for high frequency
+        # logger.info(f"Message sent: {value}") # Reduced logging for high freq
 
     def _delivery_report(self, err, msg):
         """

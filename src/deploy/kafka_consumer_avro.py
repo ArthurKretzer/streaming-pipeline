@@ -26,12 +26,14 @@ class KafkaConsumerAvro:
         """Initialize a Kafka consumer with Avro schema support.
 
         Args:
-            kafka_bootstrap_servers (str): The Kafka bootstrap servers connection string
-            kafka_topic (str, optional): The Kafka topic to consume from. Defaults to "robot"
+            kafka_bootstrap_servers (str): The Kafka bootstrap servers
+                connection string
+            kafka_topic (str, optional): The Kafka topic to consume from.
+                Defaults to "robot"
 
         Note:
-            Initializes a Spark session with Delta Lake and MinIO support using environment variables
-            for MinIO credentials.
+            Initializes a Spark session with Delta Lake and MinIO support using
+            environment variables for MinIO credentials.
         """
         kafka_topic = f"{kafka_topic}-avro"
         self.topic_name = kafka_topic
@@ -61,10 +63,12 @@ class KafkaConsumerAvro:
             topic (str): Kafka topic name
 
         Returns:
-            tuple: (StructType, str) - Spark schema structure and original Avro schema string
+            tuple: (StructType, str) - Spark schema structure and original
+                Avro schema string
 
         Raises:
-            ValueError: If an unsupported field type is encountered in the Avro schema
+            ValueError: If an unsupported field type is encountered in the
+                Avro schema
         """
         print(f"Getting schema from registry: {SCHEMA_REGISTRY_URI}")
         schema_registry_client = SchemaRegistryClient(
@@ -166,7 +170,8 @@ class KafkaConsumerAvro:
         raw_stream_query.explain(True)
 
         print(
-            f"Streaming Kafka data from {self.topic_name} into Delta Lake raw_{self.topic_name}..."
+            f"Streaming Kafka data from {self.topic_name} into Delta Lake "
+            f"raw_{self.topic_name}..."
         )
 
         return raw_stream_query

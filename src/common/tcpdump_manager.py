@@ -54,7 +54,8 @@ class TcpDumpManager:
                 os.makedirs(self.output_path)
             except OSError as e:
                 logger.error(
-                    f"Failed to create output directory {self.output_path}: {e}"
+                    f"Failed to create output directory {self.output_path}: "
+                    f"{e}"
                 )
                 return
 

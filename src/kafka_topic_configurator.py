@@ -10,7 +10,8 @@ logger = log("KafkaTopicConfigurator")
 class KafkaTopicConfigurator:
     def __init__(self, bootstrap_servers: str):
         """
-        Initializes the KafkaTopicConfigurator with the given bootstrap servers.
+        Initializes the KafkaTopicConfigurator with the given bootstrap
+        servers.
 
         Args:
             bootstrap_servers (str): Kafka broker(s) address
@@ -103,11 +104,13 @@ class KafkaTopicConfigurator:
             try:
                 f.result()  # Wait for the operation to complete
                 logger.info(
-                    f"Successfully updated configuration for topic '{config.name}'"
+                    "Successfully updated configuration for topic "
+                    f"'{config.name}'"
                 )
             except Exception as e:
                 logger.error(
-                    f"Failed to update configuration for topic '{config.name}': {e}"
+                    "Failed to update configuration for topic "
+                    f"'{config.name}': {e}"
                 )
                 traceback.print_exc()
                 raise

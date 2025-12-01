@@ -6,7 +6,8 @@ from pyspark.sql import SparkSession
 class DataProcess:
     def __init__(self):
         os.environ["PYSPARK_SUBMIT_ARGS"] = (
-            "--packages org.apache.hadoop:hadoop-aws:3.3.4,io.delta:delta-spark_2.12:3.3.0 pyspark-shell"
+            "--packages org.apache.hadoop:hadoop-aws:3.3.4,"
+            "io.delta:delta-spark_2.12:3.3.0 pyspark-shell"
         )
 
         self.spark = (
