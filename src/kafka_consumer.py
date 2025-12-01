@@ -24,8 +24,8 @@ SCHEMA_REGISTRY_URI = os.getenv("SCHEMA_REGISTRY_URI")
 
 class KafkaConsumer:
     """
-    Kafka Consumer class to read data from Kafka topics using Avro serialization
-    and write to Delta Lake.
+    Kafka Consumer class to read data from Kafka topics using Avro
+    serialization and write to Delta Lake.
 
     Attributes:
         kafka_bootstrap_servers (str): Kafka bootstrap servers.
@@ -230,7 +230,8 @@ class KafkaConsumer:
         raw_stream_query.explain(True)
 
         logger.info(
-            f"Streaming Kafka data from {self.topic_name} into Delta Lake raw_{self.topic_name}..."
+            f"Streaming Kafka data from {self.topic_name} into Delta Lake "
+            f"raw_{self.topic_name}..."
         )
 
         return raw_stream_query

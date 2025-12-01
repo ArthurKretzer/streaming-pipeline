@@ -70,7 +70,7 @@ class log(logging.Logger):
         if not self.handlers:
             color_formatter = ColoredFormatter(self.COLOR_FORMAT)
             ch = logging.StreamHandler()
-            ch.setLevel(os.getenv("LOG_LEVEL"))
+            ch.setLevel(os.getenv("LOG_LEVEL", "INFO"))
             # add formatter to ch
             ch.setFormatter(color_formatter)
             # add ch to logger
@@ -85,5 +85,5 @@ class log(logging.Logger):
                     encoding="utf8",
                 )
                 log_file.setFormatter(color_formatter)
-                log_file.setLevel(os.getenv("LOG_LEVEL"))
+                log_file.setLevel(os.getenv("LOG_LEVEL", "INFO"))
                 self.addHandler(log_file)
