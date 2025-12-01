@@ -32,17 +32,29 @@ build-producer:
 
 produce-control-power-cloud:
 	docker rm -f producer-control-power-cloud
-	docker run -d --name producer-control-power-cloud --env-file=./src/cloud.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power avro
+	docker run -d --name producer-control-power-cloud --env-file=./src/cloud.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 1
 
 stop-produce-control-power-cloud:
 	docker rm -f producer-control-power-cloud
 
 produce-control-power-edge: 
 	docker rm -f producer-control-power-edge
-	docker run -d --name producer-control-power-edge --env-file=./src/edge.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power avro
+	docker run -d --name producer-control-power-edge --env-file=./src/edge.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 1
 
 stop-produce-control-power-edge:
 	docker rm -f producer-control-power-edge
+
+produce-10-robots-cloud:
+	docker rm -f producer-control-power-cloud
+	docker run -d --name producer-control-power-cloud --env-file=./src/cloud.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 10
+
+produce-50-robots-cloud:
+	docker rm -f producer-control-power-cloud
+	docker run -d --name producer-control-power-cloud --env-file=./src/cloud.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 50
+
+produce-100-robots-cloud:
+	docker rm -f producer-control-power-cloud
+	docker run -d --name producer-control-power-cloud --env-file=./src/cloud.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 100
 
 start-produce: build-producer produce-control-power-cloud produce-control-power-edge
 

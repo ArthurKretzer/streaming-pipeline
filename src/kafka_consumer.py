@@ -1,14 +1,17 @@
+import json
 import os
 
+from confluent_kafka.schema_registry import SchemaRegistryClient
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, current_timestamp, from_json
+from pyspark.sql.avro.functions import from_avro
+from pyspark.sql.functions import current_timestamp, expr
 from pyspark.sql.types import (
-    DoubleType,
+    FloatType,
+    IntegerType,
     StringType,
     StructField,
     StructType,
-    TimestampType,
 )
 
 from common.logger import log
@@ -16,21 +19,39 @@ from common.logger import log
 load_dotenv()
 logger = log("KafkaConsumer")
 
+SCHEMA_REGISTRY_URI = os.getenv("SCHEMA_REGISTRY_URI")
+
 
 class KafkaConsumer:
+    """
+    Kafka Consumer class to read data from Kafka topics using Avro serialization
+    and write to Delta Lake.
+
+    Attributes:
+        kafka_bootstrap_servers (str): Kafka bootstrap servers.
+        topic_name (str): Name of the Kafka topic.
+        spark (SparkSession): Spark session instance.
+    """
+
     def __init__(
         self, kafka_bootstrap_servers: str, kafka_topic: str = "robot"
     ):
+        """
+        Initializes the KafkaConsumer.
+
+        Args:
+            kafka_bootstrap_servers (str): Kafka bootstrap servers.
+            kafka_topic (str): Name of the Kafka topic. Defaults to "robot".
+        """
         self.topic_name = kafka_topic
         self.kafka_bootstrap_servers = kafka_bootstrap_servers
-
-        # TODO: Avaliar a utilização de outra ferramenta que não o Spark, como o Storm ou Flink.
 
         # Set up Spark with Delta Lake and MinIO support
         minio_package = "org.apache.hadoop:hadoop-aws:3.3.4"
         delta_package = "io.delta:delta-spark_2.12:3.3.0"
         kafka_package = "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.4"
         kafka_package += ",org.apache.kafka:kafka-clients:3.9.0"
+        kafka_package += ",org.apache.spark:spark-avro_2.12:3.5.1"
         packages = f"{minio_package},{delta_package},{kafka_package}"
 
         # Submit packages to Spark
@@ -75,16 +96,72 @@ class KafkaConsumer:
                 "spark.hadoop.fs.s3a.impl",
                 "org.apache.hadoop.fs.s3a.S3AFileSystem",
             )
-            .config("spark.executor.instances", "3")
-            .config("spark.executor.cores", "8")
-            .config("spark.executor.memory", "4g")
-            .config("spark.driver.memory", "4g")
+            .config("spark.streaming.concurrentJobs", "5")
+            .config("spark.executor.instances", "1")
+            .config("spark.executor.cores", "3")
+            .config("spark.executor.memory", "6g")
+            .config("spark.driver.memory", "6g")
             .getOrCreate()
         )
 
         self.spark.sparkContext.setLogLevel("WARN")
 
+    def get_spark_schema_from_registry(
+        self, schema_registry_url: str, topic: str
+    ):
+        """
+        Retrieves the Spark schema from the Schema Registry.
+
+        Args:
+            schema_registry_url (str): URL of the Schema Registry.
+            topic (str): Kafka topic name.
+
+        Returns:
+            tuple: Spark StructType schema and Avro schema string.
+
+        Raises:
+            ValueError: If an unsupported field type is encountered.
+        """
+        logger.info("Getting schema from registry")
+        schema_registry_client = SchemaRegistryClient(
+            {"url": schema_registry_url}
+        )
+        schema_id = schema_registry_client.get_latest_version(
+            f"{topic}-value"
+        ).schema_id
+        avro_schema_str = schema_registry_client.get_schema(
+            schema_id
+        ).schema_str
+
+        # Parse the Avro schema JSON string
+        avro_schema = json.loads(avro_schema_str)
+
+        # Convert the Avro schema to Spark StructType
+        fields = []
+        for field in avro_schema["fields"]:
+            field_name = field["name"]
+            field_type = field["type"]
+
+            if field_type == "int":
+                spark_type = IntegerType()
+            elif field_type == "string":
+                spark_type = StringType()
+            elif field_type == "float":
+                spark_type = FloatType()
+            else:
+                raise ValueError(f"Unsupported field type: {field_type}")
+
+            fields.append(StructField(field_name, spark_type, True))
+
+        return StructType(fields), avro_schema_str
+
     def consume(self):
+        """
+        Consumes data from Kafka, processes it, and writes to Delta Lake.
+
+        Returns:
+            StreamingQuery: The Spark streaming query.
+        """
         # Read data from Kafka
         # .option("maxOffsetsPerTrigger", 5)  # 5 messages per trigger. 2Hz.
         kafka_stream = (
@@ -93,6 +170,7 @@ class KafkaConsumer:
             .option("subscribe", self.topic_name)
             .option("startingOffsets", "earliest")
             .option("failOnDataLoss", "false")
+            .option("minPartitions", "15")
             .load()
         )
 
@@ -101,61 +179,30 @@ class KafkaConsumer:
             "landing_timestamp", current_timestamp()
         )
 
-        # Define the JSON schema dynamically
-        json_schema = StructType(
-            [
-                StructField("robot_action_id", StringType(), True),
-                StructField("apparent_power", DoubleType(), True),
-                StructField("current", DoubleType(), True),
-                StructField("frequency", DoubleType(), True),
-                StructField("phase_angle", DoubleType(), True),
-                StructField("power", DoubleType(), True),
-                StructField("power_factor", DoubleType(), True),
-                StructField("reactive_power", DoubleType(), True),
-                StructField("voltage", DoubleType(), True),
-                StructField(
-                    "source_timestamp", TimestampType(), True
-                ),  # Epoch timestamp column
-            ]
+        struct_schema, avro_schema_str = self.get_spark_schema_from_registry(
+            SCHEMA_REGISTRY_URI, self.topic_name
         )
 
         # Parse the JSON from the `value` column into a structured format
-        parsed_stream = (
-            kafka_stream_with_timestamp.selectExpr(
-                "CAST(key AS STRING) as key",  # Preserve the Kafka key as a string
-                "CAST(value AS STRING) as json_value",  # Deserialize the Kafka value into a string
-                "topic",
-                "partition",
-                "offset",
-                "timestamp",
-                "timestampType",
-                "landing_timestamp",
-            ).withColumn(
-                "parsed_value", from_json(col("json_value"), json_schema)
-            )  # Use provided JSON schema
-        )
-
-        # Explode the JSON into individual fields while keeping the original schema
-        exploded_stream = parsed_stream.select(
-            "key",
+        parsed_stream = kafka_stream_with_timestamp.select(
             "topic",
-            "partition",
-            "offset",
             "timestamp",
-            "timestampType",
             "landing_timestamp",
-            "parsed_value",
+            from_avro(
+                expr("substring(value, 6, length(value)-5)"),
+                avro_schema_str,
+            ).alias("parsed_value"),
         )
 
         # Output the schema for verification
-        exploded_stream.printSchema()
+        parsed_stream.printSchema()
 
         # Define the path to the raw Delta table
         raw_delta_path = f"s3a://lakehouse/delta/raw_{self.topic_name}"
 
         # Write Kafka stream to Delta table
         raw_stream_query = (
-            exploded_stream.writeStream.format("delta")
+            parsed_stream.writeStream.format("delta")
             .option(
                 "checkpointLocation",
                 f"s3a://lakehouse/delta/checkpoints/raw_{self.topic_name}",
@@ -163,24 +210,24 @@ class KafkaConsumer:
             .option(
                 "mergeSchema", "false"
             )  # Schema will not evolve, should provide better performance
-            .option("delta.enableChangeDataFeed", "true")
+            .option("delta.enableChangeDataFeed", "false")
             .outputMode("append")
+            .option("delta.logRetentionDuration", "interval 1 day")
+            .option("delta.checkpointInterval", "5")
             .trigger(processingTime="1 seconds")
             .option("truncate", "false")
             .start(raw_delta_path)
         )
 
         # raw_stream_query = (
-        #     exploded_stream.writeStream.format("console")
-        #     .option(
-        #         "checkpointLocation",
-        #         f"s3a://lakehouse/delta/checkpoints/raw_{self.topic_name}_console",
-        #     )
+        #     parsed_stream.writeStream.format("console")
         #     .outputMode("append")
         #     .option("truncate", "false")
-        #     .trigger(processingTime="100 milliseconds")
+        #     .trigger(processingTime="1 seconds")
         #     .start()
         # )
+
+        raw_stream_query.explain(True)
 
         logger.info(
             f"Streaming Kafka data from {self.topic_name} into Delta Lake raw_{self.topic_name}..."

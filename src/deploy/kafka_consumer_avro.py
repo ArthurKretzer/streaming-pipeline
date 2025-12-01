@@ -23,6 +23,16 @@ class KafkaConsumerAvro:
     def __init__(
         self, kafka_bootstrap_servers: str, kafka_topic: str = "robot"
     ):
+        """Initialize a Kafka consumer with Avro schema support.
+
+        Args:
+            kafka_bootstrap_servers (str): The Kafka bootstrap servers connection string
+            kafka_topic (str, optional): The Kafka topic to consume from. Defaults to "robot"
+
+        Note:
+            Initializes a Spark session with Delta Lake and MinIO support using environment variables
+            for MinIO credentials.
+        """
         kafka_topic = f"{kafka_topic}-avro"
         self.topic_name = kafka_topic
         self.kafka_bootstrap_servers = kafka_bootstrap_servers
@@ -30,7 +40,6 @@ class KafkaConsumerAvro:
         print(f"Minio endpoint: {os.getenv('MINIO_ENDPOINT')}")
         print(f"Minio access_key: {os.getenv('MINIO_ACCESS_KEY')}")
 
-        # Initialize Spark session with Delta Lake and MinIO support
         self.spark = (
             SparkSession.builder.appName("DeltaLakeWithMinIO")
             .config(
@@ -45,6 +54,18 @@ class KafkaConsumerAvro:
         self.spark.sparkContext.setLogLevel("WARN")
 
     def get_spark_schema_from_registry(self, schema_registry_url, topic):
+        """Retrieve and convert Avro schema from registry to Spark schema.
+
+        Args:
+            schema_registry_url (str): URL of the schema registry
+            topic (str): Kafka topic name
+
+        Returns:
+            tuple: (StructType, str) - Spark schema structure and original Avro schema string
+
+        Raises:
+            ValueError: If an unsupported field type is encountered in the Avro schema
+        """
         print(f"Getting schema from registry: {SCHEMA_REGISTRY_URI}")
         schema_registry_client = SchemaRegistryClient(
             {"url": schema_registry_url}
@@ -152,6 +173,15 @@ class KafkaConsumerAvro:
 
 
 def show_stream_progress(stream):
+    """Monitor and display the progress of a Spark streaming query.
+
+    Args:
+        stream: Spark streaming query object to monitor
+
+    Note:
+        Prints progress updates every 5 seconds while the stream is active.
+        Handles and reports any attribute errors that might occur.
+    """
     try:
         while stream.isActive:
             print(stream.lastProgress)
