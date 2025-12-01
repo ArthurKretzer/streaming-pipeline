@@ -47,6 +47,10 @@ The system simulates robots generating data at a frequency of 10Hz. The data is 
 
 You must have already created your kubernetes cluster on Digital Ocean and you must have your on-premises environment configured to execute the following commands.
 
+For setting up the infrastructure, please refer to the following repositories:
+- **Edge Environment**: [https://github.com/ArthurKretzer/edge-k8s-iac](https://github.com/ArthurKretzer/edge-k8s-iac)
+- **Cloud Environment**: [https://github.com/ArthurKretzer/digitalocean-k8s-iac](https://github.com/ArthurKretzer/digitalocean-k8s-iac)
+
 1. Initialize the infrastructure:
 
     ```bash
