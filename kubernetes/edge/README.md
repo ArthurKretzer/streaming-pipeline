@@ -1,4 +1,4 @@
-# Datalake Labfaber
+# Datalake Edge
 
 This repo contains all components of a data lakehouse to be installed on a kubernetes cluster on ./infrastructure folder.
 
@@ -307,7 +307,7 @@ To add a Git repository to ArgoCD using SSH, you'll need to generate a private S
 2. **Add the repository to ArgoCD** by using the following command:
 
    ```sh
-   argocd repo add git@bitbucket.org:certi_repos/datalake-labfaber.git \
+   argocd repo add git@github.com:ArthurKretzer/streaming-pipeline.git \
      --ssh-private-key-path infrastructure/keys/argocd \
      --name datalake
    ```
@@ -667,13 +667,13 @@ clusters:
 - cluster:
     server: https://<your-cluster-ip>:6443
     insecure-skip-tls-verify: true
-  name: labfaber
+  name: streaming
 contexts:
 - context:
-    cluster: labfaber
+    cluster: streaming
     user: kubelens
-  name: labfaber
-current-context: labfaber
+  name: streaming
+current-context: streaming
 kind: Config
 preferences: {}
 users:
@@ -691,7 +691,7 @@ Run the following commands to set up `kubelens` in your kubeconfig:
 
 ```bash
 kubectl config set-credentials kubelens --client-certificate=infrastructure/keys/kubelens.crt --client-key=infrastructure/keys/kubelens.key
-kubectl config set-context kubelens-context --cluster=labfaber --user=kubelens
+kubectl config set-context kubelens-context --cluster=streaming-cluster --user=kubelens
 kubectl config use-context kubelens-context
 
 ```
