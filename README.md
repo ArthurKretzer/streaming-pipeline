@@ -47,10 +47,18 @@ The system simulates robots generating data at a frequency of 10Hz. The data is 
 
 You must have already created your kubernetes cluster on Digital Ocean and you must have your on-premises environment configured to execute the following commands.
 
-For setting up the infrastructure, please refer to the following repositories:
+For setting up the infrastructure, the code is included as submodules:
 
-- **Edge Environment**: [https://github.com/ArthurKretzer/edge-k8s-iac](https://github.com/ArthurKretzer/edge-k8s-iac)
-- **Cloud Environment**: [https://github.com/ArthurKretzer/digitalocean-k8s-iac](https://github.com/ArthurKretzer/digitalocean-k8s-iac)
+- **Edge Environment**: `terraform/edge-deploy`
+- **Cloud Environment**: `terraform/cloud-deploy`
+
+Ensure you initialize the submodules:
+
+```bash
+git submodule update --init --recursive
+```
+
+Please refer to the documentation within those directories to set up your Kubernetes clusters if needed.
 
 1. Initialize the infrastructure:
 
@@ -77,31 +85,49 @@ You can run experiments with different numbers of simulated robots to test the s
 #### Standard Production (1 Robot)
 
 ```bash
+# Cloud only
 make produce-control-power-cloud
-# or
+# Edge only
 make produce-control-power-edge
+# Both
+make start-produce
 ```
 
 #### Scalability Experiments
 
-To run experiments with a specific number of robots on the cloud environment:
+To run experiments with a specific number of robots:
 
 - **10 Robots**:
 
     ```bash
+    # Cloud only
     make produce-10-robots-cloud
+    # Edge only
+    make produce-10-robots-edge
+    # Both
+    make produce-10-robots
     ```
 
 - **50 Robots**:
 
     ```bash
+    # Cloud only
     make produce-50-robots-cloud
+    # Edge only
+    make produce-50-robots-edge
+    # Both
+    make produce-50-robots
     ```
 
 - **100 Robots**:
 
     ```bash
+    # Cloud only
     make produce-100-robots-cloud
+    # Edge only
+    make produce-100-robots-edge
+    # Both
+    make produce-100-robots
     ```
 
 ### Available Commands
