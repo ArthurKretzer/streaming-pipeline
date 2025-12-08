@@ -109,10 +109,24 @@ def collect_metrics(prometheus_uri: str, experiment_name: str):
 
 
 if __name__ == "__main__":
-    experiment_name = "experiment06"
-    cloud_ip = "192.241.148.103"
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Collect Prometheus metrics.")
+    parser.add_argument(
+        "--edge-ip", required=True, help="IP address of the Edge node"
+    )
+    parser.add_argument(
+        "--cloud-ip", required=True, help="IP address of the Cloud node"
+    )
+    parser.add_argument(
+        "--experiment-name", required=True, help="Name of the experiment"
+    )
+
+    args = parser.parse_args()
 
     collect_metrics(
-        "https://prometheus-kube-cpc.certi.org.br", f"{experiment_name}_edge"
+        f"http://{args.edge_ip}:30090", f"{args.experiment_name}_edge"
     )
-    collect_metrics(f"http://{cloud_ip}:30090", f"{experiment_name}_cloud")
+    collect_metrics(
+        f"http://{args.cloud_ip}:30090", f"{args.experiment_name}_cloud"
+    )

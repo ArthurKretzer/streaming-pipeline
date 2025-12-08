@@ -116,22 +116,22 @@ build-consumer:
 	docker build -t arthurkretzer/streaming-consumer:3.5.4 -f ./docker/streaming-consumer.Dockerfile ./src
 	docker push arthurkretzer/streaming-consumer:3.5.4
 
-consume-control-power-cloud:
-	kubectx do-nyc1-k8s-cluster
+consume-control-power-cloud: kube-context-cloud
 	kubectl apply -f ./kubernetes/yamls/consumer.yaml
 
-stop-consume-control-power-cloud:
-	kubectx do-nyc1-k8s-cluster
+stop-consume-control-power-cloud: kube-context-cloud
 	kubectl delete -f ./kubernetes/yamls/consumer.yaml
 
-consume-control-power-edge:
-	kubectx labfaber
+consume-control-power-edge: kube-context-edge
 	kubectl apply -f ./kubernetes/yamls/consumer-edge.yaml
 
-stop-consume-control-power-edge:
-	kubectx labfaber
+stop-consume-control-power-edge: kube-context-edge
 	kubectl delete -f ./kubernetes/yamls/consumer-edge.yaml
 
 start-consume: consume-control-power-edge consume-control-power-cloud 
 
 stop-consume: stop-consume-control-power-cloud stop-consume-control-power-edge
+
+# Data Collection
+collect-metrics:
+	python3 data/prometheus_metrics.py --edge-ip=$(EDGE_IP) --cloud-ip=$(CLOUD_IP) --experiment-name=$(EXP_NAME)
