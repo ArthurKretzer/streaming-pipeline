@@ -146,7 +146,31 @@ To run experiments with a specific number of robots:
 - `make start-produce` - Start all producers (1 robot default)
 - `make start-consume` - Start all consumers
 - `make stop-produce` - Stop all producers
+- `make stop-produce` - Stop all producers
 - `make stop-consume` - Stop all consumers
+- `make collect-metrics` - Collect Prometheus metrics (requires EDGE_IP, CLOUD_IP, EXP_NAME)
+
+## Data Collection
+
+### Prometheus Metrics
+
+To collect Prometheus metrics from both Edge and Cloud environments after an experiment, use the `collect-metrics` target. You need to provide the IPs of the Edge and Cloud nodes, and an experiment name.
+
+```bash
+make collect-metrics EDGE_IP=<edge_ip> CLOUD_IP=<cloud_ip> EXP_NAME=<experiment_name>
+```
+
+The metrics will be saved in `data/raw/execution_metrics/<experiment_name>`.
+
+### Spark Event Logs
+
+Spark event logs must be collected manually from the Spark History Server or the Spark UI.
+
+1. Access the Spark UI/History Server.
+2. Download the event logs for your application.
+3. Save the file as `eventLogs.json` in `data/raw/<experiment_name>/`.
+
+After saving the logs, you can use the `data/eventlog_analysis.py` script to parse and analyze them. Ensure you update the `experiment_name` variable in the script or modify it to accept arguments as needed.
 
 ## Citation
 
