@@ -219,7 +219,7 @@ ingress:
   hosts:
     - datalake-cpc.certi.org.br
   tls:
-    - secretName: certi-tls-secret
+    - secretName: streaming-tls-scret
       hosts:
         - datalake-cpc.certi.org.br
 
@@ -263,7 +263,7 @@ consoleIngress:
   hosts:
     - console-datalake-cpc.certi.org.br
   tls:
-    - secretName: certi-tls-secret
+    - secretName: streaming-tls-scret
       hosts:
         - console-datalake-cpc.certi.org.br
 

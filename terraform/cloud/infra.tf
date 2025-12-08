@@ -36,7 +36,7 @@ resource "helm_release" "argocd" {
   create_namespace = true
 
   values = [
-    file("../kubernetes/helm-charts/argo-cd/values-cloud.yaml") # optional if you have custom config
+    file("../kubernetes/cloud/helm-charts/argo-cd/values-cloud.yaml") # optional if you have custom config
   ]
 }
 
@@ -115,7 +115,7 @@ resource "kubernetes_namespace" "spark_jobs" {
 
 # Load and apply all YAML files from deepstorage directory
 data "kubectl_file_documents" "deepstorage" {
-  content = join("\n---\n", [for f in fileset("../kubernetes/app-manifests/deepstorage", "*.yaml") : file("../kubernetes/app-manifests/deepstorage/${f}")])
+  content = join("\n---\n", [for f in fileset("../kubernetes/cloud/app-manifests/deepstorage", "*.yaml") : file("../kubernetes/cloud/app-manifests/deepstorage/${f}")])
 }
 
 resource "kubernetes_manifest" "deepstorage" {
@@ -126,7 +126,7 @@ resource "kubernetes_manifest" "deepstorage" {
 
 # Load and apply all YAML files from ingestion directory
 data "kubectl_file_documents" "ingestion" {
-  content = join("\n---\n", [for f in fileset("../kubernetes/app-manifests/ingestion", "*.yaml") : file("../kubernetes/app-manifests/ingestion/${f}")])
+  content = join("\n---\n", [for f in fileset("../kubernetes/cloud/app-manifests/ingestion", "*.yaml") : file("../kubernetes/cloud/app-manifests/ingestion/${f}")])
 }
 
 resource "kubernetes_manifest" "ingestion" {
@@ -137,7 +137,7 @@ resource "kubernetes_manifest" "ingestion" {
 
 # Load and apply all YAML files from monitoring directory
 data "kubectl_file_documents" "monitoring" {
-  content = join("\n---\n", [for f in fileset("../kubernetes/app-manifests/monitoring", "*.yaml") : file("../kubernetes/app-manifests/monitoring/${f}")])
+  content = join("\n---\n", [for f in fileset("../kubernetes/cloud/app-manifests/monitoring", "*.yaml") : file("../kubernetes/cloud/app-manifests/monitoring/${f}")])
 }
 
 resource "kubernetes_manifest" "monitoring" {
@@ -148,7 +148,7 @@ resource "kubernetes_manifest" "monitoring" {
 
 # Load and apply all YAML files from spark-operator directory
 data "kubectl_file_documents" "spark_operator" {
-  content = join("\n---\n", [for f in fileset("../kubernetes/app-manifests/spark-operator", "*.yaml") : file("../kubernetes/app-manifests/spark-operator/${f}")])
+  content = join("\n---\n", [for f in fileset("../kubernetes/cloud/app-manifests/spark-operator", "*.yaml") : file("../kubernetes/cloud/app-manifests/spark-operator/${f}")])
 }
 
 resource "kubernetes_manifest" "spark_operator" {
@@ -159,7 +159,7 @@ resource "kubernetes_manifest" "spark_operator" {
 
 # Load and apply all YAML files from deploy directory
 data "kubectl_file_documents" "deploy" {
-  content = join("\n---\n", [for f in fileset("../kubernetes/deploy", "*.yaml") : file("../kubernetes/deploy/${f}")])
+  content = join("\n---\n", [for f in fileset("../kubernetes/cloud/deploy", "*.yaml") : file("../kubernetes/cloud/deploy/${f}")])
 }
 
 resource "kubernetes_manifest" "deploy" {
