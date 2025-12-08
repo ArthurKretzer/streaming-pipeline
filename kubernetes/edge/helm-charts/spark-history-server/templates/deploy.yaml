@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "spark-history-server.labels" . | nindent 4 }}
+    app.kubernetes.io/name: spark-history-server
+    app.kubernetes.io/instance: spark-history-server
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spark-history-server
+      app.kubernetes.io/instance: spark-history-server
+  template:
+    metadata:
+      name: spark-history-server
+      labels:
+        app.kubernetes.io/name: spark-history-server
+        app.kubernetes.io/instance: spark-history-server
+    spec:
+      containers:
+        - name: spark-history-server
+          image: {{ .Values.deployment.image }}
+          imagePullPolicy: {{ .Values.deployment.pullPolicy }}
+          env:
+            - name: SPARK_NO_DAEMONIZE
+              value: "false"
+            - name: SPARK_HISTORY_RETAINEDAPPLICATIONS
+              value: "100"
+            - name: SPARK_HISTORY_UI_MAXAPPLICATIONS
+              value: "50"
+            - name: SPARK_HISTORY_FS_LOG_DIRECTORY
+              value: "/opt/spark/logs/events"
+            - name: SPARK_HISTORY_OPTS
+              value: "-Dspark.history.fs.logDirectory=/opt/spark/logs/events"
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory }}
+              cpu: {{ .Values.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.resources.limits.memory }}
+              cpu: {{ .Values.resources.limits.cpu }}
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: 18080
+          volumeMounts:
+            - name: data
+              mountPath: /opt/spark/logs/events
+              readOnly: true
+            - name: data
+              mountPath: /opt/spark/metrics
+              readOnly: true
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ .Values.pvc.name }}

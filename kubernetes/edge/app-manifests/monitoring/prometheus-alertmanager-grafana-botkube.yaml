@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  # app name
+  name: kube-prometheus-stack
+  # deployed yaml
+  namespace: cicd
+spec:
+  project: default
+  source:
+    repoURL: "git@bitbucket.org:certi_repos/datalake-labfaber.git"
+    path: infrastructure/helm-charts/kube-prometheus-stack
+    targetRevision: development
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=true

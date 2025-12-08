@@ -1,0 +1,112 @@
+# Deployment.yaml
+# Deployment resource for Hive Metastore
+# Defines how the application should be deployed and managed in Kubernetes
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hive-metastore
+  labels:
+    app: hive-metastore
+spec:
+
+  strategy:
+    type: Recreate
+  replicas: 1  # Number of replicas for high availability
+  selector:
+    matchLabels:
+      app: hive-metastore  # Label selector to match the pods
+  template:
+    metadata:
+      labels:
+        app: hive-metastore
+    spec:
+      containers:
+        - name: hive-metastore
+          image: "{{ .Values.hiveMetastore.image.repository }}:{{ .Values.hiveMetastore.image.tag }}"  # Image configuration from values
+          imagePullPolicy: "{{ .Values.hiveMetastore.image.pullPolicy }}"
+          ports:
+            - containerPort: {{ .Values.service.port }}  # Expose the Thrift service port
+          env:
+            # Environment variables for database connection and S3 configuration
+            - name: DATABASE_HOST
+              value: {{ if .Values.externalDatabase.enabled }}
+                      {{ .Values.externalDatabase.host | quote}}
+                    {{ else }}
+                      {{ "hive-metastore-postgresql" }}
+                    {{ end }}
+            - name: DATABASE_PORT
+              value: {{ if .Values.externalDatabase.enabled }}
+                      {{ .Values.externalDatabase.port }}
+                    {{ else }}
+                      "5432"
+                    {{ end }}
+            - name: DATABASE_DB
+              value: {{ if .Values.externalDatabase.enabled }}
+                      {{ .Values.externalDatabase.database | quote }}
+                    {{ else }}
+                      {{ .Values.postgresql.auth.database | quote }}
+                    {{ end }}
+            - name: DATABASE_USER
+              value: {{ if .Values.externalDatabase.enabled }}
+                      {{ .Values.externalDatabase.username | quote }}
+                    {{ else }}
+                      {{ .Values.postgresql.auth.username }}
+                    {{ end }}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ if .Values.externalDatabase.enabled }}
+                          {{ .Values.externalDatabase.existingSecret | quote }}
+                        {{ else }}
+                          {{ .Values.postgresql.auth.existingSecret | quote }}
+                        {{ end }}
+                  key: {{ if .Values.externalDatabase.enabled }}
+                          "userPasswordKey"  # Assuming the key is `userPasswordKey` for both
+                        {{ else }}
+                          {{ .Values.postgresql.auth.secretKeys.userPasswordKey | quote }}
+                        {{ end }}
+            - name: AWS_SSL_CONNECTION
+              value: "{{ .Values.hiveMetastore.s3.ssl }}"
+            - name: S3_BUCKET
+              value: "{{ .Values.hiveMetastore.s3.bucket }}"
+            - name: S3_PREFIX
+              value: "{{ .Values.hiveMetastore.s3.prefix }}"
+            - name: S3_ENDPOINT_URL
+              value: "{{ .Values.hiveMetastore.s3.endpointUrl }}"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.hiveMetastore.s3.accessKeySecretName }}"
+                  key: accessKey
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.hiveMetastore.s3.accessKeySecretName }}"
+                  key: secretKey
+          readinessProbe:
+            initialDelaySeconds: 30  # Delay before the liveness probe starts (in seconds)
+            periodSeconds: 10        # How often to perform the probe (in seconds)
+            timeoutSeconds: 5        # Time after which the probe is considered failed if no response (in seconds)
+            failureThreshold: 5      # Number of failures before the container is considered unhealthy
+            successThreshold: 1      # Number of successes before the container is considered healthy
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - "netstat -ln | grep 9083"  # Check if the Thrift service is listening on port 9083
+          livenessProbe:
+            initialDelaySeconds: 120  # Delay before the liveness probe starts (in seconds)
+            periodSeconds: 30        # How often to perform the probe (in seconds)
+            timeoutSeconds: 5        # Time after which the probe is considered failed if no response (in seconds)
+            failureThreshold: 3      # Number of failures before the container is considered unhealthy
+            successThreshold: 1      # Number of successes before the container is considered healthy
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - "netstat -ln | grep 9083"  # Check if the Thrift service is listening on port 9083
+      volumes:
+        - name: hive-data
+          persistentVolumeClaim:
+            claimName: hive-data-pvc  # Volume claim for Hive data persistence

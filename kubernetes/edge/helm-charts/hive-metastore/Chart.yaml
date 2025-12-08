@@ -1,0 +1,23 @@
+apiVersion: v2
+name: hive-metastore
+version: 0.1.0
+appVersion: 4.0.0
+
+description: A Helm chart for deploying [Hive Metastore](https://hive.apache.org/) on Kubernetes
+
+sources:
+  - https://github.com/apache/hive
+
+icon: https://hive.apache.org/images/hive_logo_medium.jpg
+
+dependencies:
+  - condition: postgresql.enabled
+    name: postgresql
+    repository: oci://registry-1.docker.io/bitnamicharts
+    version: 16.x.x
+
+type: application
+
+maintainers:
+  - name: Arthur Raulino Kretzer
+    email: arthur.raulino.kretzer@gmail.com

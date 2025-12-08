@@ -1,0 +1,17 @@
+# Service resource to expose the Hive Metastore within the Kubernetes cluster
+# Defines how other services or pods can access the application
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: hive-metastore
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: hive-metastore
+spec:
+  type: "{{ .Values.service.type }}"  # Service type (ClusterIP, NodePort, etc.)
+  ports:
+    - port: {{ .Values.service.port }}  # Port to expose the service
+      targetPort: {{ .Values.service.port }}  # Target port to which traffic will be directed
+  selector:
+    app: hive-metastore  # Label selector to match the deployment
