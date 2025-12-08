@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: "git@bitbucket.org:certi_repos/datalake-labfaber.git"
+    repoURL: "git@github.com:ArthurKretzer/streaming-pipeline.git"
     path: infrastructure/helm-charts/kafka-operator
     targetRevision: development
     helm:
@@ -27,12 +27,12 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: labfaber-kafka-broker
+  name: streaming-kafka-broker
   namespace: cicd
 spec:
   project: default
   source:
-    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    repoURL: 'git@github.com:ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
     path: infrastructure/yamls/ingestion/broker
   destination:
@@ -46,12 +46,12 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: labfaber-kafka-connect
+  name: streaming-kafka-connect
   namespace: cicd
 spec:
   project: default
   source:
-    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    repoURL: 'git@github.com:ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
     path: infrastructure/yamls/ingestion/kafka-connect
   destination:
@@ -65,12 +65,12 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: labfaber-kafka-rebalance
+  name: streaming-kafka-rebalance
   namespace: cicd
 spec:
   project: default
   source:
-    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    repoURL: 'git@github.com:ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
     path: infrastructure/yamls/ingestion/cruise-control
   destination:
@@ -84,12 +84,12 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: labfaber-kafka-metrics
+  name: streaming-kafka-metrics
   namespace: cicd
 spec:
   project: default
   source:
-    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    repoURL: 'git@github.com:ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
     path: infrastructure/yamls/ingestion/metrics
   destination:
@@ -103,12 +103,12 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: labfaber-kafka-schema-registry
+  name: streaming-kafka-schema-registry
   namespace: cicd
 spec:
   project: default
   source:
-    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    repoURL: 'git@github.com:ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
     path: infrastructure/helm-charts/cp-schema-registry
   destination:
@@ -122,12 +122,12 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: labfaber-kafka-ui
+  name: streaming-kafka-ui
   namespace: cicd
 spec:
   project: default
   source:
-    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    repoURL: 'git@github.com:ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
     path: infrastructure/helm-charts/kafka-ui
   destination:

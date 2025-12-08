@@ -33,7 +33,7 @@ mode: distributed ## other supported values are "standalone"
 
 ## Additional labels to include with deployment or statefulset
 additionalLabels:
-  app: minio-labfaber
+  app: minio-streaming
 
 ## Additional annotations to include with deployment or statefulset
 additionalAnnotations: {}
@@ -294,7 +294,7 @@ affinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       - labelSelector:
           matchLabels:
-            app: minio-labfaber
+            app: minio-streaming
         topologyKey: kubernetes.io/hostname
 
 topologySpreadConstraints:

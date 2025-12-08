@@ -33,7 +33,7 @@ mode: standalone ## other supported values are "standalone"
 
 ## Additional labels to include with deployment or statefulset
 additionalLabels:
-  app: minio-labfaber
+  app: minio-streaming
 
 ## Additional annotations to include with deployment or statefulset
 additionalAnnotations: {}
@@ -294,7 +294,7 @@ affinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       - labelSelector:
           matchLabels:
-            app: minio-labfaber
+            app: minio-streaming
         topologyKey: kubernetes.io/hostname
 
 topologySpreadConstraints:
@@ -303,7 +303,7 @@ topologySpreadConstraints:
     whenUnsatisfiable: DoNotSchedule
     labelSelector:
       matchLabels:
-        app: minio-labfaber
+        app: minio-streaming
 
 ## Add stateful containers to have security context, if enabled MinIO will run as this
 ## user and group NOTE: securityContext is only enabled if persistence.enabled=true
