@@ -1,17 +1,53 @@
-start: kube-context terraform-init services-external-ips
+start: start-edge start-cloud
 
-clean: kube-context
-	cd terraform && terraform destroy
+clean: clean-edge clean-cloud
 
-kube-context:
+start-edge: kube-context-edge provision-edge-services
+
+clean-edge: kube-context-edge destroy-edge-services
+
+start-cloud: kube-context-cloud provision-cloud-infra provision-cloud-services services-external-ips
+
+clean-cloud: kube-context-cloud destroy-cloud-services destroy-cloud-infra
+
+# Cloud Provisioning
+provision-cloud-infra:
+	cd terraform/cloud-deploy && terraform init
+	cd terraform/cloud-deploy && terraform apply
+
+provision-cloud-services:
+	cd terraform/cloud-services && terraform init
+	cd terraform/cloud-services && terraform apply -target=kubernetes_namespace.monitoring -target=helm_release.argocd
+	cd terraform/cloud-services && terraform apply
+
+destroy-cloud-services:
+	cd terraform/cloud-services && terraform destroy
+
+destroy-cloud-infra:
+	cd terraform/cloud-deploy && terraform destroy
+
+# Edge Provisioning
+provision-edge-infra:
+	cd terraform/edge-deploy && terraform init
+	cd terraform/edge-deploy && terraform apply
+
+provision-edge-services:
+	cd terraform/edge-services && terraform init
+	cd terraform/edge-services && terraform apply -target=kubernetes_namespace.monitoring -target=helm_release.argocd
+	cd terraform/edge-services && terraform apply
+
+destroy-edge-services:
+	cd terraform/edge-services && terraform destroy
+
+destroy-edge-infra:
+	cd terraform/edge-deploy && terraform destroy
+
+# Utilities
+kube-context-cloud:
 	kubectx do-nyc1-k8s-cluster
 
-terraform-init:
-	cd terraform && terraform init
-	cd terraform && terraform plan -target=kubernetes_namespace.monitoring -target=helm_release.argocd 
-	cd terraform && terraform apply -target=kubernetes_namespace.monitoring -target=helm_release.argocd
-	cd terraform && terraform plan
-	cd terraform && terraform apply
+kube-context-edge:
+	kubectx streaming-cluster
 	
 services-external-ips:
 	@echo "\033[0;34mFetching ArgoCD password..."
@@ -56,6 +92,22 @@ produce-100-robots-cloud:
 	docker rm -f producer-control-power-cloud
 	docker run -d --name producer-control-power-cloud --env-file=./src/cloud.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 100
 
+produce-10-robots-edge:
+	docker rm -f producer-control-power-edge
+	docker run -d --name producer-control-power-edge --env-file=./src/edge.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 10
+
+produce-50-robots-edge:
+	docker rm -f producer-control-power-edge
+	docker run -d --name producer-control-power-edge --env-file=./src/edge.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 50
+
+produce-100-robots-edge:
+	docker rm -f producer-control-power-edge
+	docker run -d --name producer-control-power-edge --env-file=./src/edge.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 100
+
+produce-10-robots: produce-10-robots-cloud produce-10-robots-edge
+produce-50-robots: produce-50-robots-cloud produce-50-robots-edge
+produce-100-robots: produce-100-robots-cloud produce-100-robots-edge
+
 start-produce: build-producer produce-control-power-cloud produce-control-power-edge
 
 stop-produce: stop-produce-control-power-cloud stop-produce-control-power-edge
@@ -71,7 +123,7 @@ consume-control-power-cloud:
 stop-consume-control-power-cloud:
 	kubectx do-nyc1-k8s-cluster
 	kubectl delete -f ./kubernetes/yamls/consumer.yaml
-	
+
 consume-control-power-edge:
 	kubectx labfaber
 	kubectl apply -f ./kubernetes/yamls/consumer-edge.yaml
