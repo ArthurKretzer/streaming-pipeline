@@ -125,7 +125,7 @@ ingress:
     # Enable TLS termination for the Ingress
     enabled: true
     # the name of a pre-created Secret containing a TLS private key and certificate
-    secretName: certi-tls-secret
+    secretName: streaming-tls-scret
 
   # HTTP paths to add to the Ingress before the default path
   precedingPaths: []
