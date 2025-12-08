@@ -1,0 +1,139 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  # app name
+  name: kafka-operator
+  # deployed yaml
+  namespace: cicd
+spec:
+  project: default
+  source:
+    repoURL: "git@bitbucket.org:certi_repos/datalake-labfaber.git"
+    path: infrastructure/helm-charts/kafka-operator
+    targetRevision: development
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: kafka-operator
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: labfaber-kafka-broker
+  namespace: cicd
+spec:
+  project: default
+  source:
+    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    targetRevision: development
+    path: infrastructure/yamls/ingestion/broker
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: ingestion
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: labfaber-kafka-connect
+  namespace: cicd
+spec:
+  project: default
+  source:
+    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    targetRevision: development
+    path: infrastructure/yamls/ingestion/kafka-connect
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: ingestion
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: labfaber-kafka-rebalance
+  namespace: cicd
+spec:
+  project: default
+  source:
+    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    targetRevision: development
+    path: infrastructure/yamls/ingestion/cruise-control
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: ingestion
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: labfaber-kafka-metrics
+  namespace: cicd
+spec:
+  project: default
+  source:
+    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    targetRevision: development
+    path: infrastructure/yamls/ingestion/metrics
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: ingestion
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: labfaber-kafka-schema-registry
+  namespace: cicd
+spec:
+  project: default
+  source:
+    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    targetRevision: development
+    path: infrastructure/helm-charts/cp-schema-registry
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: ingestion
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: labfaber-kafka-ui
+  namespace: cicd
+spec:
+  project: default
+  source:
+    repoURL: 'git@bitbucket.org:certi_repos/datalake-labfaber.git'
+    targetRevision: development
+    path: infrastructure/helm-charts/kafka-ui
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: ingestion
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

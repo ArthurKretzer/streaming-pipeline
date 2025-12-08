@@ -1,0 +1,63 @@
+postgresql:
+  enabled: true
+  auth:
+    # postgresPassword: ""
+    username: "hive"
+    # password: ""
+    database: "hive_metastore"
+    existingSecret: "hive-db-credentials-secret"
+    secretKeys:
+      postgresPasswordKey: postgres-password
+      userPasswordKey: password
+  architecture: standalone
+
+externalDatabase:
+  enabled: false  # Enable external PostgreSQL
+  host: ""  # External database host
+  port: "5432"  # External database port
+  database: ""
+  username: "hive"
+  existingSecret: "hive-db-credentials-secret"
+  secretKeys:
+    postgresPasswordKey: postgres-password
+    userPasswordKey: password
+    
+persistence:
+  size: 1Gi  # Storage size for database persistence
+  storageClass: "longhorn"  # Storage class to be used for persistence; set to "" to use the default storage class
+
+hiveMetastore:
+  # Docker image configuration for Hive Metastore
+  image:
+    repository: arthurkretzer/hive-metastore  # Docker repository for the Hive Metastore image
+    tag: latest  # Image tag/version
+    pullPolicy: Always # IfNotPresent  # Image pull policy
+
+  # S3 configuration for storage
+  s3:
+    bucket: metastore  # S3 bucket name
+    prefix: hive  # S3 prefix for storage
+    ssl: true
+    endpointUrl: "https://datalake.com.br"  # Custom S3 endpoint URL
+    accessKeySecretName: hive-metastore-s3-secret  # Secret name for S3 access keys
+
+# Service configuration
+service:
+  type: NodePort  # Service type (e.g., ClusterIP, NodePort, LoadBalancer)
+  port: 9083  # Service port for Thrift communication
+
+# Ingress configuration for external access
+ingress:
+  enabled: false  # Enable/disable Ingress resource
+  hosts:
+    - host: "metastore.datalake.com.br"  # Hostname for Ingress
+      paths:
+        - path: "/"  # Path to expose through Ingress
+
+  annotations:
+    # cert-manager.io/cluster-issuer: dev-selfsigned
+    traefik.ingress.kubernetes.io/force-ssl-redirect: "true"
+    traefik.ingress.kubernetes.io/ssl-passthrough: "true"  # Custom annotations for Ingress
+    
+  labels: {}  # Custom labels for Ingress
+  ingressClassName: "traefik"  # Ingress class name to use (e.g., nginx)

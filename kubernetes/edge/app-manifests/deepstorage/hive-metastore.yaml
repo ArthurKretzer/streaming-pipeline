@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hive-metastore
+  namespace: cicd
+spec:
+  project: default
+  source:
+    repoURL: "git@bitbucket.org:certi_repos/datalake-labfaber.git"
+    path: infrastructure/helm-charts/hive-metastore
+    targetRevision: development
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: deepstorage
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      prune: true
+      selfHeal: true

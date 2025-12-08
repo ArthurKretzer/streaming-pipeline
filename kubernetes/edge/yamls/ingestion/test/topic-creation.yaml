@@ -1,0 +1,9 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: iot-temperature
+  labels:
+    strimzi.io/cluster: labfaber-kafka
+spec:
+  partitions: 3
+  replicas: 3  # Altere isso para ser igual ou menor ao número de brokers disponíveis
