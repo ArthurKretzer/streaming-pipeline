@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: "git@github.com:ArthurKretzer/streaming-pipeline.git"
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     path: infrastructure/helm-charts/kafka-operator
     targetRevision: development
     helm:
@@ -32,7 +32,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'git@github.com:ArthurKretzer/streaming-pipeline.git'
+    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
     path: infrastructure/yamls/ingestion/broker
   destination:
@@ -51,7 +51,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'git@github.com:ArthurKretzer/streaming-pipeline.git'
+    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
     path: infrastructure/yamls/ingestion/kafka-connect
   destination:
@@ -70,7 +70,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'git@github.com:ArthurKretzer/streaming-pipeline.git'
+    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
     path: infrastructure/yamls/ingestion/cruise-control
   destination:
@@ -89,7 +89,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'git@github.com:ArthurKretzer/streaming-pipeline.git'
+    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
     path: infrastructure/yamls/ingestion/metrics
   destination:
@@ -108,7 +108,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'git@github.com:ArthurKretzer/streaming-pipeline.git'
+    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
     path: infrastructure/helm-charts/cp-schema-registry
   destination:
@@ -127,7 +127,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'git@github.com:ArthurKretzer/streaming-pipeline.git'
+    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: development
     path: infrastructure/helm-charts/kafka-ui
   destination:

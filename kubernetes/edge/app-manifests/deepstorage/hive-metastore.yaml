@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: "git@github.com:ArthurKretzer/streaming-pipeline.git"
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     path: infrastructure/helm-charts/hive-metastore
     targetRevision: development
     helm:
