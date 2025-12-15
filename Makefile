@@ -13,7 +13,7 @@ clean-cloud: kube-context-cloud destroy-cloud-services destroy-cloud-infra
 # Cloud Provisioning
 provision-cloud-infra:
 	cd terraform/cloud-deploy && terraform init
-	cd terraform/cloud-deploy && terraform apply
+	cd terraform/cloud-deploy && terraform apply --var-file=env.tfvars
 
 provision-cloud-services:
 	cd terraform/cloud-services && terraform init
@@ -33,7 +33,7 @@ destroy-cloud-infra:
 # Edge Provisioning
 provision-edge-infra:
 	cd terraform/edge-deploy && terraform init
-	cd terraform/edge-deploy && terraform apply
+	cd terraform/edge-deploy && terraform apply --var-file=env.tfvars
 
 provision-edge-services:
 	cd terraform/edge-services && terraform init
