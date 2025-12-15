@@ -139,7 +139,7 @@ To add a Git repository to ArgoCD using SSH, you'll need to generate a private S
 2. **Add the repository to ArgoCD** by using the following command:
 
    ```sh
-    argocd repo add git@github.com:ArthurKretzer/streaming-pipeline.git \
+    argocd repo add https://github.com/ArthurKretzer/streaming-pipeline.git \
       --ssh-private-key-path infrastructure/keys/argocd \
      --name datalake
    ```
