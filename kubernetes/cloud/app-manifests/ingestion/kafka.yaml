@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
-    path: kubernetes/helm-charts/kafka-operator
+    path: kubernetes/cloud/helm-charts/kafka-operator
     targetRevision: main
     helm:
       valueFiles:
@@ -34,7 +34,7 @@ spec:
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
-    path: kubernetes/yamls/ingestion/broker-cloud
+    path: kubernetes/cloud/yamls/ingestion/broker-cloud
   destination:
     server: "https://kubernetes.default.svc"
     namespace: ingestion
@@ -53,7 +53,7 @@ spec:
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
-    path: kubernetes/yamls/ingestion/cruise-control
+    path: kubernetes/cloud/yamls/ingestion/cruise-control
   destination:
     server: "https://kubernetes.default.svc"
     namespace: ingestion
@@ -72,7 +72,7 @@ spec:
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
-    path: kubernetes/yamls/ingestion/metrics
+    path: kubernetes/cloud/yamls/ingestion/metrics
   destination:
     server: "https://kubernetes.default.svc"
     namespace: ingestion
@@ -91,7 +91,7 @@ spec:
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
-    path: kubernetes/helm-charts/cp-schema-registry
+    path: kubernetes/cloud/helm-charts/cp-schema-registry
   destination:
     server: "https://kubernetes.default.svc"
     namespace: ingestion
@@ -110,7 +110,7 @@ spec:
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
-    path: kubernetes/helm-charts/kafka-ui
+    path: kubernetes/cloud/helm-charts/kafka-ui
     helm:
       valueFiles:
         - values-cloud.yaml

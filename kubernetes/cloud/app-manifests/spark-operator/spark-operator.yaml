@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
-    path: kubernetes/helm-charts/spark-operator
+    path: kubernetes/cloud/helm-charts/spark-operator
     targetRevision: main
     helm:
       valueFiles:
