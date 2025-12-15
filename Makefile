@@ -17,11 +17,15 @@ provision-cloud-infra:
 
 provision-cloud-services:
 	cd terraform/cloud-services && terraform init
-	cd terraform/cloud-services && terraform apply -target=kubernetes_namespace.monitoring -target=helm_release.argocd
+	cd terraform/cloud-services && terraform apply -target=kubernetes_namespace_v1.monitoring -target=helm_release.argocd
+	@echo "Waiting 30s for resources to stabilize..."
+	sleep 30
 	cd terraform/cloud-services && terraform apply
 
-destroy-cloud-services:
+destroy-cloud-services: kube-context-cloud
 	cd terraform/cloud-services && terraform destroy
+	helm uninstall argocd -n cicd
+	kubectl delete ns monitoring
 
 destroy-cloud-infra:
 	cd terraform/cloud-deploy && terraform destroy
@@ -33,11 +37,15 @@ provision-edge-infra:
 
 provision-edge-services:
 	cd terraform/edge-services && terraform init
-	cd terraform/edge-services && terraform apply -target=kubernetes_namespace.monitoring -target=helm_release.argocd
+	cd terraform/edge-services && terraform apply -target=kubernetes_namespace_v1.monitoring -target=helm_release.argocd
+	@echo "Waiting 30s for resources to stabilize..."
+	sleep 30
 	cd terraform/edge-services && terraform apply
 
-destroy-edge-services:
+destroy-edge-services: kube-context-edge
 	cd terraform/edge-services && terraform destroy
+	helm uninstall argocd -n cicd
+	kubectl delete ns monitoring
 
 destroy-edge-infra:
 	cd terraform/edge-deploy && terraform destroy
