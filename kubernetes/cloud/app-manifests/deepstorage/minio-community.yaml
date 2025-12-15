@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
-    path: kubernetes/helm-charts/minio-community
+    path: kubernetes/cloud/helm-charts/minio-community
     targetRevision: main
     helm:
       valueFiles:
