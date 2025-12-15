@@ -160,10 +160,10 @@ mavenBuilder:
     tag: ""
 resources:
   requests:
-    memory: 384Mi
-    cpu: 200m
+    memory: 512Mi
+    cpu: 500m
 livenessProbe:
-  initialDelaySeconds: 10
+  initialDelaySeconds: 60
   periodSeconds: 30
 readinessProbe:
   initialDelaySeconds: 10
