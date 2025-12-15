@@ -21,8 +21,8 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
-    config_path    = "~/.kube/config"
+  kubernetes = {
+    config_path = "~/.kube/config"
     config_context = "do-nyc1-k8s-cluster"
   }
 }
@@ -30,13 +30,13 @@ provider "helm" {
 resource "helm_release" "argocd" {
   name      = "argocd"
   namespace = "cicd"
-  chart     = "../kubernetes/helm-charts/argo-cd"
-  version   = "5.51.6"
+  chart     = "../../kubernetes/cloud/helm-charts/argo-cd"
+  version   = "7.6.5"
 
   create_namespace = true
 
   values = [
-    file("../kubernetes/cloud/helm-charts/argo-cd/values-cloud.yaml") # optional if you have custom config
+    file("../../kubernetes/cloud/helm-charts/argo-cd/values-cloud.yaml") # optional if you have custom config
   ]
 }
 
@@ -48,7 +48,7 @@ resource "time_sleep" "wait_for_crds" {
 }
 
 # Create required namespaces
-resource "kubernetes_namespace" "deepstorage" {
+resource "kubernetes_namespace_v1" "deepstorage" {
   metadata {
     name = "deepstorage"
   }
@@ -61,7 +61,7 @@ resource "kubernetes_namespace" "deepstorage" {
   }
 }
 
-resource "kubernetes_namespace" "ingestion" {
+resource "kubernetes_namespace_v1" "ingestion" {
   metadata {
     name = "ingestion"
   }
@@ -74,7 +74,7 @@ resource "kubernetes_namespace" "ingestion" {
   }
 }
 
-resource "kubernetes_namespace" "monitoring" {
+resource "kubernetes_namespace_v1" "monitoring" {
   metadata {
     name = "monitoring"
   }
@@ -87,7 +87,7 @@ resource "kubernetes_namespace" "monitoring" {
   }
 }
 
-resource "kubernetes_namespace" "spark_operator" {
+resource "kubernetes_namespace_v1" "spark_operator" {
   metadata {
     name = "spark-operator"
   }
@@ -100,7 +100,7 @@ resource "kubernetes_namespace" "spark_operator" {
   }
 }
 
-resource "kubernetes_namespace" "spark_jobs" {
+resource "kubernetes_namespace_v1" "spark_jobs" {
   metadata {
     name = "spark-jobs"
   }
@@ -115,55 +115,55 @@ resource "kubernetes_namespace" "spark_jobs" {
 
 # Load and apply all YAML files from deepstorage directory
 data "kubectl_file_documents" "deepstorage" {
-  content = join("\n---\n", [for f in fileset("../kubernetes/cloud/app-manifests/deepstorage", "*.yaml") : file("../kubernetes/cloud/app-manifests/deepstorage/${f}")])
+  content = join("\n---\n", [for f in fileset("../../kubernetes/cloud/app-manifests/deepstorage", "*.yaml") : file("../../kubernetes/cloud/app-manifests/deepstorage/${f}")])
 }
 
 resource "kubernetes_manifest" "deepstorage" {
   for_each   = data.kubectl_file_documents.deepstorage.manifests
   manifest   = yamldecode(each.value)
-  depends_on = [kubernetes_namespace.deepstorage, helm_release.argocd]
+  depends_on = [kubernetes_namespace_v1.deepstorage, helm_release.argocd]
 }
 
 # Load and apply all YAML files from ingestion directory
 data "kubectl_file_documents" "ingestion" {
-  content = join("\n---\n", [for f in fileset("../kubernetes/cloud/app-manifests/ingestion", "*.yaml") : file("../kubernetes/cloud/app-manifests/ingestion/${f}")])
+  content = join("\n---\n", [for f in fileset("../../kubernetes/cloud/app-manifests/ingestion", "*.yaml") : file("../../kubernetes/cloud/app-manifests/ingestion/${f}")])
 }
 
 resource "kubernetes_manifest" "ingestion" {
   for_each   = data.kubectl_file_documents.ingestion.manifests
   manifest   = yamldecode(each.value)
-  depends_on = [kubernetes_namespace.ingestion, helm_release.argocd]
+  depends_on = [kubernetes_namespace_v1.ingestion, helm_release.argocd]
 }
 
 # Load and apply all YAML files from monitoring directory
 data "kubectl_file_documents" "monitoring" {
-  content = join("\n---\n", [for f in fileset("../kubernetes/cloud/app-manifests/monitoring", "*.yaml") : file("../kubernetes/cloud/app-manifests/monitoring/${f}")])
+  content = join("\n---\n", [for f in fileset("../../kubernetes/cloud/app-manifests/monitoring", "*.yaml") : file("../../kubernetes/cloud/app-manifests/monitoring/${f}")])
 }
 
 resource "kubernetes_manifest" "monitoring" {
   for_each   = data.kubectl_file_documents.monitoring.manifests
   manifest   = yamldecode(each.value)
-  depends_on = [kubernetes_namespace.monitoring, helm_release.argocd]
+  depends_on = [kubernetes_namespace_v1.monitoring, helm_release.argocd]
 }
 
 # Load and apply all YAML files from spark-operator directory
 data "kubectl_file_documents" "spark_operator" {
-  content = join("\n---\n", [for f in fileset("../kubernetes/cloud/app-manifests/spark-operator", "*.yaml") : file("../kubernetes/cloud/app-manifests/spark-operator/${f}")])
+  content = join("\n---\n", [for f in fileset("../../kubernetes/cloud/app-manifests/spark-operator", "*.yaml") : file("../../kubernetes/cloud/app-manifests/spark-operator/${f}")])
 }
 
 resource "kubernetes_manifest" "spark_operator" {
   for_each   = data.kubectl_file_documents.spark_operator.manifests
   manifest   = yamldecode(each.value)
-  depends_on = [kubernetes_namespace.spark_operator, kubernetes_namespace.spark_jobs, helm_release.argocd]
+  depends_on = [kubernetes_namespace_v1.spark_operator, kubernetes_namespace_v1.spark_jobs, helm_release.argocd]
 }
 
 # Load and apply all YAML files from deploy directory
 data "kubectl_file_documents" "deploy" {
-  content = join("\n---\n", [for f in fileset("../kubernetes/cloud/deploy", "*.yaml") : file("../kubernetes/cloud/deploy/${f}")])
+  content = join("\n---\n", [for f in fileset("../../kubernetes/cloud/deploy", "*.yaml") : file("../../kubernetes/cloud/deploy/${f}")])
 }
 
 resource "kubernetes_manifest" "deploy" {
   for_each   = data.kubectl_file_documents.deploy.manifests
   manifest   = yamldecode(each.value)
-  depends_on = [kubernetes_namespace.spark_operator, kubernetes_namespace.spark_jobs, helm_release.argocd]
+  depends_on = [kubernetes_namespace_v1.spark_operator, kubernetes_namespace_v1.spark_jobs, helm_release.argocd]
 }
