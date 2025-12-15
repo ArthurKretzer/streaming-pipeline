@@ -165,11 +165,11 @@ resources:
     memory: 384Mi
     cpu: 250m
 livenessProbe:
-  initialDelaySeconds: 10
-  periodSeconds: 30
+  initialDelaySeconds: 90
+  periodSeconds: 60
 readinessProbe:
-  initialDelaySeconds: 10
-  periodSeconds: 30
+  initialDelaySeconds: 90
+  periodSeconds: 60
 
 createGlobalResources: true
 # Create clusterroles that extend existing clusterroles to interact with strimzi crds
