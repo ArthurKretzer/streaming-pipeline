@@ -163,8 +163,8 @@ resources:
     memory: 384Mi
     cpu: 1000m
   requests:
-    memory: 1Gi
-    cpu: 1000m
+    memory: 128Mi
+    cpu: 100m
 livenessProbe:
   initialDelaySeconds: 60
   periodSeconds: 30

@@ -328,8 +328,8 @@ podLabels: {}
 ##
 resources:
   requests:
-    memory: "500Mi"
-    cpu: "200m"
+    memory: "1000Mi"
+    cpu: "100m"
   limits:
     memory: "2Gi"
     cpu: "1000m"

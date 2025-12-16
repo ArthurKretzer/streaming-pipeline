@@ -138,8 +138,8 @@ resources:
     cpu: 500m
     memory: 1000Mi
   requests:
-    cpu: 200m
-    memory: 256Mi
+    cpu: 100m
+    memory: 128Mi
 
 autoscaling:
   enabled: false
