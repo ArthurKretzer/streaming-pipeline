@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -75,18 +76,25 @@ def collect_metrics(prometheus_uri: str, experiment_name: str):
         "spark_executor_running_count",
         "spark_executor_success_count",
     ]
-    SAVE_DIR = f"./data/raw/execution_metrics/{experiment_name}"
+
+    project_root = Path.cwd()
+
+    SAVE_DIR = f"{project_root}/data/raw/execution_metrics/{experiment_name}"
+
+    print(f"Creating dir for experiment {experiment_name}")
     os.makedirs(SAVE_DIR, exist_ok=True)
 
-    # Conectar ao Prometheus
+    print("Connecting to Prometheus...")
     prom = PrometheusConnect(url=PROMETHEUS_URL, disable_ssl=False)
 
+    print("Collecting metrics...")
     # Intervalo de tempo: última hora
     end_time = datetime.now(timezone.utc)
     start_time = end_time - timedelta(hours=1, minutes=40)
 
     collected_dfs = {}
     for metric in METRICS:
+        print(f"Collecting metric {metric}")
         try:
             data = prom.get_metric_range_data(
                 metric_name=metric,
@@ -113,10 +121,10 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Collect Prometheus metrics.")
     parser.add_argument(
-        "--edge-ip", required=True, help="IP address of the Edge node"
+        "--edge-ip", required=False, help="IP address of the Edge node"
     )
     parser.add_argument(
-        "--cloud-ip", required=True, help="IP address of the Cloud node"
+        "--cloud-ip", required=False, help="IP address of the Cloud node"
     )
     parser.add_argument(
         "--experiment-name", required=True, help="Name of the experiment"
@@ -124,9 +132,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    collect_metrics(
-        f"http://{args.edge_ip}:30090", f"{args.experiment_name}_edge"
-    )
-    collect_metrics(
-        f"http://{args.cloud_ip}:30090", f"{args.experiment_name}_cloud"
-    )
+    if args.edge_ip:
+        collect_metrics(
+            f"http://{args.edge_ip}:30090", f"{args.experiment_name}_edge"
+        )
+
+    if args.cloud_ip:
+        collect_metrics(
+            f"http://{args.cloud_ip}:30090", f"{args.experiment_name}_cloud"
+        )

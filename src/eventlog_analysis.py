@@ -58,9 +58,9 @@ def extract_spark_events(events):
                     "SubmissionTime": stage_info.get("Submission Time"),
                     "CompletionTime": stage_info.get("Completion Time"),
                     "NumTasks": stage_info.get("Number of Tasks", 0),
-                    "ShuffleReadBytes": stage_info.get("Shuffle Read Metrics", {}).get(
-                        "Remote Bytes Read", 0
-                    ),
+                    "ShuffleReadBytes": stage_info.get(
+                        "Shuffle Read Metrics", {}
+                    ).get("Remote Bytes Read", 0),
                     "ShuffleWriteBytes": stage_info.get(
                         "Shuffle Write Metrics", {}
                     ).get("Shuffle Bytes Written", 0),
@@ -68,7 +68,8 @@ def extract_spark_events(events):
                         (
                             int(acc["Value"])
                             for acc in stage_info.get("Accumulables", [])
-                            if acc["Name"] == "internal.metrics.input.recordsRead"
+                            if acc["Name"]
+                            == "internal.metrics.input.recordsRead"
                         ),
                         0,
                     ),
@@ -76,7 +77,8 @@ def extract_spark_events(events):
                         (
                             int(acc["Value"])
                             for acc in stage_info.get("Accumulables", [])
-                            if acc["Name"] == "internal.metrics.output.recordsWritten"
+                            if acc["Name"]
+                            == "internal.metrics.output.recordsWritten"
                         ),
                         0,
                     ),
@@ -113,7 +115,8 @@ def extract_spark_events(events):
                     "FinishTime": task_info.get("Finish Time"),
                     "Duration": task_info.get("Finish Time")
                     - task_info.get("Launch Time")
-                    if task_info.get("Launch Time") and task_info.get("Finish Time")
+                    if task_info.get("Launch Time")
+                    and task_info.get("Finish Time")
                     else None,
                     "Successful": task_info.get("Successful"),
                     "BytesRead": task_metrics.get("InputMetrics", {}).get(
@@ -125,8 +128,12 @@ def extract_spark_events(events):
                     "ShuffleWriteBytes": task_metrics.get(
                         "Shuffle Write Metrics", {}
                     ).get("Shuffle Bytes Written", 0),
-                    "MemoryBytesSpilled": task_metrics.get("Memory Bytes Spilled", 0),
-                    "DiskBytesSpilled": task_metrics.get("Disk Bytes Spilled", 0),
+                    "MemoryBytesSpilled": task_metrics.get(
+                        "Memory Bytes Spilled", 0
+                    ),
+                    "DiskBytesSpilled": task_metrics.get(
+                        "Disk Bytes Spilled", 0
+                    ),
                     # Add more task metrics if you need
                 }
             )
@@ -175,7 +182,11 @@ def summarize_jobs_stages(df_jobs, df_stages):
     print("\nTop 5 Stages by Shuffle Read:")
     if "ShuffleReadBytes" in df_stages.columns:
         print("\nTop 5 Stages by Shuffle Read:")
-        print(df_stages.sort_values(by="ShuffleReadBytes", ascending=False).head())
+        print(
+            df_stages.sort_values(
+                by="ShuffleReadBytes", ascending=False
+            ).head()
+        )
     else:
         print("\nNo Shuffle Read data available in this log.")
 
@@ -188,15 +199,19 @@ if __name__ == "__main__":
 
     experiment_name = "experiment06"
 
-    eventlog_path = (
-        f"{project_root}/data/raw/{experiment_name}/eventLogs.json"  # <- Change this
-    )
+    eventlog_path = f"{project_root}/data/raw/{experiment_name}/eventLogs.json"
 
     print("Reading Logs...")
     events = load_eventlog(eventlog_path)
     print("Done.")
     df_jobs, df_stages, df_tasks = extract_spark_events(events)
     summarize_jobs_stages(df_jobs, df_stages)
-    df_jobs.to_parquet(f"./data/raw/{experiment_name}/df_jobs.parquet", index=False)
-    df_stages.to_parquet(f"./data/raw/{experiment_name}/df_stages.parquet", index=False)
-    df_tasks.to_parquet(f"./data/raw/{experiment_name}/df_tasks.parquet", index=False)
+    df_jobs.to_parquet(
+        f"./data/raw/{experiment_name}/df_jobs.parquet", index=False
+    )
+    df_stages.to_parquet(
+        f"./data/raw/{experiment_name}/df_stages.parquet", index=False
+    )
+    df_tasks.to_parquet(
+        f"./data/raw/{experiment_name}/df_tasks.parquet", index=False
+    )

@@ -142,4 +142,4 @@ stop-consume: stop-consume-control-power-cloud stop-consume-control-power-edge
 
 # Data Collection
 collect-metrics:
-	python3 data/prometheus_metrics.py --edge-ip=$(EDGE_IP) --cloud-ip=$(CLOUD_IP) --experiment-name=$(EXP_NAME)
+	uv run src/prometheus_metrics.py --edge-ip=$(EDGE_IP) --cloud-ip=$(CLOUD_IP) --experiment-name=$(EXP_NAME)
