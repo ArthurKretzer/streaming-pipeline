@@ -326,9 +326,12 @@ podLabels: {}
 ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
 ##
 resources:
-  requests:
-    memory: "1Gi"
-    cpu: "500m"
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  # requests:
+  #   memory: "1Gi"
+  #   cpu: "500m"
 
 ## List of policies to be created after minio install
 ##
@@ -393,8 +396,10 @@ makePolicyJob:
     runAsUser: 1000
     runAsGroup: 1000
   resources:
-    requests:
-      memory: 128Mi
+    limits:
+      memory: 256mi
+    # requests:
+    #   memory: 128Mi
   # Command to run after the main command on exit
   exitCommand: ""
 
@@ -423,8 +428,10 @@ makeUserJob:
     runAsUser: 1000
     runAsGroup: 1000
   resources:
-    requests:
-      memory: 128Mi
+    limits:
+      memory: 256mi
+    # requests:
+    #   memory: 128Mi
   # Command to run after the main command on exit
   exitCommand: ""
 
@@ -463,8 +470,10 @@ makeServiceAccountJob:
     runAsUser: 1000
     runAsGroup: 1000
   resources:
-    requests:
-      memory: 128Mi
+    limits:
+      memory: 256mi
+    # requests:
+    #   memory: 128Mi
   # Command to run after the main command on exit
   exitCommand: ""
 
@@ -539,8 +548,10 @@ makeBucketJob:
     runAsUser: 1000
     runAsGroup: 1000
   resources:
-    requests:
-      memory: 128Mi
+    limits:
+      memory: 256mi
+    # requests:
+    #   memory: 128Mi
   # Command to run after the main command on exit
   exitCommand: ""
 
@@ -556,8 +567,10 @@ customCommandJob:
     runAsUser: 1000
     runAsGroup: 1000
   resources:
-    requests:
-      memory: 128Mi
+    limits:
+      memory: 256mi
+    # requests:
+    #   memory: 128Mi
   ## Additional volumes to add to the post-job.
   extraVolumes:
     []

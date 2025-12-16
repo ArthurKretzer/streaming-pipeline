@@ -66,9 +66,9 @@ spec:
     # resource limitation
     # -xms -xmx set as same as resources [limit]
     resources:
-      requests:
-        memory: 256Mi
-        cpu: "500m"
+      # requests:
+      #   memory: 256Mi
+      #   cpu: "500m"
       limits:
         memory: 2Gi
         cpu: "1500m"
@@ -87,9 +87,9 @@ spec:
         deleteClaim: true
     resources:
       # requests and limits
-      requests:
-        memory: 100Mi
-        cpu: "250m"
+      # requests:
+      #   memory: 100Mi
+      #   cpu: "250m"
       limits:
         memory: 1Gi
         cpu: "1500m"
