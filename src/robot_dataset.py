@@ -101,7 +101,8 @@ class RobotDataset:
         "j07_temperature",
     ]
 
-    def __init__(self, normalize: bool = False):
+    def __init__(self, normalize: bool = False, max_rows: int = None):
+        self.max_rows = max_rows
         self.columns = (
             self.control_power_columns + self.accelerometer_gyro_columns
         )
@@ -111,10 +112,27 @@ class RobotDataset:
 
     def _concat_subsets(self, subsets: list) -> pd.DataFrame:
         """Concatenate subsets into a single DataFrame."""
-        return pd.concat(
-            [pd.DataFrame(subset, columns=self.columns) for subset in subsets],
+        data_frames = []
+        total_rows = 0
+        for subset in subsets:
+            df = pd.DataFrame(subset, columns=self.columns)
+            data_frames.append(df)
+            total_rows += len(df)
+            if self.max_rows and total_rows >= self.max_rows:
+                break
+
+        if not data_frames:
+            return pd.DataFrame(columns=self.columns)
+
+        full_df = pd.concat(
+            data_frames,
             ignore_index=True,
         )
+
+        if self.max_rows:
+            full_df = full_df.head(self.max_rows)
+
+        return full_df
 
     def get_dataset(self, data_type: str) -> pd.DataFrame:
         if data_type == "control_power":
