@@ -162,9 +162,9 @@ resources:
   limits:
     memory: 384Mi
     cpu: 1000m
-  requests:
-    memory: 384Mi
-    cpu: 250m
+  # requests:
+  #   memory: 384Mi
+  #   cpu: 250m
 livenessProbe:
   initialDelaySeconds: 90
   periodSeconds: 60

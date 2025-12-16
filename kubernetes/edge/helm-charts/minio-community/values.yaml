@@ -327,9 +327,9 @@ podLabels: {}
 ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
 ##
 resources:
-  requests:
-    memory: "500Mi"
-    cpu: "200m"
+  # requests:
+  #   memory: "500Mi"
+  #   cpu: "200m"
   limits:
     memory: "2Gi"
     cpu: "1000m"
@@ -397,8 +397,10 @@ makePolicyJob:
     runAsUser: 1000
     runAsGroup: 1000
   resources:
-    requests:
-      memory: 128Mi
+    # requests:
+    #   memory: 128Mi
+    limits:
+      memory: 256Mi
   # Command to run after the main command on exit
   exitCommand: ""
 
@@ -427,8 +429,10 @@ makeUserJob:
     runAsUser: 1000
     runAsGroup: 1000
   resources:
-    requests:
-      memory: 128Mi
+    # requests:
+    #   memory: 128Mi
+    limits:
+      memory: 256Mi
   # Command to run after the main command on exit
   exitCommand: ""
 
@@ -467,8 +471,8 @@ makeServiceAccountJob:
     runAsUser: 1000
     runAsGroup: 1000
   resources:
-    requests:
-      memory: 128Mi
+    limits:
+      memory: 256Mi
   # Command to run after the main command on exit
   exitCommand: ""
 
@@ -543,8 +547,8 @@ makeBucketJob:
     runAsUser: 1000
     runAsGroup: 1000
   resources:
-    requests:
-      memory: 128Mi
+    limits:
+      memory: 256Mi
   # Command to run after the main command on exit
   exitCommand: ""
 
@@ -560,8 +564,8 @@ customCommandJob:
     runAsUser: 1000
     runAsGroup: 1000
   resources:
-    requests:
-      memory: 128Mi
+    limits:
+      memory: 256Mi
   ## Additional volumes to add to the post-job.
   extraVolumes:
     []
