@@ -876,9 +876,9 @@ serviceAccountAnnotations: {}
 
 # -- [Resources](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) for `traefik` container.
 resources:
-  # requests:
-  #   cpu: "100m"
-  #   memory: "50Mi"
+  requests:
+    cpu: "100m"
+    memory: "50Mi"
   limits:
     cpu: "1000m"
     memory: "1000Mi"

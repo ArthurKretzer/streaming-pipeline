@@ -62,9 +62,9 @@ spec:
     # resource limitation
     # -xms -xmx set as same as resources [limit]
     resources:
-      limits:
-        memory: 1Gi
-        cpu: "1000m"
+      requests:
+        memory: 256Mi
+        cpu: "500m"
     metricsConfig:
       type: jmxPrometheusExporter
       valueFrom:
@@ -80,9 +80,9 @@ spec:
       deleteClaim: true
     resources:
       # requests and limits
-      limits:
-        memory: 256Mi
-        cpu: "500m"
+      requests:
+        memory: 100Mi
+        cpu: "250m"
     metricsConfig:
       type: jmxPrometheusExporter
       valueFrom:
