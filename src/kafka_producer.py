@@ -138,10 +138,18 @@ class KafkaProducer:
         """
         self._configure_topic()
 
+        if data_type != "mocked":
+            # Load dataset once for all robots, limited to 1 hour at 10Hz
+            # (36000 rows)
+            dataset_loader = RobotDataset(normalize=False, max_rows=36000)
+            dataset = dataset_loader.get_dataset(data_type=data_type)
+        else:
+            dataset = None
+
         threads = []
         for i in range(num_robots):
             thread = threading.Thread(
-                target=self._run_simulation, args=(data_type, i)
+                target=self._run_simulation, args=(data_type, i, dataset)
             )
             threads.append(thread)
             thread.start()
@@ -150,45 +158,48 @@ class KafkaProducer:
         for thread in threads:
             thread.join()
 
-    def _run_simulation(self, data_type: str, robot_id: int):
+    def _run_simulation(self, data_type: str, robot_id: int, dataset=None):
         """
         Runs the simulation for a single robot.
 
         Args:
             data_type (str): Type of data to produce.
             robot_id (int): ID of the robot.
+            dataset (pd.DataFrame, optional): Pre-loaded dataset.
         """
         if data_type == "control_power":
-            self._produce_control_power_data(robot_id)
+            self._produce_control_power_data(robot_id, dataset)
         elif data_type == "accelerometer_gyro":
-            self._produce_temperature_accelerometer_gyro_data(robot_id)
+            self._produce_temperature_accelerometer_gyro_data(
+                robot_id, dataset
+            )
         elif data_type == "mocked":
             self._produce_mocked_data(robot_id)
         else:
             logger.error(f"Invalid data type ({data_type}) for producer.")
 
-    def _produce_control_power_data(self, robot_id: int):
+    def _produce_control_power_data(self, robot_id: int, dataset):
         """
         Produces control power data for a specific robot.
 
         Args:
             robot_id (int): ID of the robot.
+            dataset (pd.DataFrame): Dataset to send.
         """
         producer = self.get_producer(self.topic_name)
-        dataset = RobotDataset(normalize=False)
-        dataset = dataset.get_dataset(data_type="control_power")
         self._send_dataset(producer, dataset, robot_id)
 
-    def _produce_temperature_accelerometer_gyro_data(self, robot_id: int):
+    def _produce_temperature_accelerometer_gyro_data(
+        self, robot_id: int, dataset
+    ):
         """
         Produces accelerometer and gyro data for a specific robot.
 
         Args:
             robot_id (int): ID of the robot.
+            dataset (pd.DataFrame): Dataset to send.
         """
         producer = self.get_producer(self.topic_name)
-        dataset = RobotDataset(normalize=False)
-        dataset = dataset.get_dataset(data_type="accelerometer_gyro")
         self._send_dataset(producer, dataset, robot_id)
 
     def _send_dataset(self, producer, dataset, robot_id: int):
