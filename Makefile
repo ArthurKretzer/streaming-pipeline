@@ -67,7 +67,7 @@ services-external-ips:
 	@doctl compute droplet list --format Name,PublicIPv4
 
 build-spark:
-	docker build -t arthurkretzer/spark:3.5.4 -f ./docker/spark.Dockerfile
+	docker build -t arthurkretzer/spark:3.5.4 -f ./docker/spark.Dockerfile .
 	docker push arthurkretzer/spark:3.5.4
 
 build-producer:
@@ -125,16 +125,16 @@ build-consumer:
 	docker push arthurkretzer/streaming-consumer:3.5.4
 
 consume-control-power-cloud: kube-context-cloud
-	kubectl apply -f ./kubernetes/yamls/consumer.yaml
+	kubectl apply -f ./kubernetes/cloud/yamls/consumer.yaml
 
 stop-consume-control-power-cloud: kube-context-cloud
-	kubectl delete -f ./kubernetes/yamls/consumer.yaml
+	kubectl delete -f ./kubernetes/cloud/yamls/consumer.yaml
 
 consume-control-power-edge: kube-context-edge
-	kubectl apply -f ./kubernetes/yamls/consumer-edge.yaml
+	kubectl apply -f ./kubernetes/edge/yamls/consumer-edge.yaml
 
 stop-consume-control-power-edge: kube-context-edge
-	kubectl delete -f ./kubernetes/yamls/consumer-edge.yaml
+	kubectl delete -f ./kubernetes/edge/yamls/consumer-edge.yaml
 
 start-consume: consume-control-power-edge consume-control-power-cloud 
 
