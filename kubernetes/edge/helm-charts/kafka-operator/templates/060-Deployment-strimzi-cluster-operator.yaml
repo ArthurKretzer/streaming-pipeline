@@ -9,16 +9,8 @@ metadata:
     component: deployment
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-  {{- with .Values.deploymentAnnotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
 spec:
   replicas: {{ .Values.replicas }}
-  {{- with .Values.deploymentStrategy }}
-  strategy:
-    {{- toYaml . | trim | nindent 4 }}
-  {{- end }}
   {{- if .Values.revisionHistoryLimit }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   {{- end }}
@@ -96,9 +88,9 @@ spec:
               {{- end }}
               {{- end }}
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
-              value: {{ .Values.fullReconciliationIntervalMs | int64 | quote }}
+              value: {{ .Values.fullReconciliationIntervalMs | quote }}
             - name: STRIMZI_OPERATION_TIMEOUT_MS
-              value: {{ .Values.operationTimeoutMs | int64 | quote }}
+              value: {{ .Values.operationTimeoutMs | quote }}
             {{- template "strimzi.kafka.image.map" . }}
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
               value: {{ template "strimzi.image" (set . "key" "topicOperator") }}
@@ -110,8 +102,6 @@ spec:
               value: {{ template "strimzi.image" (set . "key" "kafkaBridge") }}
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
               value: {{ template "strimzi.image" (set . "key" "kanikoExecutor") }}
-            - name: STRIMZI_DEFAULT_BUILDAH_IMAGE
-              value: {{ template "strimzi.image" (set . "key" "buildah") }}
             - name: STRIMZI_DEFAULT_MAVEN_BUILDER
               value: {{ template "strimzi.image" (set . "key" "mavenBuilder") }}
             - name: STRIMZI_OPERATOR_NAMESPACE
@@ -148,11 +138,7 @@ spec:
             {{- end }}
             {{- if ne (int .Values.connectBuildTimeoutMs) 300000 }}
             - name: STRIMZI_CONNECT_BUILD_TIMEOUT_MS
-              value: {{ .Values.connectBuildTimeoutMs | int64 | quote }}
-            {{- end }}
-            {{- if ne .Values.generatePodDisruptionBudget true}}
-            - name: STRIMZI_POD_DISRUPTION_BUDGET_GENERATION
-              value: {{ .Values.generatePodDisruptionBudget | quote }}
+              value: {{ .Values.connectBuildTimeoutMs | quote }}
             {{- end }}
             {{- if .Values.extraEnvs }}
 {{ toYaml .Values.extraEnvs | indent 12 }}
