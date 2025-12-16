@@ -1,6 +1,0 @@
-[submodule "terraform/edge-deploy"]
-	path = terraform/edge-deploy
-	url = https://github.com/ArthurKretzer/edge-k8s-iac.git
-[submodule "terraform/cloud-deploy"]
-	path = terraform/cloud-deploy
-	url = https://github.com/ArthurKretzer/digitalocean-k8s-iac
