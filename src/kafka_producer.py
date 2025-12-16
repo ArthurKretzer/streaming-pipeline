@@ -238,10 +238,10 @@ class KafkaProducer:
         """
         if err is not None:
             logger.error(f"Error in delivery: {err}")
-        # else:
-        # logger.info(
-        #     f"Mensagem entregue para {msg.topic()} [{msg.partition()}]"
-        # )
+        else:
+            logger.info(
+                f"Mensagem entregue para {msg.topic()} [{msg.partition()}]"
+            )
 
     def _produce_mocked_data(self, robot_id: int):
         """
