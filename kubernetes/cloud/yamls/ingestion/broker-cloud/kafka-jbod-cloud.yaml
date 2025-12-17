@@ -24,18 +24,18 @@ spec:
         tls: true
       - name: external
         port: 9094
-        type: nodeport
+        type: ingress
         tls: false
         configuration:
           bootstrap:
-            nodePort: 32289
+            host: kafka-bootstrap.local
           brokers:
             - broker: 0
-              nodePort: 32290
+              host: kafka-0.local
             - broker: 1
-              nodePort: 32291
+              host: kafka-1.local
             - broker: 2
-              nodePort: 32292
+              host: kafka-2.local
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
