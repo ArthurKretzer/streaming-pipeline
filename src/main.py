@@ -47,6 +47,10 @@ def produce(
             target_host=target_host,
             enabled=ENABLE_TCPDUMP,
         ):
+            logger.info(
+                f"Producing data of type '{data_type}' to topic '{topic_name}' "
+                f"with {num_robots} robots."
+            )
             producer = KafkaProducer(KAFKA_BROKER, topic_name)
             producer.produce(data_type, num_robots)
             logger.info(
@@ -143,6 +147,9 @@ def parse_arguments():
 if __name__ == "__main__":
     args = parse_arguments()
 
+    logger.info(
+        f"Starting {args.function_name} with topic '{args.topic_name}' and data type '{args.data_type}'."
+    )
     if args.function_name == "consume":
         consume(args.topic_name)
     elif args.function_name == "produce":
