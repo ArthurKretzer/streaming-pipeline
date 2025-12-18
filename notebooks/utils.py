@@ -4,7 +4,7 @@ import pandas as pd
 
 
 def fix_timestamps_timezone(df: pd.DataFrame) -> pd.DataFrame:
-    df["source_timestamp"] = pd.to_datetime(df["source_timestamp"])
+    df["source_timestamp"] = pd.to_datetime(df["source_timestamp"], format="mixed")
     df["source_timestamp"] = (
         df["source_timestamp"].dt.tz_convert(None).dt.tz_localize("UTC")
     )
