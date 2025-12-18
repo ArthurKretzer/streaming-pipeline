@@ -138,18 +138,25 @@ class KafkaProducer:
         """
         self._configure_topic()
 
+        # Create a single producer instance shared among all threads
+        producer = self.get_producer(self.topic_name)
+
         if data_type != "mocked":
             # Load dataset once for all robots, limited to 1 hour at 10Hz
             # (36000 rows)
             dataset_loader = RobotDataset(normalize=False, max_rows=36000)
-            dataset = dataset_loader.get_dataset(data_type=data_type)
+            df = dataset_loader.get_dataset(data_type=data_type)
+            # Convert DataFrame to a list of dicts for faster iteration and reduced memory
+            records = df.to_dict("records")
+            del df  # Explicitly free the DataFrame memory
         else:
-            dataset = None
+            records = None
 
         threads = []
         for i in range(num_robots):
             thread = threading.Thread(
-                target=self._run_simulation, args=(data_type, i, dataset)
+                target=self._run_simulation,
+                args=(data_type, i, producer, records),
             )
             threads.append(thread)
             thread.start()
@@ -158,69 +165,80 @@ class KafkaProducer:
         for thread in threads:
             thread.join()
 
-    def _run_simulation(self, data_type: str, robot_id: int, dataset=None):
+    def _run_simulation(
+        self, data_type: str, robot_id: int, producer, records=None
+    ):
         """
         Runs the simulation for a single robot.
 
         Args:
             data_type (str): Type of data to produce.
             robot_id (int): ID of the robot.
-            dataset (pd.DataFrame, optional): Pre-loaded dataset.
+            producer (SerializingProducer): Shared Kafka producer instance.
+            records (list[dict], optional): Pre-loaded dataset records.
         """
         if data_type == "control_power":
-            self._produce_control_power_data(robot_id, dataset)
+            self._produce_control_power_data(robot_id, producer, records)
         elif data_type == "accelerometer_gyro":
             self._produce_temperature_accelerometer_gyro_data(
-                robot_id, dataset
+                robot_id, producer, records
             )
         elif data_type == "mocked":
-            self._produce_mocked_data(robot_id)
+            self._produce_mocked_data(robot_id, producer)
         else:
             logger.error(f"Invalid data type ({data_type}) for producer.")
 
-    def _produce_control_power_data(self, robot_id: int, dataset):
+    def _produce_control_power_data(self, robot_id: int, producer, records):
         """
         Produces control power data for a specific robot.
 
         Args:
             robot_id (int): ID of the robot.
-            dataset (pd.DataFrame): Dataset to send.
+            producer (SerializingProducer): Shared Kafka producer instance.
+            records (list[dict]): Dataset records to send.
         """
-        producer = self.get_producer(self.topic_name)
-        self._send_dataset(producer, dataset, robot_id)
+        self._send_dataset(producer, records, robot_id)
 
     def _produce_temperature_accelerometer_gyro_data(
-        self, robot_id: int, dataset
+        self, robot_id: int, producer, records
     ):
         """
         Produces accelerometer and gyro data for a specific robot.
 
         Args:
             robot_id (int): ID of the robot.
-            dataset (pd.DataFrame): Dataset to send.
+            producer (SerializingProducer): Shared Kafka producer instance.
+            records (list[dict]): Dataset records to send.
         """
-        producer = self.get_producer(self.topic_name)
-        self._send_dataset(producer, dataset, robot_id)
+        self._send_dataset(producer, records, robot_id)
 
-    def _send_dataset(self, producer, dataset, robot_id: int):
+    def _send_dataset(self, producer, records, robot_id: int):
         """
         Sends the dataset to Kafka.
 
         Args:
             producer (SerializingProducer): Kafka producer instance.
-            dataset (pd.DataFrame): Dataset to send.
+            records (list[dict]): Dataset records to send.
             robot_id (int): ID of the robot.
         """
-        for i in range(len(dataset)):
+        for row in records:
             timestamp = datetime.now(UTC).isoformat()
-            row = dataset.iloc[i, :]
-            row["source_timestamp"] = timestamp
+
+            # Create a copy to avoid race conditions if modifying shared dicts (though unique timestamps usually imply copy needed)
+            message = row.copy()
+            message["source_timestamp"] = timestamp
+
             # Ideally we would add robot_id to the message, but schema might
             # not support it.
             # For now, we just simulate the load.
-            message = row.to_dict()
             self._send_message(producer, key=timestamp, value=message)
+
+            # Serve delivery reports to ensure internal queue doesn't fill up indefinitely
+            producer.poll(0)
+
             time.sleep(0.1)  # 10Hz
+
+        producer.flush()
 
     def _send_message(self, producer, key, value):
         """
@@ -254,16 +272,16 @@ class KafkaProducer:
                 f"Mensagem entregue para {msg.topic()} [{msg.partition()}]"
             )
 
-    def _produce_mocked_data(self, robot_id: int):
+    def _produce_mocked_data(self, robot_id: int, producer):
         """
         Produces mocked temperature data.
 
         Args:
             robot_id (int): ID of the robot.
+            producer (SerializingProducer): Shared Kafka producer instance.
         """
         i = 0
         msg_count = 10000
-        producer = self.get_producer(self.topic_name)
         while i <= msg_count:
             # Creates random temperature data between 20.0
             # and 30.0 degrees Celsius.
@@ -278,6 +296,7 @@ class KafkaProducer:
             }
 
             self._send_message(producer, key=timestamp, value=message)
+            producer.poll(0)
             i += 1
             time.sleep(0.1)  # 10Hz
         producer.flush()
