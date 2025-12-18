@@ -1,7 +1,9 @@
 import os
 import random
+import statistics
 import threading
 import time
+from functools import partial
 from datetime import UTC, datetime
 
 from confluent_kafka import SerializingProducer
@@ -38,6 +40,8 @@ class KafkaProducer:
         """
         self.bootstrap_servers = bootstrap_servers
         self.topic_name = topic_name
+        self.stats_lock = threading.Lock()
+        self.robot_stats = {}
 
     def get_producer(self, topic_name: str) -> SerializingProducer:
         """
@@ -58,10 +62,10 @@ class KafkaProducer:
             "client.id": f"{self.topic_name}-producer",
             "acks": 1,
             "enable.idempotence": False,
-            "linger.ms": 0,
-            "batch.num.messages": 1,
+            "linger.ms": 10,
+            "batch.num.messages": 1000,
             "compression.type": "none",
-            "max.in.flight.requests.per.connection": 1,
+            "max.in.flight.requests.per.connection": 5,
         }
 
         producer = SerializingProducer(self.producer_config)
@@ -141,6 +145,7 @@ class KafkaProducer:
         # Create a single producer instance shared among all threads
         producer = self.get_producer(self.topic_name)
 
+        logger.info("Loading robot dataset...")
         if data_type != "mocked":
             # Load dataset once for all robots, limited to 1 hour at 10Hz
             # (36000 rows)
@@ -152,6 +157,7 @@ class KafkaProducer:
         else:
             records = None
 
+        logger.info("Starting robot simulations...")
         threads = []
         for i in range(num_robots):
             thread = threading.Thread(
@@ -227,11 +233,14 @@ class KafkaProducer:
             # Create a copy to avoid race conditions if modifying shared dicts (though unique timestamps usually imply copy needed)
             message = row.copy()
             message["source_timestamp"] = timestamp
+            message["robot_id"] = robot_id
 
             # Ideally we would add robot_id to the message, but schema might
             # not support it.
             # For now, we just simulate the load.
-            self._send_message(producer, key=timestamp, value=message)
+            self._send_message(
+                producer, key=timestamp, value=message, robot_id=robot_id
+            )
 
             # Serve delivery reports to ensure internal queue doesn't fill up indefinitely
             producer.poll(0)
@@ -240,7 +249,7 @@ class KafkaProducer:
 
         producer.flush()
 
-    def _send_message(self, producer, key, value):
+    def _send_message(self, producer, key, value, robot_id=None):
         """
         Sends a single message to Kafka.
 
@@ -248,29 +257,77 @@ class KafkaProducer:
             producer (SerializingProducer): Kafka producer instance.
             key (str): Message key.
             value (dict): Message value.
+            robot_id (int, optional): ID of the robot for stats.
         """
-        producer.produce(
-            self.topic_name,
-            key=str(key),
-            value=value,
-            on_delivery=self._delivery_report,
+        callback = (
+            partial(self._delivery_report, robot_id=robot_id)
+            if robot_id is not None
+            else self._delivery_report
         )
+
+        while True:
+            try:
+                producer.produce(
+                    self.topic_name,
+                    key=str(key),
+                    value=value,
+                    on_delivery=callback,
+                )
+                break
+            except BufferError:
+                # If the queue is full, poll to clear sending queue and retry
+                producer.poll(0.1)
         # logger.info(f"Message sent: {value}") # Reduced logging for high freq
 
-    def _delivery_report(self, err, msg):
+    def _delivery_report(self, err, msg, robot_id=None):
         """
-        Delivery callback confirmation.
+        Delivery callback confirmation with stats logging.
 
         Args:
             err (KafkaError): Error object if delivery failed.
             msg (Message): Kafka message object.
+            robot_id (int, optional): Robot ID to track stats.
         """
         if err is not None:
             logger.error(f"Error in delivery: {err}")
-        else:
-            logger.info(
-                f"Mensagem entregue para {msg.topic()} [{msg.partition()}]"
-            )
+            return
+
+        if robot_id is None:
+            return
+
+        current_time = time.time()
+        with self.stats_lock:
+            if robot_id not in self.robot_stats:
+                self.robot_stats[robot_id] = {
+                    "last_ack_time": None,
+                    "deltas": [],
+                    "count": 0,
+                }
+
+            stats_data = self.robot_stats[robot_id]
+            stats_data["count"] += 1
+
+            if stats_data["last_ack_time"] is not None:
+                delta = current_time - stats_data["last_ack_time"]
+                stats_data["deltas"].append(delta)
+
+            stats_data["last_ack_time"] = current_time
+
+            # Log every 100 messages
+            if len(stats_data["deltas"]) >= 100:
+                deltas = stats_data["deltas"]
+                avg_time = statistics.mean(deltas)
+                median_time = statistics.median(deltas)
+                std_dev = statistics.stdev(deltas) if len(deltas) > 1 else 0.0
+
+                logger.info(
+                    f"Robot {robot_id} stats (last 100 msgs): "
+                    f"Avg: {avg_time:.4f}s, "
+                    f"Median: {median_time:.4f}s, "
+                    f"StdDev: {std_dev:.4f}s"
+                )
+                # Reset deltas but keep last_ack_time
+                stats_data["deltas"] = []
 
     def _produce_mocked_data(self, robot_id: int, producer):
         """
@@ -295,7 +352,9 @@ class KafkaProducer:
                 "temperature": temperature,
             }
 
-            self._send_message(producer, key=timestamp, value=message)
+            self._send_message(
+                producer, key=timestamp, value=message, robot_id=robot_id
+            )
             producer.poll(0)
             i += 1
             time.sleep(0.1)  # 10Hz
