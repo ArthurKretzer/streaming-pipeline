@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import threading
 import signal
@@ -12,6 +13,7 @@ from common.tcpdump_manager import TcpDumpManager
 from data_process import DataProcess
 from kafka_consumer import KafkaConsumer
 from kafka_producer import KafkaProducer
+from kafka_topic_configurator import KafkaTopicConfigurator
 
 load_dotenv()
 
@@ -19,6 +21,7 @@ load_dotenv()
 logger = log("Main")
 
 KAFKA_BROKER = os.getenv("KAFKA_BROKER")
+SCHEMA_REGISTRY_URI = os.getenv("SCHEMA_REGISTRY_URI")
 
 # TCPDump Configuration
 ENABLE_TCPDUMP = os.getenv("ENABLE_TCPDUMP", "False").lower() == "true"
@@ -125,17 +128,19 @@ def parse_arguments():
     parser = ArgumentParser(description="Kafka producer/consumer script")
     parser.add_argument(
         "function_name",
-        choices=["consume", "produce", "process"],
-        help="Function to execute: 'consume', 'produce', or 'process'.",
+        choices=["consume", "produce", "process", "setup"],
+        help="Function to execute: 'consume', 'produce', 'process', or 'setup'.",
     )
     parser.add_argument(
         "topic_name",
+        nargs="?",
         choices=["robot", "control_power", "accelerometer_gyro"],
         default="robot",
         help="Kafka topic name (default: 'robot').",
     )
     parser.add_argument(
         "data_type",
+        nargs="?",
         choices=["mocked", "control_power", "accelerometer_gyro"],
         default="mocked",
         help="Data type to produce (default: 'mocked').",
@@ -175,3 +180,21 @@ if __name__ == "__main__":
         )
     elif args.function_name == "process":
         process()
+    elif args.function_name == "setup":
+        if not SCHEMA_REGISTRY_URI:
+            logger.error(
+                "SCHEMA_REGISTRY_URI environment variable is not set."
+            )
+            sys.exit(1)
+
+        configurator = KafkaTopicConfigurator(
+            KAFKA_BROKER, schema_registry_url=SCHEMA_REGISTRY_URI
+        )
+
+        topic_name = f"{args.topic_name}-avro"
+        config_updates = {"message.timestamp.type": "LogAppendTime"}
+
+        logger.info(f"Configuring topic {topic_name}...")
+        configurator.configure_topic(topic_name, config_updates)
+        logger.info(f"Registering schema for {topic_name}...")
+        configurator.register_schema(topic_name)

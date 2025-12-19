@@ -1,6 +1,8 @@
+import os
 import traceback
 
 from confluent_kafka.admin import AdminClient, ConfigResource, NewTopic
+from confluent_kafka.schema_registry import SchemaRegistryClient, Schema
 
 from common.logger import log
 
@@ -8,18 +10,20 @@ logger = log("KafkaTopicConfigurator")
 
 
 class KafkaTopicConfigurator:
-    def __init__(self, bootstrap_servers: str):
+    def __init__(
+        self, bootstrap_servers: str, schema_registry_url: str = None
+    ):
         """
-        Initializes the KafkaTopicConfigurator with the given bootstrap
-        servers.
+        Initializes the KafkaTopicConfigurator.
 
         Args:
-            bootstrap_servers (str): Kafka broker(s) address
-                (e.g., 'localhost:9092').
+            bootstrap_servers (str): Kafka broker(s) address.
+            schema_registry_url (str, optional): Schema Registry URL.
         """
         self.admin_client = AdminClient(
             {"bootstrap.servers": bootstrap_servers}
         )
+        self.schema_registry_url = schema_registry_url
 
     def topic_exists(self, topic_name: str) -> bool:
         """
@@ -114,6 +118,75 @@ class KafkaTopicConfigurator:
                 )
                 traceback.print_exc()
                 raise
+
+    def _get_schema(self, topic_name: str) -> str:
+        """
+        Retrieves the Avro schema for the specified topic.
+
+        Args:
+            topic_name (str): Name of the Kafka topic.
+
+        Returns:
+            str: Avro schema as a string.
+
+        Raises:
+            ValueError: If no schema is found for the topic.
+        """
+        # Determine the absolute path to the 'schemas' directory
+        # This assumes 'src' is the parent directory of this file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        schema_dir = os.path.join(current_dir, "schemas")
+
+        schema_mapping = {
+            "control_power-avro": "control_power.json",
+            "accelerometer_gyro-avro": "accelerometer_gyro.json",
+            "mocked-avro": "temperature.json",
+        }
+
+        if topic_name in schema_mapping:
+            schema_path = os.path.join(schema_dir, schema_mapping[topic_name])
+            if os.path.exists(schema_path):
+                with open(schema_path, "r") as f:
+                    return f.read()
+            else:
+                raise FileNotFoundError(
+                    f"Schema file not found at: {schema_path}"
+                )
+
+        raise ValueError(f"No schema mapping found for topic: {topic_name}")
+
+    def register_schema(self, topic_name: str) -> None:
+        """
+        Registers the schema for the given topic.
+
+        Args:
+            topic_name (str): Name of the topic.
+        """
+        if not self.schema_registry_url:
+            logger.warning(
+                "Schema Registry URL not provided. Skipping registration."
+            )
+            return
+
+        try:
+            schema_str = self._get_schema(topic_name)
+            schema_registry_conf = {"url": self.schema_registry_url}
+            client = SchemaRegistryClient(schema_registry_conf)
+
+            subject_name = f"{topic_name}-value"
+            schema = Schema(schema_str, schema_type="AVRO")
+
+            schema_id = client.register_schema(subject_name, schema)
+            logger.info(
+                f"Successfully registered schema for subject '{subject_name}' "
+                f"with ID: {schema_id}"
+            )
+
+        except Exception as e:
+            logger.error(
+                f"Failed to register schema for topic '{topic_name}': {e}"
+            )
+            traceback.print_exc()
 
 
 # Example usage
