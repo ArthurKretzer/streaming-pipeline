@@ -26,7 +26,7 @@ yamlApplicationConfig:
   kafka:
     clusters:
       - name: yaml
-        bootstrapServers: labfaber-kafka-bootstrap:9092
+        bootstrapServers: streaming-kafka-bootstrap:9092
   # spring:
   #   security:
   #     oauth2:

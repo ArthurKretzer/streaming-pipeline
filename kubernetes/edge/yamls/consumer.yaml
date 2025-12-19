@@ -75,9 +75,9 @@ spec:
     javaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
     env:
       - name: KAFKA_BOOTSTRAP_SERVERS
-        value: labfaber-kafka-external-bootstrap.ingestion.svc.cluster.local:9094
+        value: streaming-kafka-external-bootstrap.ingestion.svc.cluster.local:9094
       - name: SCHEMA_REGISTRY_URI
-        value: http://labfaber-kafka-schema-registry-cp-schema-registry.ingestion.svc.cluster.local:8081
+        value: http://streaming-kafka-schema-registry-cp-schema-registry.ingestion.svc.cluster.local:8081
       - name: MINIO_ACCESS_KEY
         valueFrom:
           secretKeyRef:
@@ -103,9 +103,9 @@ spec:
     javaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
     env:
       - name: KAFKA_BOOTSTRAP_SERVERS
-        value: labfaber-kafka-external-bootstrap.ingestion.svc.cluster.local:9094
+        value: streaming-kafka-external-bootstrap.ingestion.svc.cluster.local:9094
       - name: SCHEMA_REGISTRY_URI
-        value: http://labfaber-kafka-schema-registry-cp-schema-registry.ingestion.svc.cluster.local:8081
+        value: http://streaming-kafka-schema-registry-cp-schema-registry.ingestion.svc.cluster.local:8081
       - name: MINIO_ACCESS_KEY
         valueFrom:
           secretKeyRef:

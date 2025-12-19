@@ -128,7 +128,7 @@ metadata:
   name: kafka-node-reader-binding
 subjects:
   - kind: ServiceAccount
-    name: labfaber-kafka
+    name: streaming-kafka
     namespace: ingestion
 roleRef:
   kind: ClusterRole
