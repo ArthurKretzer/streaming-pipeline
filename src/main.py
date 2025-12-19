@@ -1,5 +1,7 @@
 import os
 import time
+import threading
+import signal
 import traceback
 from argparse import ArgumentParser
 
@@ -25,7 +27,10 @@ TCPDUMP_OUTPUT_PATH = os.getenv("TCPDUMP_OUTPUT_PATH", "./data")
 
 
 def produce(
-    topic_name: str = "robot", data_type: str = "mocked", num_robots: int = 1
+    topic_name: str = "robot",
+    data_type: str = "mocked",
+    num_robots: int = 1,
+    stop_event: threading.Event = None,
 ):
     """
     Produces data to a Kafka topic.
@@ -52,7 +57,7 @@ def produce(
                 f"with {num_robots} robots."
             )
             producer = KafkaProducer(KAFKA_BROKER, topic_name)
-            producer.produce(data_type, num_robots)
+            producer.produce(data_type, num_robots, stop_event)
             logger.info(
                 f"Produced data of type '{data_type}' to topic '{topic_name}' "
                 f"with {num_robots} robots."
@@ -147,12 +152,26 @@ def parse_arguments():
 if __name__ == "__main__":
     args = parse_arguments()
 
+    stop_event = threading.Event()
+
+    def handle_signal(signum, frame):
+        logger.info(f"Received signal {signum}, stopping...")
+        stop_event.set()
+
+    signal.signal(signal.SIGINT, handle_signal)
+    signal.signal(signal.SIGTERM, handle_signal)
+
     logger.info(
         f"Starting {args.function_name} with topic '{args.topic_name}' and data type '{args.data_type}'."
     )
     if args.function_name == "consume":
         consume(args.topic_name)
     elif args.function_name == "produce":
-        produce(args.topic_name, args.data_type, args.num_robots)
+        produce(
+            args.topic_name,
+            args.data_type,
+            args.num_robots,
+            stop_event=stop_event,
+        )
     elif args.function_name == "process":
         process()
