@@ -46,25 +46,6 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: streaming-kafka-connect
-  namespace: cicd
-spec:
-  project: default
-  source:
-    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
-    targetRevision: main
-    path: kubernetes/edge/yamls/ingestion/kafka-connect
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: ingestion
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
   name: streaming-kafka-rebalance
   namespace: cicd
 spec:
