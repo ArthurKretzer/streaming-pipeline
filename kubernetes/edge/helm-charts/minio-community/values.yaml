@@ -271,8 +271,8 @@ consoleIngress:
 ## Node labels for pod assignment
 ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
 ##
-nodeSelector:
-  role: storage
+nodeSelector: {}
+  # role: storage
 
 tolerations:
   - key: "role"
