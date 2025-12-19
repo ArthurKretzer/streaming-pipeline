@@ -74,7 +74,7 @@ resource "proxmox_vm_qemu" "kubernetes-master" {
   ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj+NdBrCFBMv33OHEwLghK9dxFjMjgprT2M9ATMOL6bTX/lVNly8oFnRS3Hf8vj7UadXMKiBOkGbw4Q3wOBzlZUOS7XuLb3tEg4nPwl5/HWiRZXJrLUQMr+lITlmddK9/26363dNY+mD23dQ6jS2XUmzsUQX6KQH7+MsQCoz9NR0owUvppCxzTMefGT0RcBXyNKaTCTTh1KVOrOD0tx0cMVHSc2GTMdtUC8N4lOGLKC054PmqvvFz86M9paMQvNuORMDR90PSe+0aH42go+OtK/GuLZx+BgWSs2ZuBMQy1OAc12ozLEg3k/pgvV5wHgjgcUP29HAddHVhLyklw2ZCss+jCyBUAcqnfPz5edwlsmwoNB1t0sV205UIRZRrdjT+AjWBsc8nTpVrOPb8sCeKAH3E8tbbWI0zNJ6SAYG7Q6iAl6dTe+fux/5LT3R99Isv9bxlVtPsZ5WwqlfoeoyvgEWktUyGiGFVmdHBWvUZpF27I/l9o3JGpKFqyOzpfUp0= arthur@CPC-12806
   EOF
   # Ip configs
-  ipconfig0  = "ip=172.16.208.241/24,gw=172.16.208.254"
+  ipconfig0  = "ip=172.16.208.241/24,gw=172.16.208.1"
   nameserver = "8.8.8.8,8.8.4.4"
   # User configs
   ciuser     = var.ssh_user
@@ -189,7 +189,7 @@ resource "proxmox_vm_qemu" "kubernetes-workers" {
   ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj+NdBrCFBMv33OHEwLghK9dxFjMjgprT2M9ATMOL6bTX/lVNly8oFnRS3Hf8vj7UadXMKiBOkGbw4Q3wOBzlZUOS7XuLb3tEg4nPwl5/HWiRZXJrLUQMr+lITlmddK9/26363dNY+mD23dQ6jS2XUmzsUQX6KQH7+MsQCoz9NR0owUvppCxzTMefGT0RcBXyNKaTCTTh1KVOrOD0tx0cMVHSc2GTMdtUC8N4lOGLKC054PmqvvFz86M9paMQvNuORMDR90PSe+0aH42go+OtK/GuLZx+BgWSs2ZuBMQy1OAc12ozLEg3k/pgvV5wHgjgcUP29HAddHVhLyklw2ZCss+jCyBUAcqnfPz5edwlsmwoNB1t0sV205UIRZRrdjT+AjWBsc8nTpVrOPb8sCeKAH3E8tbbWI0zNJ6SAYG7Q6iAl6dTe+fux/5LT3R99Isv9bxlVtPsZ5WwqlfoeoyvgEWktUyGiGFVmdHBWvUZpF27I/l9o3JGpKFqyOzpfUp0= arthur@CPC-12806
   EOF
   # Ip configs
-  ipconfig0  = "ip=${each.value.ip}/24,gw=172.16.208.254" # Fixed IP
+  ipconfig0  = "ip=${each.value.ip}/24,gw=172.16.208.1" # Fixed IP
   nameserver = "8.8.8.8,8.8.4.4"
   # User configs
   ciuser     = var.ssh_user
