@@ -57,7 +57,7 @@ kube-context-cloud:
 kube-context-edge:
 	kubectx streaming-cluster
 	
-services-external-ips:
+services-external-ips: kube-context-cloud
 	@echo "\033[0;34mFetching ArgoCD password..."
 	@kubectl get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' -n cicd | base64 -d && echo
 	@echo "\033[0m\033[0;32mListing all services with Nodeports:"
@@ -66,7 +66,7 @@ services-external-ips:
 	@echo "\033[0m\033[0;33mListing all droplets public IPs:"
 	@doctl compute droplet list --format Name,PublicIPv4
 
-services-edge-ips:
+services-edge-ips: kube-context-edge
 	@echo "\033[0;34mFetching ArgoCD password..."
 	@kubectl get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' -n cicd | base64 -d && echo
 	@echo "\033[0m\033[0;32mListing all services with Nodeports:"
