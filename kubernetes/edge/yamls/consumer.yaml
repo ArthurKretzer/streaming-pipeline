@@ -35,7 +35,7 @@ spec:
     spark.history.fs.logDirectory: "file:///opt/spark/logs/events"
     spark.history.provider: "org.apache.spark.deploy.history.FsHistoryProvider"
     spark.ui.enabled: "false"
-    spark.hadoop.fs.s3a.endpoint: "http://minio-master.deepstorage.svc.cluster.local:9000"
+    spark.hadoop.fs.s3a.endpoint: "http://minio-community.deepstorage.svc.cluster.local:9000"
     spark.hadoop.fs.s3a.impl: "org.apache.hadoop.fs.s3a.S3AFileSystem"
     spark.sql.extensions: "io.delta.sql.DeltaSparkSessionExtension"
     spark.sql.catalog.spark_catalog: "org.apache.spark.sql.delta.catalog.DeltaCatalog"
@@ -47,6 +47,7 @@ spec:
     spark.hadoop.fs.s3a.fast.upload: "True"
     spark.hadoop.fs.s3a.multipart.size: "104857600"
     spark.hadoop.fs.s3a.connection.maximum: "100"
+    spark.hadoop.fs.s3a.retry.limit: "10"
     spark.hadoop.fs.s3a.retry.interval: "500ms"
     spark.hadoop.fs.s3a.retry.throttle.delay: "1s"
     spark.hadoop.fs.s3a.retry.policy: "exponential"
@@ -92,13 +93,6 @@ spec:
     coreLimit: "1200m"
     memory: "2g"
     serviceAccount: spark-operator-spark
-    volumeMounts:
-      - name: spark-history-volume
-        mountPath: /opt/spark/logs/events
-      - name: spark-history-volume
-        mountPath: /opt/spark/metrics
-      - name: ivy-cache
-        mountPath: /tmp/ivy2
   executor:
     javaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
     env:
@@ -121,23 +115,14 @@ spec:
     instances: 2
     memory: "2000m"
     serviceAccount: spark-operator-spark
-    volumeMounts:
-      - name: spark-history-volume
-        mountPath: /opt/spark/logs/events
-      - name: spark-history-volume
-        mountPath: /opt/spark/metrics
-      - name: ivy-cache
-        mountPath: /tmp/ivy2
+    tolerations:
+      - key: "spark-only"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
   monitoring:
     exposeDriverMetrics: true
     exposeExecutorMetrics: true
     prometheus:
       jmxExporterJar: /opt/spark/jars/io.prometheus.jmx_jmx_prometheus_javaagent-1.0.1.jar
       port: 8080
-  volumes:
-    - name: spark-history-volume
-      persistentVolumeClaim:
-        claimName: pvc-spark-history-server
-    - name: "ivy-cache"
-      persistentVolumeClaim:
-        claimName: pvc-shared-spark-ivy-cache
