@@ -21,7 +21,7 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     config_path    = "~/.kube/config"
     config_context = "streaming-cluster"
   }
@@ -31,12 +31,12 @@ resource "helm_release" "argocd" {
   name      = "argocd"
   namespace = "cicd"
   chart     = "../../kubernetes/edge/helm-charts/argo-cd"
-  version   = "5.51.6"
+  version   = "7.6.5"
 
   create_namespace = true
 
   values = [
-    file("../../kubernetes/edge/helm-charts/argo-cd/values-edge.yaml") # optional if you have custom config
+    file("../../kubernetes/edge/helm-charts/argo-cd/values.yaml") # optional if you have custom config
   ]
 }
 
