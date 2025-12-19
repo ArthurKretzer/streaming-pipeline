@@ -2,7 +2,7 @@ start: start-edge start-cloud
 
 clean: clean-edge clean-cloud
 
-start-edge: kube-context-edge provision-edge-services
+start-edge: kube-context-edge provision-edge-services services-edge-ips
 
 clean-edge: kube-context-edge destroy-edge-services
 
@@ -66,6 +66,15 @@ services-external-ips:
 	@echo "\033[0m\033[0;33mListing all droplets public IPs:"
 	@doctl compute droplet list --format Name,PublicIPv4
 
+services-edge-ips:
+	@echo "\033[0;34mFetching ArgoCD password..."
+	@kubectl get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' -n cicd | base64 -d && echo
+	@echo "\033[0m\033[0;32mListing all services with Nodeports:"
+	@kubectl get svc --all-namespaces -o custom-columns="NAMESPACE:.metadata.namespace,NAME:.metadata.name,TYPE:.spec.type,PORT(S):.spec.ports[*].nodePort" | \
+		grep NodePort | column -t
+	@echo "\033[0m\033[0;33mListing all nodes/IPs:"
+	@kubectl get nodes -o wide
+
 build-spark:
 	docker build -t arthurkretzer/spark:3.5.4 -f ./docker/spark.Dockerfile .
 	docker push arthurkretzer/spark:3.5.4
@@ -73,6 +82,14 @@ build-spark:
 build-producer:
 	docker build -t arthurkretzer/streaming-producer:3.5.4 -f ./docker/streaming-producer.Dockerfile ./src
 	docker push arthurkretzer/streaming-producer:3.5.4
+
+setup-control-power-cloud:
+	-docker rm -f producer-control-power-cloud
+	docker run --name producer-control-power-cloud --env-file=./src/cloud.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py setup control_power
+
+setup-control-power-edge:
+	-docker rm -f producer-control-power-edge
+	docker run --name producer-control-power-edge --env-file=./src/edge.env arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py setup control_power
 
 produce-control-power-cloud:
 	-docker rm -f producer-control-power-cloud
@@ -122,9 +139,11 @@ start-produce: build-producer produce-control-power-cloud produce-control-power-
 
 stop-produce: stop-produce-control-power-cloud stop-produce-control-power-edge
 
-experiment-cloud:
+experiment-cloud: kube-context-cloud 
 	@echo "Starting consumer..."
 	$(MAKE) consume-control-power-cloud
+	@echo "Waiting 5 minutes for consumer start..."
+	sleep 300
 	@echo "Starting experiment with 1 robot..."
 	$(MAKE) produce-control-power-cloud
 	@echo "Running for 30 minutes..."
@@ -147,9 +166,11 @@ experiment-cloud:
 	$(MAKE) stop-produce-control-power-cloud
 	@echo "Experiment finished."
 
-experiment-edge:
+experiment-edge: kube-context-edge
 	@echo "Starting consumer..."
 	$(MAKE) consume-control-power-edge
+	@echo "Waiting 5 minutes for consumer start..."
+	sleep 300
 	@echo "Starting experiment with 1 robot..."
 	$(MAKE) produce-control-power-edge
 	@echo "Running for 30 minutes..."
@@ -183,10 +204,10 @@ stop-consume-control-power-cloud: kube-context-cloud
 	kubectl delete -f ./kubernetes/cloud/yamls/consumer.yaml
 
 consume-control-power-edge: kube-context-edge
-	kubectl apply -f ./kubernetes/edge/yamls/consumer-edge.yaml
+	kubectl apply -f ./kubernetes/edge/yamls/consumer.yaml
 
 stop-consume-control-power-edge: kube-context-edge
-	kubectl delete -f ./kubernetes/edge/yamls/consumer-edge.yaml
+	kubectl delete -f ./kubernetes/edge/yamls/consumer.yaml
 
 start-consume: consume-control-power-edge consume-control-power-cloud 
 
