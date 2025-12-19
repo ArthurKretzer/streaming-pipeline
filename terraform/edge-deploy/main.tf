@@ -45,8 +45,8 @@ locals {
   starting_vmid = 9100
   workers = {
     "01" = { ip = "172.16.208.242", mac = "6C:32:4B:0B:B6:9B" }
-    "02" = { ip = "172.16.208.243", mac = "A3:43:DF:FC:C0:46" }
-    "03" = { ip = "172.16.208.244", mac = "F9:47:C7:EE:72:20" }
+    "02" = { ip = "172.16.208.243", mac = "A2:43:DF:FC:C0:46" }
+    "03" = { ip = "172.16.208.244", mac = "F8:47:C7:EE:72:20" }
     "04" = { ip = "172.16.208.245", mac = "78:97:8F:39:2C:EF" }
   }
 }
@@ -111,20 +111,31 @@ resource "proxmox_vm_qemu" "kubernetes-master" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo ufw disable",                           # Necessary since kubernetes will manage ip tables
-      "sudo hostnamectl set-hostname ${self.name}", # Change hostname for the VM name. K8s nodes can't have the same name.
+      # --- System Prep ---
+      "sudo ufw disable",
+      "sudo hostnamectl set-hostname ${self.name}",
       "echo '127.0.1.1 ${self.name}' | sudo tee -a /etc/hosts",
-      "sudo swapoff -a", # Disable swap. K8s requirement.
-      "wget https://github.com/etcd-io/etcd/releases/download/v3.5.5/etcd-v3.5.5-linux-amd64.tar.gz",
-      "tar -xvf etcd-v3.5.5-linux-amd64.tar.gz",
-      "sudo mv etcd-v3.5.5-linux-amd64/etcd* /usr/local/bin/",
-      "etcd --name k8s-etcd --data-dir /var/lib/etcd --listen-client-urls http://127.0.0.1:2379 --advertise-client-urls http://127.0.0.1:2379",
-      "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"server --datastore-endpoint='etcd://127.0.0.1:2379'\" sh -", # Install k3s on the master
-      "sudo kubectl taint nodes $(hostname) node-role.kubernetes.io/master=:NoSchedule",                              # Taint master to not schedule apps
-      "sudo cp /var/lib/rancher/k3s/server/node-token /home/${var.ssh_user}/node-token",                              # Copy token to home directory
-      "sudo chown ${var.ssh_user}:${var.ssh_user} /home/${var.ssh_user}/node-token",                                  # Change ownership to the SSH user
-      "sudo cp /etc/rancher/k3s/k3s.yaml /home/${var.ssh_user}/k3s.yaml",                                             # Copy kubeconfig to home directory
-      "sudo chown ${var.ssh_user}:${var.ssh_user} /home/${var.ssh_user}/k3s.yaml"                                     # Change ownership to the SSH user
+      "sudo swapoff -a",
+
+      # --- K3s Installation (Embedded Etcd) ---
+      # --cluster-init: Initializes the embedded etcd so you can add more masters later
+      # --tls-san: (Optional but recommended) Adds the IP to the cert so you can kubectl from outside
+      "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"server --cluster-init --tls-san ${self.ssh_forward_ip}\" sh -",
+
+      # --- Wait for K3s Startup ---
+      # Critical: Give K3s time to generate the config files before we try to copy them
+      "echo 'Waiting for K3s to initialize...'",
+      "sleep 10",
+
+      # --- Node Taint ---
+      "sudo kubectl taint nodes $(hostname) node-role.kubernetes.io/master=:NoSchedule",
+
+      # --- Token & Config Copy ---
+      "sudo cp /var/lib/rancher/k3s/server/node-token /home/${var.ssh_user}/node-token",
+      "sudo chown ${var.ssh_user}:${var.ssh_user} /home/${var.ssh_user}/node-token",
+
+      "sudo cp /etc/rancher/k3s/k3s.yaml /home/${var.ssh_user}/k3s.yaml",
+      "sudo chown ${var.ssh_user}:${var.ssh_user} /home/${var.ssh_user}/k3s.yaml"
     ]
     connection {
       type        = "ssh"
@@ -138,7 +149,7 @@ resource "proxmox_vm_qemu" "kubernetes-master" {
 
 resource "null_resource" "get_node_token" {
   provisioner "local-exec" {
-    command = "scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -P ${var.ssh_port} ${var.ssh_user}@${proxmox_vm_qemu.kubernetes-master.ssh_forward_ip}:/home/ORG/${var.ssh_user}/node-token ./node-token"
+    command = "scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa -P ${var.ssh_port} ${var.ssh_user}@${proxmox_vm_qemu.kubernetes-master.ssh_forward_ip}:/home/${var.ssh_user}/node-token ./node-token"
   }
   depends_on = [proxmox_vm_qemu.kubernetes-master]
 }
@@ -146,13 +157,13 @@ resource "null_resource" "get_node_token" {
 resource "null_resource" "get_kubeconfig" {
   provisioner "local-exec" {
     command = <<-EOT
-      scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -P ${var.ssh_port} ${var.ssh_user}@${proxmox_vm_qemu.kubernetes-master.ssh_forward_ip}:/home/ORG/${var.ssh_user}/k3s.yaml ./k3s.yaml && \
+      scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/id_rsa -P ${var.ssh_port} ${var.ssh_user}@${proxmox_vm_qemu.kubernetes-master.ssh_forward_ip}:/home//${var.ssh_user}/k3s.yaml ./k3s.yaml && \
       sed -i 's/127.0.0.1/${proxmox_vm_qemu.kubernetes-master.ssh_forward_ip}/' ./k3s.yaml && \
       sed -i 's/name: default/name: ${var.new_cluster_name}/' ./k3s.yaml && \
       sed -i 's/cluster: default/cluster: ${var.new_cluster_name}/' ./k3s.yaml && \
       sed -i 's/user: default/user: ${var.new_cluster_name}/' ./k3s.yaml && \
-      sed -i 's/current-context: default/current-context: ${var.new_cluster_name}/' ./k3s.yaml \
-      export KUBECONFIG=~/.kube/config:./k3s.yaml \
+      sed -i 's/current-context: default/current-context: ${var.new_cluster_name}/' ./k3s.yaml && \
+      export KUBECONFIG=~/.kube/config:./k3s.yaml && \
       kubectl config view --merge --flatten > ~/.kube/config
     EOT
   }
@@ -165,7 +176,7 @@ resource "proxmox_vm_qemu" "kubernetes-workers" {
 
   name        = "server-k8s-w${each.key}"
   tags        = "k8s,project"
-  target_node = "server01"
+  target_node = "proxmox-cdm"
   clone       = "cloud-init-ubuntu-20.04-template"
 
   # Boot
@@ -282,7 +293,7 @@ resource "proxmox_vm_qemu" "kubernetes-workers" {
     }
   }
 
-  depends_on = [null_resource.get_node_token]
+  depends_on = [null_resource.get_node_token, null_resource.get_kubeconfig]
 }
 
 resource "null_resource" "remote_exec_k8s_join" {
@@ -307,4 +318,5 @@ resource "null_resource" "remote_exec_k8s_join" {
     }
   }
 
+  depends_on = [proxmox_vm_qemu.kubernetes-workers]
 }
