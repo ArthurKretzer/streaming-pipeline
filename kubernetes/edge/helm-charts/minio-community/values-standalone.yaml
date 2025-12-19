@@ -163,7 +163,7 @@ persistence:
   storageClass: ""
   volumeName: ""
   accessMode: ReadWriteOnce
-  size: 500Gi
+  size: 10Gi
 
   ## If subPath is set mount a sub folder of a volume instead of the root of the volume.
   ## This is especially handy for volume plugins that don't natively support sub mounting (like glusterfs).
@@ -199,7 +199,7 @@ service:
 ##
 
 ingress:
-  enabled: true
+  enabled: false
   ingressClassName: ~
   labels:
     {}
@@ -245,7 +245,7 @@ consoleService:
   externalTrafficPolicy: Cluster
 
 consoleIngress:
-  enabled: true
+  enabled: false
   ingressClassName: ~
   labels:
     {}
@@ -271,39 +271,13 @@ consoleIngress:
 ## Node labels for pod assignment
 ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
 ##
-nodeSelector:
-  role: storage
+nodeSelector: {}
 
-tolerations:
-  - key: "role"
-    operator: "Equal"
-    value: "storage"
-    effect: "NoSchedule"
+tolerations: []
 
-affinity:
-  nodeAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: role
-              operator: In
-              values:
-                - storage
+affinity: []
 
-  podAntiAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchLabels:
-            app: minio-streaming
-        topologyKey: kubernetes.io/hostname
-
-topologySpreadConstraints:
-  - maxSkew: 1
-    topologyKey: kubernetes.io/hostname
-    whenUnsatisfiable: DoNotSchedule
-    labelSelector:
-      matchLabels:
-        app: minio-streaming
+topologySpreadConstraints: []
 
 ## Add stateful containers to have security context, if enabled MinIO will run as this
 ## user and group NOTE: securityContext is only enabled if persistence.enabled=true
