@@ -129,7 +129,7 @@ spec:
   source:
     repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
     targetRevision: main
-    path: infrastructure/helm-charts/kafka-ui
+    path: kubernetes/edge/helm-charts/kafka-ui
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: ingestion

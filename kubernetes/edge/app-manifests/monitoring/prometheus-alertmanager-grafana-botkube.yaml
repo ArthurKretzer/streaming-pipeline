@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
-    path: infrastructure/helm-charts/kube-prometheus-stack
+    path: kubernetes/edge/helm-charts/kube-prometheus-stack
     targetRevision: main
     helm:
       valueFiles:
