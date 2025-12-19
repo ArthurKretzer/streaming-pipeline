@@ -120,7 +120,7 @@ resource "proxmox_vm_qemu" "kubernetes-master" {
       # --- K3s Installation (Embedded Etcd) ---
       # --cluster-init: Initializes the embedded etcd so you can add more masters later
       # --tls-san: (Optional but recommended) Adds the IP to the cert so you can kubectl from outside
-      "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"server --cluster-init --tls-san ${self.ssh_forward_ip}\" sh -",
+      "curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=\"v1.32.10+k3s1\" INSTALL_K3S_EXEC=\"server --cluster-init --tls-san ${self.ssh_forward_ip}\" sh -",
 
       # --- Wait for K3s Startup ---
       # Critical: Give K3s time to generate the config files before we try to copy them
@@ -282,7 +282,7 @@ resource "proxmox_vm_qemu" "kubernetes-workers" {
       "chmod 600 /home/${var.ssh_user}/.ssh/id_rsa",
       "export K3S_TOKEN=$(cat /home/${var.ssh_user}/node-token)",
       "export K3S_URL=https://${proxmox_vm_qemu.kubernetes-master.ssh_forward_ip}:6443",
-      "curl -sfL https://get.k3s.io | K3S_URL=$K3S_URL K3S_TOKEN=$K3S_TOKEN sh -", # Install k3s and join the cluster
+      "curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=\"v1.32.10+k3s1\" K3S_URL=$K3S_URL K3S_TOKEN=$K3S_TOKEN sh -", # Install k3s and join the cluster
     ]
     connection {
       type        = "ssh"
@@ -307,7 +307,7 @@ resource "null_resource" "remote_exec_k8s_join" {
       "chmod 600 /home/${var.ssh_user}/.ssh/id_rsa",
       "export K3S_TOKEN=$(cat /home/${var.ssh_user}/node-token)",
       "export K3S_URL=https://${proxmox_vm_qemu.kubernetes-master.ssh_forward_ip}:6443",
-      "curl -sfL https://get.k3s.io | K3S_URL=$K3S_URL K3S_TOKEN=$K3S_TOKEN sh -",
+      "curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=\"v1.32.10+k3s1\" K3S_URL=$K3S_URL K3S_TOKEN=$K3S_TOKEN sh -",
     ]
     connection {
       type        = "ssh"
