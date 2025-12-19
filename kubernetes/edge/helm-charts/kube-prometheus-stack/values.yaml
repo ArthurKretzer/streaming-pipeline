@@ -396,7 +396,7 @@ alertmanager:
   #       {{ end }}
 
   ingress:
-    enabled: true
+    enabled: false
 
     # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
     # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
@@ -543,7 +543,7 @@ alertmanager:
 
     ## Service type
     ##
-    type: ClusterIP
+    type: NodePort
 
   ## Configuration for creating a separate Service for each statefulset Alertmanager replica
   ##
@@ -1145,7 +1145,7 @@ grafana:
   ingress:
     ## If true, Grafana Ingress will be created
     ##
-    enabled: true
+    enabled: false
 
     ## IngressClassName for Grafana Ingress.
     ## Should be provided if Ingress is enable.
@@ -1301,8 +1301,8 @@ grafana:
   ## Passed to grafana subchart and used by servicemonitor below
   ##
   service:
-    type: ClusterIP # Specify NodePort as the service type
-    nodePort: 30091 # Define the desired NodePort (between 30000-32767)
+    type: NodePort # Specify NodePort as the service type
+    nodePort: 30080 # Define the desired NodePort (between 30000-32767)
     portName: http-web
     ipFamilies: []
     ipFamilyPolicy: ""
@@ -3457,7 +3457,7 @@ prometheus:
 
     ## Service type
     ##
-    type: ClusterIP
+    type: NodePort
 
     ## Additional ports to open for Prometheus service
     ##
@@ -3584,7 +3584,7 @@ prometheus:
   #     someoneelse:$apr1$DMZX2Z4q$6SbQIfyuLQd.xmo/P0m2c.
 
   ingress:
-    enabled: true
+    enabled: false
 
     # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
     # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress

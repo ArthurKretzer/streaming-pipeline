@@ -113,9 +113,9 @@ image:
 service:
   ui:
     # -- Service type for Longhorn UI. (Options: "ClusterIP", "NodePort", "LoadBalancer", "Rancher-Proxy")
-    type: ClusterIP
+    type: NodePort
     # -- NodePort port number for Longhorn UI. When unspecified, Longhorn selects a free port between 30000 and 32767.
-    nodePort: null
+    nodePort: 31000
   manager:
     # -- Service type for Longhorn Manager.
     type: ClusterIP
@@ -425,7 +425,7 @@ longhornUI:
 
 ingress:
   # -- Setting that allows Longhorn to generate ingress records for the Longhorn UI service.
-  enabled: true
+  enabled: false
 
   # -- IngressClass resource that contains ingress configuration, including the name of the Ingress controller.
   # ingressClassName can replace the kubernetes.io/ingress.class annotation used in earlier Kubernetes releases.
