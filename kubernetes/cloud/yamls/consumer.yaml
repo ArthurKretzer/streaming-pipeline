@@ -110,10 +110,10 @@ spec:
           secretKeyRef:
             name: spark-minio-credentials
             key: secretKey
-    cores: 1
-    coreLimit: "2000m"
+    cores: 2
+    coreLimit: "2500m"
     instances: 2
-    memory: "1500m"
+    memory: "2000m"
     serviceAccount: spark-operator-spark
     tolerations:
       - key: "spark-only"
