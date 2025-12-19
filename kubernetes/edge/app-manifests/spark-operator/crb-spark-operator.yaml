@@ -2,7 +2,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: crb-spark-operator-spark-jobs
-  namespace: spark-jobs
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -16,8 +15,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: crb-spark-operator-spark-jobs
-  namespace: spark-jobs
+  name: crb-spark-operator-spark-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

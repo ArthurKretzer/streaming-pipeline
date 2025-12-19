@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     path: infrastructure/helm-charts/longhorn
-    targetRevision: development
+    targetRevision: main
     helm:
       valueFiles:
         - values.yaml

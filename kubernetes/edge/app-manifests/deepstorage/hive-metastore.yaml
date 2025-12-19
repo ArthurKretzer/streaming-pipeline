@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     path: infrastructure/helm-charts/hive-metastore
-    targetRevision: development
+    targetRevision: main
     helm:
       valueFiles:
         - values.yaml
