@@ -131,7 +131,7 @@ class KafkaProducer:
         config_updates = {"message.timestamp.type": "LogAppendTime"}
         configurator.configure_topic(self.topic_name, config_updates)
 
-    def produce(self, data_type: str, num_robots: int = 1):
+    def produce(self, data_type: str, num_robots: int = 1, stop_event=None):
         """
         Produces data to the Kafka topic, simulating multiple robots.
 
@@ -139,6 +139,7 @@ class KafkaProducer:
             data_type (str): Type of data to produce ('control_power',
                 'accelerometer_gyro', 'mocked').
             num_robots (int): Number of robots to simulate concurrently.
+            stop_event (threading.Event): Event to signal stopping.
         """
         self._configure_topic()
 
@@ -162,7 +163,7 @@ class KafkaProducer:
         for i in range(num_robots):
             thread = threading.Thread(
                 target=self._run_simulation,
-                args=(data_type, i, producer, records),
+                args=(data_type, i, producer, records, stop_event),
             )
             threads.append(thread)
             thread.start()
@@ -172,7 +173,12 @@ class KafkaProducer:
             thread.join()
 
     def _run_simulation(
-        self, data_type: str, robot_id: int, producer, records=None
+        self,
+        data_type: str,
+        robot_id: int,
+        producer,
+        records=None,
+        stop_event=None,
     ):
         """
         Runs the simulation for a single robot.
@@ -184,17 +190,21 @@ class KafkaProducer:
             records (list[dict], optional): Pre-loaded dataset records.
         """
         if data_type == "control_power":
-            self._produce_control_power_data(robot_id, producer, records)
+            self._produce_control_power_data(
+                robot_id, producer, records, stop_event
+            )
         elif data_type == "accelerometer_gyro":
             self._produce_temperature_accelerometer_gyro_data(
-                robot_id, producer, records
+                robot_id, producer, records, stop_event
             )
         elif data_type == "mocked":
-            self._produce_mocked_data(robot_id, producer)
+            self._produce_mocked_data(robot_id, producer, stop_event)
         else:
             logger.error(f"Invalid data type ({data_type}) for producer.")
 
-    def _produce_control_power_data(self, robot_id: int, producer, records):
+    def _produce_control_power_data(
+        self, robot_id: int, producer, records, stop_event=None
+    ):
         """
         Produces control power data for a specific robot.
 
@@ -203,10 +213,10 @@ class KafkaProducer:
             producer (SerializingProducer): Shared Kafka producer instance.
             records (list[dict]): Dataset records to send.
         """
-        self._send_dataset(producer, records, robot_id)
+        self._send_dataset(producer, records, robot_id, stop_event)
 
     def _produce_temperature_accelerometer_gyro_data(
-        self, robot_id: int, producer, records
+        self, robot_id: int, producer, records, stop_event=None
     ):
         """
         Produces accelerometer and gyro data for a specific robot.
@@ -216,9 +226,9 @@ class KafkaProducer:
             producer (SerializingProducer): Shared Kafka producer instance.
             records (list[dict]): Dataset records to send.
         """
-        self._send_dataset(producer, records, robot_id)
+        self._send_dataset(producer, records, robot_id, stop_event)
 
-    def _send_dataset(self, producer, records, robot_id: int):
+    def _send_dataset(self, producer, records, robot_id: int, stop_event=None):
         """
         Sends the dataset to Kafka.
 
@@ -228,6 +238,8 @@ class KafkaProducer:
             robot_id (int): ID of the robot.
         """
         for row in records:
+            if stop_event and stop_event.is_set():
+                break
             timestamp = datetime.now(UTC).isoformat()
 
             # Create a copy to avoid race conditions if modifying shared dicts (though unique timestamps usually imply copy needed)
@@ -329,7 +341,7 @@ class KafkaProducer:
                 # Reset deltas but keep last_ack_time
                 stats_data["deltas"] = []
 
-    def _produce_mocked_data(self, robot_id: int, producer):
+    def _produce_mocked_data(self, robot_id: int, producer, stop_event=None):
         """
         Produces mocked temperature data.
 
@@ -340,6 +352,8 @@ class KafkaProducer:
         i = 0
         msg_count = 10000
         while i <= msg_count:
+            if stop_event and stop_event.is_set():
+                break
             # Creates random temperature data between 20.0
             # and 30.0 degrees Celsius.
             temperature = round(random.uniform(20.0, 30.0), 2)
