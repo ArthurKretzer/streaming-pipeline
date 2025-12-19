@@ -577,9 +577,9 @@ def gantt_chart(
         "MinIO": ["minio-community", "minio-master"],
         "Kafka": [
             "labfaber-cruise-control",
-            "labfaber-kafka",
-            "labfaber-kafka-schema-registry",
-            "labfaber-kafka-ui",
+            "streaming-kafka",
+            "streaming-kafka-schema-registry",
+            "streaming-kafka-ui",
             "labfaber-zookeeper",
             "master-cruise-control",
             "master-kafka",
@@ -1018,7 +1018,7 @@ def kafka_charts(
         lambda x: x.rolling(window=3, min_periods=1).mean()
     )
     kafka_cpu_df = cpu_df[
-        cpu_df["pod"].str.contains("labfaber-kafka", case=False)
+        cpu_df["pod"].str.contains("streaming-kafka", case=False)
         | cpu_df["pod"].str.contains("master-kafka", case=False)
     ]
     kafka_cpu_df = kafka_cpu_df[kafka_cpu_df["container"] == "kafka"]
@@ -1028,7 +1028,7 @@ def kafka_charts(
     def detect_pod_restart_and_running(df_kube_pod_status_phase):
         df = df_kube_pod_status_phase
         df = df[
-            df["pod"].str.startswith("labfaber-kafka")
+            df["pod"].str.startswith("streaming-kafka")
             | df["pod"].str.startswith("labfaber-zookeeper")
             | df["pod"].str.startswith("master-kafka")
             | df["pod"].str.startswith("master-zookeeper")
