@@ -23,12 +23,12 @@ provision-cloud-services:
 	cd terraform/cloud-services && terraform apply
 
 destroy-cloud-services: kube-context-cloud
-	cd terraform/cloud-services && terraform destroy
+	cd terraform/cloud-services && terraform destroy --var-file=env.tfvars
 	helm uninstall argocd -n cicd
 	kubectl delete ns monitoring
 
 destroy-cloud-infra:
-	cd terraform/cloud-deploy && terraform destroy
+	cd terraform/cloud-deploy && terraform destroy --var-file=env.tfvars
 
 # Edge Provisioning
 provision-edge-infra:
@@ -43,12 +43,12 @@ provision-edge-services:
 	cd terraform/edge-services && terraform apply
 
 destroy-edge-services: kube-context-edge
-	cd terraform/edge-services && terraform destroy
+	cd terraform/edge-services && terraform destroy --var-file=secret.tfvars
 	helm uninstall argocd -n cicd
 	kubectl delete ns monitoring
 
 destroy-edge-infra:
-	cd terraform/edge-deploy && terraform destroy
+	cd terraform/edge-deploy && terraform destroy --var-file=secret.tfvars
 
 # Utilities
 kube-context-cloud:
