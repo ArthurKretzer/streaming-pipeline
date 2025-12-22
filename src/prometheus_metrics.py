@@ -75,6 +75,22 @@ def collect_metrics(prometheus_uri: str, experiment_name: str):
         "spark_executor_failure_count",
         "spark_executor_running_count",
         "spark_executor_success_count",
+        # Spark Driver Metrics (Prometheus Servlet)
+        "metrics_jvm_memory_heap_used",
+        "metrics_jvm_memory_heap_committed",
+        "metrics_jvm_threads_count",
+        "metrics_spark_driver_dagScheduler_job_activeJobs",
+        "metrics_spark_driver_dagScheduler_stage_activeStages",
+        "metrics_spark_driver_dagScheduler_stage_failedStages",
+        "metrics_spark_driver_BlockManager_memory_memUsed_MB",
+        # Spark Structured Streaming Metrics
+        "metrics_spark_sql_streaming_inputRate",
+        "metrics_spark_sql_streaming_processingRate",
+        "metrics_spark_sql_streaming_latency",
+        "metrics_spark_sql_streaming_states_rowsTotal",
+        "metrics_spark_sql_streaming_states_usedBytes",
+        "metrics_spark_sql_streaming_lastProgress_numInputRows",
+        "metrics_spark_sql_streaming_lastProgress_processedRowsPerSecond",
     ]
 
     project_root = Path.cwd()
@@ -90,7 +106,7 @@ def collect_metrics(prometheus_uri: str, experiment_name: str):
     print("Collecting metrics...")
     # Intervalo de tempo: última hora
     end_time = datetime.now(timezone.utc)
-    start_time = end_time - timedelta(hours=1, minutes=40)
+    start_time = end_time - timedelta(hours=4, minutes=00)
 
     collected_dfs = {}
     for metric in METRICS:
