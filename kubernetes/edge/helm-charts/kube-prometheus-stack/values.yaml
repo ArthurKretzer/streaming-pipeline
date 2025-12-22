@@ -3986,18 +3986,10 @@ prometheus:
     ## To remove the release label from the matchLabels condition, explicit set release to null.
     ## If null, exclude the field from the prometheusSpec (keeping downward compatibility with older versions of CRD)
     ##
-    podMonitorSelector:
-      matchLabels:
-        release: "{{ $.Release.Name }}"
-    ## Example which selects PodMonitors with label "prometheus" set to "somelabel"
-    # podMonitorSelector:
-    #   matchLabels:
-    #     prometheus: somelabel
+    podMonitorSelector: {}
 
     ## If nil, select own namespace. Namespaces to be selected for PodMonitor discovery.
-    podMonitorNamespaceSelector:
-      matchLabels:
-        prometheus: kube-prometheus-stack
+    podMonitorNamespaceSelector: {}
     ## Example which selects PodMonitor in namespaces with label "prometheus" set to "somelabel"
     # podMonitorNamespaceSelector:
     #   matchLabels:
