@@ -113,10 +113,12 @@ class KafkaConsumerAvro:
             .option("startingOffsets", "earliest")
             .option("failOnDataLoss", "false")
             .option("minPartitions", "4")
-            .option("maxOffsetsPerTrigger", "50000")
-            .option("fetchMaxWaitMs", "20")
+            .option(
+                "maxOffsetsPerTrigger", "400000"
+            )  # Default: Undefined | Experiment 07: 50000
+            .option("fetchMaxWaitMs", "20")  # Default: 500ms
             .option("fetchMinBytes", "1")
-            .option("maxPollRecords", "50000")
+            .option("maxPollRecords", "50000")  # Default: 500
             .load()
         )
 
