@@ -166,129 +166,137 @@ class KafkaProducer:
         else:
             records = None
 
-        logger.info("Starting robot simulations...")
+        # Start polling thread
+        self.polling_active = True
+        self.polling_thread = threading.Thread(
+            target=self.poll_scheduler, args=(producer,)
+        )
+        self.polling_thread.start()
+
+        # Determine number of worker threads based on CPU cores
+        # We want to avoid excessive context switching with 100 threads.
+        # Using ~1 thread per core is usually optimal for CPU/GIL bound tasks.
+        num_workers = min(os.cpu_count() or 4, num_robots)
+        logger.info(
+            f"Starting {num_robots} robot simulations using {num_workers} "
+            "worker threads..."
+        )
+
         threads = []
-        for i in range(num_robots):
+        robots_per_worker = num_robots // num_workers
+        remainder = num_robots % num_workers
+
+        start_robot_id = 0
+        for i in range(num_workers):
+            # Distribute remainder among the first few workers
+            count = robots_per_worker + (1 if i < remainder else 0)
+            robot_ids = list(range(start_robot_id, start_robot_id + count))
+            start_robot_id += count
+
+            if not robot_ids:
+                continue
+
             thread = threading.Thread(
-                target=self._run_simulation,
-                args=(data_type, i, producer, records, frequency, stop_event),
+                target=self._run_worker,
+                args=(
+                    data_type,
+                    robot_ids,
+                    producer,
+                    records,
+                    frequency,
+                    stop_event,
+                ),
             )
             threads.append(thread)
             thread.start()
-            logger.info(f"Started simulation for robot {i}")
+            logger.info(
+                f"Started worker {i} managing robots: "
+                f"{robot_ids[0]}..{robot_ids[-1]}"
+            )
 
         for thread in threads:
             thread.join()
 
-    def _run_simulation(
+        # Stop polling thread
+        self.polling_active = False
+        self.polling_thread.join()
+
+    def _run_worker(
         self,
         data_type: str,
-        robot_id: int,
+        robot_ids: list[int],
         producer,
         records=None,
         frequency: int = 10,
         stop_event=None,
     ):
         """
-        Runs the simulation for a single robot.
-
-        Args:
-            data_type (str): Type of data to produce.
-            robot_id (int): ID of the robot.
-            producer (SerializingProducer): Shared Kafka producer instance.
-            records (list[dict], optional): Pre-loaded dataset records.
+        Runs the simulation for a batch of robots.
+        Iterates through all assigned robots for each time step.
         """
-        if data_type == "control_power":
-            self._produce_control_power_data(
-                robot_id, producer, records, frequency, stop_event
-            )
-        elif data_type == "accelerometer_gyro":
-            self._produce_temperature_accelerometer_gyro_data(
-                robot_id, producer, records, frequency, stop_event
-            )
-        elif data_type == "mocked":
-            self._produce_mocked_data(
-                robot_id, producer, frequency, stop_event
-            )
+        period = 1.0 / frequency
+
+        if data_type == "mocked":
+            i = 0
+            while not (stop_event and stop_event.is_set()):
+                t_start = time.time()
+                for robot_id in robot_ids:
+                    # Creates random temperature data
+                    temperature = round(random.uniform(20.0, 30.0), 2)
+                    timestamp = int(datetime.now(UTC).timestamp() * 1000)
+                    message = {
+                        "source_timestamp": timestamp,
+                        "temperature": temperature,
+                    }
+                    self._send_message(
+                        producer,
+                        key=timestamp,
+                        value=message,
+                        robot_id=robot_id,
+                    )
+
+                i += 1
+                t_elapsed = time.time() - t_start
+                sleep_time = max(0, period - t_elapsed)
+                time.sleep(sleep_time)
+
         else:
-            logger.error(f"Invalid data type ({data_type}) for producer.")
+            # Dataset playback
+            # We iterate the dataset indefinitely or until it ends?
+            # Original code iterated once through 'records'.
+            for row in records:
+                if stop_event and stop_event.is_set():
+                    break
 
-    def _produce_control_power_data(
-        self,
-        robot_id: int,
-        producer,
-        records,
-        frequency: int = 10,
-        stop_event=None,
-    ):
-        """
-        Produces control power data for a specific robot.
+                t_start = time.time()
+                current_timestamp = datetime.now(UTC).isoformat()
 
-        Args:
-            robot_id (int): ID of the robot.
-            producer (SerializingProducer): Shared Kafka producer instance.
-            records (list[dict]): Dataset records to send.
-            frequency (int): Frequency in Hz.
-        """
-        self._send_dataset(producer, records, robot_id, frequency, stop_event)
+                for robot_id in robot_ids:
+                    # Create a copy to avoid race conditions
+                    # (though strictly we are reading, copy adds robot_id)
+                    message = row.copy()
+                    message["source_timestamp"] = current_timestamp
+                    message["robot_id"] = robot_id
 
-    def _produce_temperature_accelerometer_gyro_data(
-        self,
-        robot_id: int,
-        producer,
-        records,
-        frequency: int = 10,
-        stop_event=None,
-    ):
-        """
-        Produces accelerometer and gyro data for a specific robot.
+                    self._send_message(
+                        producer,
+                        key=current_timestamp,
+                        value=message,
+                        robot_id=robot_id,
+                    )
 
-        Args:
-            robot_id (int): ID of the robot.
-            producer (SerializingProducer): Shared Kafka producer instance.
-            records (list[dict]): Dataset records to send.
-        """
-        self._send_dataset(producer, records, robot_id, frequency, stop_event)
-
-    def _send_dataset(
-        self,
-        producer,
-        records,
-        robot_id: int,
-        frequency: int = 10,
-        stop_event=None,
-    ):
-        """
-        Sends the dataset to Kafka.
-
-        Args:
-            producer (SerializingProducer): Kafka producer instance.
-            records (list[dict]): Dataset records to send.
-            robot_id (int): ID of the robot.
-        """
-        for row in records:
-            if stop_event and stop_event.is_set():
-                break
-            timestamp = datetime.now(UTC).isoformat()
-
-            # Create a copy to avoid race conditions if modifying shared dicts (though unique timestamps usually imply copy needed)
-            message = row.copy()
-            message["source_timestamp"] = timestamp
-            message["robot_id"] = robot_id
-
-            # Ideally we would add robot_id to the message, but schema might
-            # not support it.
-            # For now, we just simulate the load.
-            self._send_message(
-                producer, key=timestamp, value=message, robot_id=robot_id
-            )
-
-            # Serve delivery reports to ensure internal queue doesn't fill up indefinitely
-            producer.poll(0)
-
-            time.sleep(1.0 / frequency)
+                t_elapsed = time.time() - t_start
+                sleep_time = max(0, period - t_elapsed)
+                time.sleep(sleep_time)
 
         producer.flush()
+
+    def poll_scheduler(self, producer):
+        """
+        Continuously polls the producer to trigger delivery reports.
+        """
+        while self.polling_active:
+            producer.poll(0.1)
 
     def _send_message(self, producer, key, value, robot_id=None):
         """
@@ -355,55 +363,20 @@ class KafkaProducer:
             stats_data["last_ack_time"] = current_time
 
             # Log every 100 messages
-            if len(stats_data["deltas"]) >= 100:
-                deltas = stats_data["deltas"]
-                avg_time = statistics.mean(deltas)
-                median_time = statistics.median(deltas)
-                std_dev = statistics.stdev(deltas) if len(deltas) > 1 else 0.0
+            # if len(stats_data["deltas"]) >= 100:
+            #     deltas = stats_data["deltas"]
+            #     avg_time = statistics.mean(deltas)
+            #     median_time = statistics.median(deltas)
+            #     std_dev = statistics.stdev(deltas) if len(deltas) > 1 else 0.0
 
-                logger.info(
-                    f"Robot {robot_id} stats (last 100 msgs): "
-                    f"Avg: {avg_time:.4f}s, "
-                    f"Median: {median_time:.4f}s, "
-                    f"StdDev: {std_dev:.4f}s"
-                )
-                # Reset deltas but keep last_ack_time
-                stats_data["deltas"] = []
-
-    def _produce_mocked_data(
-        self, robot_id: int, producer, frequency: int = 10, stop_event=None
-    ):
-        """
-        Produces mocked temperature data.
-
-        Args:
-            robot_id (int): ID of the robot.
-            producer (SerializingProducer): Shared Kafka producer instance.
-        """
-        i = 0
-        msg_count = 10000
-        while i <= msg_count:
-            if stop_event and stop_event.is_set():
-                break
-            # Creates random temperature data between 20.0
-            # and 30.0 degrees Celsius.
-            temperature = round(random.uniform(20.0, 30.0), 2)
-
-            timestamp = int(
-                datetime.now(UTC).timestamp() * 1000
-            )  # Convert to milliseconds
-            message = {
-                "source_timestamp": timestamp,
-                "temperature": temperature,
-            }
-
-            self._send_message(
-                producer, key=timestamp, value=message, robot_id=robot_id
-            )
-            producer.poll(0)
-            i += 1
-            time.sleep(1.0 / frequency)
-        producer.flush()
+            #     logger.info(
+            #         f"Robot {robot_id} stats (last 100 msgs): "
+            #         f"Avg: {avg_time:.4f}s, "
+            #         f"Median: {median_time:.4f}s, "
+            #         f"StdDev: {std_dev:.4f}s"
+            #     )
+            #     # Reset deltas but keep last_ack_time
+            #     stats_data["deltas"] = []
 
 
 if __name__ == "__main__":
