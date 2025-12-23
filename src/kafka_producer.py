@@ -63,7 +63,8 @@ class KafkaProducer:
             "acks": 1,
             "enable.idempotence": False,
             "linger.ms": 10,
-            "batch.num.messages": 1000,
+            "batch.num.messages": 10000,
+            "queue.buffering.max.messages": 500000,
             "compression.type": "none",
             "max.in.flight.requests.per.connection": 5,
         }
@@ -131,7 +132,13 @@ class KafkaProducer:
         config_updates = {"message.timestamp.type": "LogAppendTime"}
         configurator.configure_topic(self.topic_name, config_updates)
 
-    def produce(self, data_type: str, num_robots: int = 1, stop_event=None):
+    def produce(
+        self,
+        data_type: str,
+        num_robots: int = 1,
+        frequency: int = 10,
+        stop_event=None,
+    ):
         """
         Produces data to the Kafka topic, simulating multiple robots.
 
@@ -139,6 +146,7 @@ class KafkaProducer:
             data_type (str): Type of data to produce ('control_power',
                 'accelerometer_gyro', 'mocked').
             num_robots (int): Number of robots to simulate concurrently.
+            frequency (int): Frequency in Hz.
             stop_event (threading.Event): Event to signal stopping.
         """
         self._configure_topic()
@@ -163,7 +171,7 @@ class KafkaProducer:
         for i in range(num_robots):
             thread = threading.Thread(
                 target=self._run_simulation,
-                args=(data_type, i, producer, records, stop_event),
+                args=(data_type, i, producer, records, frequency, stop_event),
             )
             threads.append(thread)
             thread.start()
@@ -178,6 +186,7 @@ class KafkaProducer:
         robot_id: int,
         producer,
         records=None,
+        frequency: int = 10,
         stop_event=None,
     ):
         """
@@ -191,19 +200,26 @@ class KafkaProducer:
         """
         if data_type == "control_power":
             self._produce_control_power_data(
-                robot_id, producer, records, stop_event
+                robot_id, producer, records, frequency, stop_event
             )
         elif data_type == "accelerometer_gyro":
             self._produce_temperature_accelerometer_gyro_data(
-                robot_id, producer, records, stop_event
+                robot_id, producer, records, frequency, stop_event
             )
         elif data_type == "mocked":
-            self._produce_mocked_data(robot_id, producer, stop_event)
+            self._produce_mocked_data(
+                robot_id, producer, frequency, stop_event
+            )
         else:
             logger.error(f"Invalid data type ({data_type}) for producer.")
 
     def _produce_control_power_data(
-        self, robot_id: int, producer, records, stop_event=None
+        self,
+        robot_id: int,
+        producer,
+        records,
+        frequency: int = 10,
+        stop_event=None,
     ):
         """
         Produces control power data for a specific robot.
@@ -212,11 +228,17 @@ class KafkaProducer:
             robot_id (int): ID of the robot.
             producer (SerializingProducer): Shared Kafka producer instance.
             records (list[dict]): Dataset records to send.
+            frequency (int): Frequency in Hz.
         """
-        self._send_dataset(producer, records, robot_id, stop_event)
+        self._send_dataset(producer, records, robot_id, frequency, stop_event)
 
     def _produce_temperature_accelerometer_gyro_data(
-        self, robot_id: int, producer, records, stop_event=None
+        self,
+        robot_id: int,
+        producer,
+        records,
+        frequency: int = 10,
+        stop_event=None,
     ):
         """
         Produces accelerometer and gyro data for a specific robot.
@@ -226,9 +248,16 @@ class KafkaProducer:
             producer (SerializingProducer): Shared Kafka producer instance.
             records (list[dict]): Dataset records to send.
         """
-        self._send_dataset(producer, records, robot_id, stop_event)
+        self._send_dataset(producer, records, robot_id, frequency, stop_event)
 
-    def _send_dataset(self, producer, records, robot_id: int, stop_event=None):
+    def _send_dataset(
+        self,
+        producer,
+        records,
+        robot_id: int,
+        frequency: int = 10,
+        stop_event=None,
+    ):
         """
         Sends the dataset to Kafka.
 
@@ -257,7 +286,7 @@ class KafkaProducer:
             # Serve delivery reports to ensure internal queue doesn't fill up indefinitely
             producer.poll(0)
 
-            time.sleep(0.1)  # 10Hz
+            time.sleep(1.0 / frequency)
 
         producer.flush()
 
@@ -341,7 +370,9 @@ class KafkaProducer:
                 # Reset deltas but keep last_ack_time
                 stats_data["deltas"] = []
 
-    def _produce_mocked_data(self, robot_id: int, producer, stop_event=None):
+    def _produce_mocked_data(
+        self, robot_id: int, producer, frequency: int = 10, stop_event=None
+    ):
         """
         Produces mocked temperature data.
 
@@ -371,7 +402,7 @@ class KafkaProducer:
             )
             producer.poll(0)
             i += 1
-            time.sleep(0.1)  # 10Hz
+            time.sleep(1.0 / frequency)
         producer.flush()
 
 

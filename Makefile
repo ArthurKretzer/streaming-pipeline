@@ -119,6 +119,18 @@ produce-100-robots-cloud:
 	-docker rm -f producer-control-power-cloud
 	docker run -d --name producer-control-power-cloud --env-file=./src/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 100
 
+produce-100-robots-20hz-cloud:
+	-docker rm -f producer-control-power-cloud
+	docker run -d --name producer-control-power-cloud --env-file=./src/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 100 --frequency 20
+
+produce-100-robots-50hz-cloud:
+	-docker rm -f producer-control-power-cloud
+	docker run -d --name producer-control-power-cloud --env-file=./src/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 100 --frequency 50
+
+produce-100-robots-100hz-cloud:
+	-docker rm -f producer-control-power-cloud
+	docker run -d --name producer-control-power-cloud --env-file=./src/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 100 --frequency 100
+
 produce-10-robots-edge:
 	docker rm -f producer-control-power-edge
 	docker run -d --name producer-control-power-edge --env-file=./src/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 10
@@ -131,6 +143,18 @@ produce-100-robots-edge:
 	docker rm -f producer-control-power-edge
 	docker run -d --name producer-control-power-edge --env-file=./src/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 100
 
+produce-100-robots-20hz-edge:
+	docker rm -f producer-control-power-edge
+	docker run -d --name producer-control-power-edge --env-file=./src/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 100 --frequency 20
+
+produce-100-robots-50hz-edge:
+	docker rm -f producer-control-power-edge
+	docker run -d --name producer-control-power-edge --env-file=./src/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 100 --frequency 50
+
+produce-100-robots-100hz-edge:
+	docker rm -f producer-control-power-edge
+	docker run -d --name producer-control-power-edge --env-file=./src/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer:3.5.4 uv run /app/main.py produce control_power control_power --num-robots 100 --frequency 100
+
 produce-10-robots: produce-10-robots-cloud produce-10-robots-edge
 produce-50-robots: produce-50-robots-cloud produce-50-robots-edge
 produce-100-robots: produce-100-robots-cloud produce-100-robots-edge
@@ -140,24 +164,26 @@ start-produce: build-producer produce-control-power-cloud produce-control-power-
 stop-produce: stop-produce-control-power-cloud stop-produce-control-power-edge
 
 experiment-cloud: kube-context-cloud 
-	@echo "Starting consumer..."
-	$(MAKE) consume-control-power-cloud
-	@echo "Waiting 5 minutes for consumer start..."
-	sleep 300
-	@echo "Starting experiment with 1 robot..."
-	$(MAKE) produce-control-power-cloud
-	@echo "Running for 30 minutes..."
-	sleep 1800
-	$(MAKE)stop-produce-control-power-cloud
-	@echo "Starting experiment with 10 robots..."
-	$(MAKE) produce-10-robots-cloud
-	@echo "Running for 30 minutes..."
-	sleep 1800
-	$(MAKE) stop-produce-control-power-cloud
-	@echo "Starting experiment with 50 robots..."
-	$(MAKE) produce-50-robots-cloud
-	@echo "Running for 30 minutes..."
-	sleep 1800
+# 	@echo "Setup kafka topic..."
+# 	$(MAKE) setup-control-power-cloud
+# 	@echo "Starting consumer..."
+# 	$(MAKE) consume-control-power-cloud
+# 	@echo "Waiting 8 minutes for consumer start..."
+# 	sleep 480
+# 	@echo "Starting experiment with 1 robot..."
+# 	$(MAKE) produce-control-power-cloud
+# 	@echo "Running for 30 minutes..."
+# 	sleep 1800
+# 	$(MAKE)stop-produce-control-power-cloud
+# 	@echo "Starting experiment with 10 robots..."
+# 	$(MAKE) produce-10-robots-cloud
+# 	@echo "Running for 30 minutes..."
+# 	sleep 1800
+# 	$(MAKE) stop-produce-control-power-cloud
+# 	@echo "Starting experiment with 50 robots..."
+# 	$(MAKE) produce-50-robots-cloud
+# 	@echo "Running for 30 minutes..."
+# 	sleep 1800
 	$(MAKE) stop-produce-control-power-cloud
 	@echo "Starting experiment with 100 robots..."
 	$(MAKE) produce-100-robots-cloud
@@ -167,24 +193,26 @@ experiment-cloud: kube-context-cloud
 	@echo "Experiment finished."
 
 experiment-edge: kube-context-edge
-	@echo "Starting consumer..."
-	$(MAKE) consume-control-power-edge
-	@echo "Waiting 5 minutes for consumer start..."
-	sleep 300
-	@echo "Starting experiment with 1 robot..."
-	$(MAKE) produce-control-power-edge
-	@echo "Running for 30 minutes..."
-	sleep 1800
-	$(MAKE)stop-produce-control-power-edge
-	@echo "Starting experiment with 10 robots..."
-	$(MAKE) produce-10-robots-edge
-	@echo "Running for 30 minutes..."
-	sleep 1800
-	$(MAKE) stop-produce-control-power-edge
-	@echo "Starting experiment with 50 robots..."
-	$(MAKE) produce-50-robots-edge
-	@echo "Running for 30 minutes..."
-	sleep 1800
+# 	@echo "Setup kafka topic..."
+# 	$(MAKE) setup-control-power-edge
+# 	@echo "Starting consumer..."
+# 	$(MAKE) consume-control-power-edge
+# 	@echo "Waiting 8 minutes for consumer start..."
+# 	sleep 480
+# 	@echo "Starting experiment with 1 robot..."
+# 	$(MAKE) produce-control-power-edge
+# 	@echo "Running for 30 minutes..."
+# 	sleep 1800
+# 	$(MAKE)stop-produce-control-power-edge
+# 	@echo "Starting experiment with 10 robots..."
+# 	$(MAKE) produce-10-robots-edge
+# 	@echo "Running for 30 minutes..."
+# 	sleep 1800
+# 	$(MAKE) stop-produce-control-power-edge
+# 	@echo "Starting experiment with 50 robots..."
+# 	$(MAKE) produce-50-robots-edge
+# 	@echo "Running for 30 minutes..."
+# 	sleep 1800
 	$(MAKE) stop-produce-control-power-edge
 	@echo "Starting experiment with 100 robots..."
 	$(MAKE) produce-100-robots-edge
@@ -192,6 +220,8 @@ experiment-edge: kube-context-edge
 	sleep 1800
 	$(MAKE) stop-produce-control-power-edge
 	@echo "Experiment finished."
+
+start-experiments: experiment-cloud experiment-edge
 
 build-consumer:
 	docker build -t arthurkretzer/streaming-consumer:3.5.4 -f ./docker/streaming-consumer.Dockerfile ./src
