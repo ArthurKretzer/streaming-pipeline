@@ -33,6 +33,7 @@ def produce(
     topic_name: str = "robot",
     data_type: str = "mocked",
     num_robots: int = 1,
+    frequency: int = 10,
     stop_event: threading.Event = None,
 ):
     """
@@ -42,6 +43,7 @@ def produce(
         topic_name (str): The name of the Kafka topic. Defaults to "robot".
         data_type (str): The type of data to produce. Defaults to "mocked".
         num_robots (int): The number of robots to simulate. Defaults to 1.
+        frequency (int): Frequency in Hz. Defaults to 10.
     """
     topic_name = f"{topic_name}-avro"
 
@@ -57,10 +59,10 @@ def produce(
         ):
             logger.info(
                 f"Producing data of type '{data_type}' to topic '{topic_name}' "
-                f"with {num_robots} robots."
+                f"with {num_robots} robots at {frequency}Hz."
             )
             producer = KafkaProducer(KAFKA_BROKER, topic_name)
-            producer.produce(data_type, num_robots, stop_event)
+            producer.produce(data_type, num_robots, frequency, stop_event)
             logger.info(
                 f"Produced data of type '{data_type}' to topic '{topic_name}' "
                 f"with {num_robots} robots."
@@ -151,6 +153,12 @@ def parse_arguments():
         default=1,
         help="Number of robots to simulate (default: 1).",
     )
+    parser.add_argument(
+        "--frequency",
+        type=int,
+        default=10,
+        help="Frequency in Hz (default: 10).",
+    )
     return parser.parse_args()
 
 
@@ -176,6 +184,7 @@ if __name__ == "__main__":
             args.topic_name,
             args.data_type,
             args.num_robots,
+            args.frequency,
             stop_event=stop_event,
         )
     elif args.function_name == "process":
