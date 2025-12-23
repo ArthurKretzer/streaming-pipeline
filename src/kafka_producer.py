@@ -115,6 +115,7 @@ class KafkaProducer:
             "control_power-avro": "control_power.json",
             "accelerometer_gyro-avro": "accelerometer_gyro.json",
             "mocked-avro": "temperature.json",
+            "robot_data-avro": "robot_data.json",
         }
 
         if topic_name in schema_mapping:
@@ -156,9 +157,10 @@ class KafkaProducer:
 
         logger.info("Loading robot dataset...")
         if data_type != "mocked":
-            # Load dataset once for all robots, limited to 1 hour at 10Hz
-            # (36000 rows)
-            dataset_loader = RobotDataset(normalize=False, max_rows=36000)
+            # Load dataset once for all robots, limited to 1 hour at {frequency}Hz
+            # ({frequency * 3600} rows)
+            max_rows = frequency * 3600
+            dataset_loader = RobotDataset(normalize=False, max_rows=max_rows)
             df = dataset_loader.get_dataset(data_type=data_type)
             # Convert DataFrame to a list of dicts for faster iteration and reduced memory
             records = df.to_dict("records")

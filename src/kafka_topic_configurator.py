@@ -141,6 +141,7 @@ class KafkaTopicConfigurator:
             "control_power-avro": "control_power.json",
             "accelerometer_gyro-avro": "accelerometer_gyro.json",
             "mocked-avro": "temperature.json",
+            "robot_data-avro": "robot_data.json",
         }
 
         if topic_name in schema_mapping:

@@ -136,14 +136,19 @@ def parse_arguments():
     parser.add_argument(
         "topic_name",
         nargs="?",
-        choices=["robot", "control_power", "accelerometer_gyro"],
+        choices=["robot", "control_power", "accelerometer_gyro", "robot_data"],
         default="robot",
         help="Kafka topic name (default: 'robot').",
     )
     parser.add_argument(
         "data_type",
         nargs="?",
-        choices=["mocked", "control_power", "accelerometer_gyro"],
+        choices=[
+            "mocked",
+            "control_power",
+            "accelerometer_gyro",
+            "robot_data",
+        ],
         default="mocked",
         help="Data type to produce (default: 'mocked').",
     )
