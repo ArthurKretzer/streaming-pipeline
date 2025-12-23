@@ -139,6 +139,8 @@ class RobotDataset:
             return self._get_control_power_data()
         elif data_type == "accelerometer_gyro":
             return self._get_temperature_accelerometer_gyro_data()
+        elif data_type == "robot_data":
+            return self.dataset
         else:
             logger.error(f"Invalid data type ({data_type}) for producer.")
             raise ValueError(f"Invalid data type ({data_type}) for producer.")
