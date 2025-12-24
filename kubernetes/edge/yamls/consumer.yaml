@@ -68,7 +68,7 @@ spec:
   mainApplicationFile: "local:///app/deploy/kafka_consumer_avro.py"
   arguments:
     - "--kafka-topic"
-    - "control_power"
+    - "robot_data"
   sparkVersion: "3.5.4"
   restartPolicy:
     type: OnFailure
