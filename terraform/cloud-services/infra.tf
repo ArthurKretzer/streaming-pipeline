@@ -22,7 +22,7 @@ provider "kubernetes" {
 
 provider "helm" {
   kubernetes = {
-    config_path = "~/.kube/config"
+    config_path    = "~/.kube/config"
     config_context = "do-nyc1-k8s-cluster"
   }
 }
@@ -113,6 +113,19 @@ resource "kubernetes_namespace_v1" "spark_jobs" {
   }
 }
 
+resource "kubernetes_namespace_v1" "time_sync" {
+  metadata {
+    name = "time-sync"
+  }
+
+  lifecycle {
+    ignore_changes = [
+      metadata[0].labels,
+      metadata[0].annotations,
+    ]
+  }
+}
+
 # Load and apply all YAML files from deepstorage directory
 data "kubectl_file_documents" "deepstorage" {
   content = join("\n---\n", [for f in fileset("../../kubernetes/cloud/app-manifests/deepstorage", "*.yaml") : file("../../kubernetes/cloud/app-manifests/deepstorage/${f}")])
@@ -155,6 +168,16 @@ resource "kubernetes_manifest" "spark_operator" {
   for_each   = data.kubectl_file_documents.spark_operator.manifests
   manifest   = yamldecode(each.value)
   depends_on = [kubernetes_namespace_v1.spark_operator, kubernetes_namespace_v1.spark_jobs, helm_release.argocd]
+}
+
+data "kubectl_file_documents" "time_sync" {
+  content = join("\n---\n", [for f in fileset("../../kubernetes/cloud/app-manifests/time-sync", "*.yaml") : file("../../kubernetes/cloud/app-manifests/time-sync/${f}")])
+}
+
+resource "kubernetes_manifest" "time_sync" {
+  for_each   = data.kubectl_file_documents.time_sync.manifests
+  manifest   = yamldecode(each.value)
+  depends_on = [kubernetes_namespace_v1.time_sync, helm_release.argocd]
 }
 
 # Load and apply all YAML files from deploy directory
