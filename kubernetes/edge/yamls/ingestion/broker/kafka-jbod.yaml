@@ -63,6 +63,20 @@ spec:
         type: persistent-claim
         size: 15Gi
         deleteClaim: true
+    template:
+      pod:
+        affinity:
+          podAntiAffinity:
+            # "Required" ensures they NEVER share a node. 
+            # Use "preferred" if you want to allow it only as a last resort.
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: strimzi.io/name
+                      operator: In
+                      values:
+                        - streaming-kafka
+                topologyKey: "kubernetes.io/hostname"
     # resource limitation
     # -xms -xmx set as same as resources [limit]
     resources:
