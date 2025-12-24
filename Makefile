@@ -170,23 +170,38 @@ experiment-cloud: kube-context-cloud
 	sleep 300
 	@echo "Starting experiment with 1 robot..."
 	$(MAKE) produce-robot-data-cloud
-	@echo "Running for 30 minutes..."
-	sleep 1800
-	$(MAKE)stop-produce-robot-data-cloud
+	@echo "Running for 15 minutes..."
+	sleep 900
+	$(MAKE) stop-produce-robot-data-cloud
 	@echo "Starting experiment with 10 robots..."
 	$(MAKE) produce-10-robots-cloud
-	@echo "Running for 30 minutes..."
-	sleep 1800
+	@echo "Running for 15 minutes..."
+	sleep 900
 	$(MAKE) stop-produce-robot-data-cloud
 	@echo "Starting experiment with 50 robots..."
 	$(MAKE) produce-50-robots-cloud
-	@echo "Running for 30 minutes..."
-	sleep 1800
+	@echo "Running for 15 minutes..."
+	sleep 900
 	$(MAKE) stop-produce-robot-data-cloud
 	@echo "Starting experiment with 100 robots..."
 	$(MAKE) produce-100-robots-cloud
-	@echo "Running for 30 minutes..."
-	sleep 1800
+	@echo "Running for 15 minutes..."
+	sleep 900
+	$(MAKE) stop-produce-robot-data-cloud
+	@echo "Starting experiment with 100 - 20hz robots..."
+	$(MAKE) produce-100-robots-20hz-cloud
+	@echo "Running for 15 minutes..."
+	sleep 900
+	$(MAKE) stop-produce-robot-data-cloud
+	@echo "Starting experiment with 100 - 50hz robots..."
+	$(MAKE) produce-100-robots-50hz-cloud
+	@echo "Running for 15 minutes..."
+	sleep 900
+	$(MAKE) stop-produce-robot-data-cloud
+	@echo "Starting experiment with 100 - 100hz robots..."
+	$(MAKE) produce-100-robots-100hz-cloud
+	@echo "Running for 15 minutes..."
+	sleep 900
 	$(MAKE) stop-produce-robot-data-cloud
 	@echo "Experiment finished."
 
@@ -197,23 +212,38 @@ experiment-edge: kube-context-edge
 	sleep 300
 	@echo "Starting experiment with 1 robot..."
 	$(MAKE) produce-robot-data-edge
-	@echo "Running for 30 minutes..."
-	sleep 1800
-	$(MAKE)stop-produce-robot-data-edge
+	@echo "Running for 15 minutes..."
+	sleep 900
+	$(MAKE) stop-produce-robot-data-edge
 	@echo "Starting experiment with 10 robots..."
 	$(MAKE) produce-10-robots-edge
-	@echo "Running for 30 minutes..."
-	sleep 1800
+	@echo "Running for 15 minutes..."
+	sleep 900
 	$(MAKE) stop-produce-robot-data-edge
 	@echo "Starting experiment with 50 robots..."
 	$(MAKE) produce-50-robots-edge
-	@echo "Running for 30 minutes..."
-	sleep 1800
+	@echo "Running for 15 minutes..."
+	sleep 900
 	$(MAKE) stop-produce-robot-data-edge
 	@echo "Starting experiment with 100 robots..."
 	$(MAKE) produce-100-robots-edge
-	@echo "Running for 30 minutes..."
-	sleep 1800
+	@echo "Running for 15 minutes..."
+	sleep 900
+	$(MAKE) stop-produce-robot-data-edge
+	@echo "Starting experiment with 100 - 20hz robots..."
+	$(MAKE) produce-100-robots-20hz-edge
+	@echo "Running for 15 minutes..."
+	sleep 900
+	$(MAKE) stop-produce-robot-data-edge
+	@echo "Starting experiment with 100 - 50hz robots..."
+	$(MAKE) produce-100-robots-50hz-edge
+	@echo "Running for 15 minutes..."
+	sleep 900
+	$(MAKE) stop-produce-robot-data-edge
+	@echo "Starting experiment with 100 - 100hz robots..."
+	$(MAKE) produce-100-robots-100hz-edge
+	@echo "Running for 15 minutes..."
+	sleep 900
 	$(MAKE) stop-produce-robot-data-edge
 	@echo "Experiment finished."
 
