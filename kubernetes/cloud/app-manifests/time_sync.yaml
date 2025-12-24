@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: time_sync
+  name: time-sync
   namespace: cicd
 spec:
   project: default
@@ -11,7 +11,7 @@ spec:
     path: kubernetes/cloud/yamls/time_sync.yaml
   destination:
     server: "https://kubernetes.default.svc"
-    namespace: time_sync
+    namespace: time-sync
   syncPolicy:
     automated:
       prune: true
