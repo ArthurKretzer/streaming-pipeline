@@ -34,7 +34,7 @@ spec:
 
               # 3. Create the config file safely using printf
               # This avoids the heredoc 'EOF' issue in nested shells
-              printf 'pool 2.ubuntu.pool.ntp.org iburst\nserver 1.1.1.1 iburst\nserver 8.8.8.8 iburst\nmakestep 0.1 3\nrtcsync\n' > /etc/chrony/chrony.conf
+              printf 'pool br.pool.ntp.org iburst\nserver 1.1.1.1 iburst\nserver 8.8.8.8 iburst\nmakestep 0.1 3\nrtcsync\n' > /etc/chrony/chrony.conf
 
               # 4. Open local firewall port (UFW) just in case
               if command -v ufw > /dev/null 2>&1; then
