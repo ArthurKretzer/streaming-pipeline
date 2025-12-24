@@ -271,11 +271,11 @@ class KafkaProducer:
                     break
 
                 t_start = time.time()
-                current_timestamp = datetime.now(UTC).isoformat()
 
                 for robot_id in robot_ids:
                     # Create a copy to avoid race conditions
                     # (though strictly we are reading, copy adds robot_id)
+                    current_timestamp = datetime.now(UTC).isoformat()
                     message = row.copy()
                     message["source_timestamp"] = current_timestamp
                     message["robot_id"] = robot_id
