@@ -71,7 +71,7 @@ spec:
                     - key: strimzi.io/name
                       operator: In
                       values:
-                        - streaming-kafka
+                        - master-kafka
                 topologyKey: "kubernetes.io/hostname"
     # resource limitation
     # -xms -xmx set as same as resources [limit]
