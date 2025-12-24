@@ -23,9 +23,7 @@ provision-cloud-services:
 	cd terraform/cloud-services && terraform apply
 
 destroy-cloud-services: kube-context-cloud
-	cd terraform/cloud-services && terraform destroy --var-file=env.tfvars
-	helm uninstall argocd -n cicd
-	kubectl delete ns monitoring
+	cd terraform/cloud-services && terraform destroy
 
 destroy-cloud-infra:
 	cd terraform/cloud-deploy && terraform destroy --var-file=env.tfvars
