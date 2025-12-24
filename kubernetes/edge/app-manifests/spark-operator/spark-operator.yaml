@@ -24,3 +24,22 @@ spec:
     syncOptions:
       - ServerSideApply=true
       - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spark-pod-monitor
+  namespace: cicd
+spec:
+  project: default
+  source:
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
+    targetRevision: main
+    path: kubernetes/edge/yamls/monitoring
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: spark-operator
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
