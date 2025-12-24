@@ -97,6 +97,9 @@ spec:
       requests:
         memory: 100Mi
         cpu: "250m"
+      limits:
+        memory: 1Gi
+        cpu: "1500m"
     metricsConfig:
       type: jmxPrometheusExporter
       valueFrom:
