@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
-    path: kubernetes/edge/yamls/time_sync.yaml
+    path: kubernetes/edge/yamls/time_sync
   destination:
     server: "https://kubernetes.default.svc"
     namespace: time-sync
