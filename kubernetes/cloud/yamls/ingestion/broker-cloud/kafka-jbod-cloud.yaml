@@ -77,7 +77,7 @@ spec:
     # -xms -xmx set as same as resources [limit]
     resources:
       requests:
-        memory: 256Mi
+        memory: 1Gi
         cpu: "500m"
     metricsConfig:
       type: jmxPrometheusExporter
