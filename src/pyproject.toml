@@ -33,6 +33,8 @@ producer = [
     "confluent-kafka[avro,schemaregistry]>=2.8.0",
     "avro-python3>=1.10.2",
     "fastavro>=1.10.0",
+    "pandas>=2.2.3",
+    "pyarrow>=19.0.1",
 ]
 
 consumer = [
