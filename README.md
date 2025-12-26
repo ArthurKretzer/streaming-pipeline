@@ -130,6 +130,52 @@ To run experiments with a specific number of robots:
     make produce-100-robots
     ```
 
+#### Frequency Experiments
+
+For 100 robots, you can also vary the frequency (default is 10Hz):
+
+- **20 Hz**:
+
+    ```bash
+    # Cloud only
+    make produce-100-robots-20hz-cloud
+    # Edge only
+    make produce-100-robots-20hz-edge
+    ```
+
+- **50 Hz**:
+
+    ```bash
+    # Cloud only
+    make produce-100-robots-50hz-cloud
+    # Edge only
+    make produce-100-robots-50hz-edge
+    ```
+
+- **100 Hz**:
+
+    ```bash
+    # Cloud only
+    make produce-100-robots-100hz-cloud
+    # Edge only
+    make produce-100-robots-100hz-edge
+    ```
+
+#### Automated Experiments
+
+To run a full sequence of experiments (1, 10, 50, 100 robots, and frequency variations) automatically. This sequence includes starting the consumer, running each experiment for 15 minutes, and stopping the producers between runs.
+
+```bash
+# Run full experiment sequence on Cloud
+make experiment-cloud
+
+# Run full experiment sequence on Edge
+make experiment-edge
+
+# Run both sequences in parallel
+make -j2 start-experiments
+```
+
 ### Available Commands
 
 #### Infrastructure
