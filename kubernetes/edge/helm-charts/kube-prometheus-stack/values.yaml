@@ -4155,12 +4155,12 @@ prometheus:
     ##
      volumeClaimTemplate:
        spec:
-         storageClassName: ""
+         storageClassName: "local-path"
          accessModes: ["ReadWriteOnce"]
          resources:
            requests:
              storage: 20Gi
-       selector: {}
+        selector: {}
 
     ## Using tmpfs volume
     ##

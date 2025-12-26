@@ -3980,7 +3980,7 @@ prometheus:
     ##
      volumeClaimTemplate:
        spec:
-         storageClassName: ""
+         storageClassName: "do-block-storage"
          accessModes: ["ReadWriteOnce"]
          resources:
            requests:
