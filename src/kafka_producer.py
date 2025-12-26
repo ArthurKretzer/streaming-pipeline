@@ -6,6 +6,7 @@ import time
 from functools import partial
 from datetime import UTC, datetime
 
+import pandas as pd
 from confluent_kafka import SerializingProducer
 from confluent_kafka.schema_registry import SchemaRegistryClient
 from confluent_kafka.schema_registry.avro import AvroSerializer
@@ -42,6 +43,7 @@ class KafkaProducer:
         self.topic_name = topic_name
         self.stats_lock = threading.Lock()
         self.robot_stats = {}
+        self.ack_records = []
 
     def get_producer(self, topic_name: str) -> SerializingProducer:
         """
@@ -223,6 +225,26 @@ class KafkaProducer:
         self.polling_active = False
         self.polling_thread.join()
 
+        producer.flush()
+
+        logger.info("Saving ack latency records to parquet...")
+        with self.stats_lock:
+            if self.ack_records:
+                data_dir = "data"
+                os.makedirs(data_dir, exist_ok=True)
+
+                df_ack = pd.DataFrame(
+                    self.ack_records,
+                    columns=["source_timestamp", "robot_id", "ack_latency"],
+                )
+                filename = os.path.join(
+                    data_dir, f"ack_latency_{int(time.time())}.parquet"
+                )
+                df_ack.to_parquet(filename)
+                logger.info(f"Saved {len(df_ack)} records to {filename}")
+            else:
+                logger.info("No ack records to save.")
+
     def _run_worker(
         self,
         data_type: str,
@@ -310,8 +332,16 @@ class KafkaProducer:
             value (dict): Message value.
             robot_id (int, optional): ID of the robot for stats.
         """
+        t_send = time.monotonic()
+        source_timestamp = value.get("source_timestamp")
+
         callback = (
-            partial(self._delivery_report, robot_id=robot_id)
+            partial(
+                self._delivery_report,
+                robot_id=robot_id,
+                t_send=t_send,
+                source_timestamp=source_timestamp,
+            )
             if robot_id is not None
             else self._delivery_report
         )
@@ -330,7 +360,9 @@ class KafkaProducer:
                 producer.poll(0.1)
         # logger.info(f"Message sent: {value}") # Reduced logging for high freq
 
-    def _delivery_report(self, err, msg, robot_id=None):
+    def _delivery_report(
+        self, err, msg, robot_id=None, t_send=None, source_timestamp=None
+    ):
         """
         Delivery callback confirmation with stats logging.
 
@@ -338,6 +370,8 @@ class KafkaProducer:
             err (KafkaError): Error object if delivery failed.
             msg (Message): Kafka message object.
             robot_id (int, optional): Robot ID to track stats.
+            t_send (float, optional): Monotonic timestamp of send initiation.
+            source_timestamp (str/int, optional): Timestamp from the message source.
         """
         if err is not None:
             logger.error(f"Error in delivery: {err}")
@@ -346,8 +380,23 @@ class KafkaProducer:
         if robot_id is None:
             return
 
+        current_time_mono = time.monotonic()
         current_time = time.time()
+
         with self.stats_lock:
+            # New metric recording
+            if t_send is not None:
+                delta_ack = current_time_mono - t_send
+                # Append to list
+                self.ack_records.append(
+                    {
+                        "source_timestamp": source_timestamp,
+                        "robot_id": robot_id,
+                        "ack_latency": delta_ack,
+                    }
+                )
+
+            # Existing stats logic
             if robot_id not in self.robot_stats:
                 self.robot_stats[robot_id] = {
                     "last_ack_time": None,
