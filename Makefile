@@ -1,5 +1,8 @@
 start: start-edge start-cloud
 
+CLOUD_CONTEXT := do-nyc1-k8s-cluster
+EDGE_CONTEXT := streaming-cluster
+
 clean: clean-edge clean-cloud
 
 start-edge: kube-context-edge provision-edge-services services-edge-ips
@@ -161,7 +164,7 @@ start-produce: build-producer produce-robot-data-cloud produce-robot-data-edge
 
 stop-produce: stop-produce-robot-data-cloud stop-produce-robot-data-edge
 
-experiment-cloud: kube-context-cloud 
+experiment-cloud: 
 	@echo "Starting consumer..."
 	$(MAKE) consume-robot-data-cloud
 	@echo "Waiting 5 minutes for consumer start..."
@@ -203,7 +206,7 @@ experiment-cloud: kube-context-cloud
 	$(MAKE) stop-produce-robot-data-cloud
 	@echo "Experiment finished."
 
-experiment-edge: kube-context-edge
+experiment-edge:
 	@echo "Starting consumer..."
 	$(MAKE) consume-robot-data-edge
 	@echo "Waiting 5 minutes for consumer start..."
@@ -251,17 +254,17 @@ build-consumer:
 	docker build -t arthurkretzer/streaming-consumer:3.5.4 -f ./docker/streaming-consumer.Dockerfile ./src
 	docker push arthurkretzer/streaming-consumer:3.5.4
 
-consume-robot-data-cloud: kube-context-cloud
-	kubectl apply -f ./kubernetes/cloud/yamls/consumer.yaml
+consume-robot-data-cloud:
+	kubectl --context $(CLOUD_CONTEXT) apply -f ./kubernetes/cloud/yamls/consumer.yaml
 
-stop-consume-robot-data-cloud: kube-context-cloud
-	kubectl delete -f ./kubernetes/cloud/yamls/consumer.yaml
+stop-consume-robot-data-cloud:
+	kubectl --context $(CLOUD_CONTEXT) delete -f ./kubernetes/cloud/yamls/consumer.yaml
 
-consume-robot-data-edge: kube-context-edge
-	kubectl apply -f ./kubernetes/edge/yamls/consumer.yaml
+consume-robot-data-edge:
+	kubectl --context $(EDGE_CONTEXT) apply -f ./kubernetes/edge/yamls/consumer.yaml
 
-stop-consume-robot-data-edge: kube-context-edge
-	kubectl delete -f ./kubernetes/edge/yamls/consumer.yaml
+stop-consume-robot-data-edge:
+	kubectl --context $(EDGE_CONTEXT) delete -f ./kubernetes/edge/yamls/consumer.yaml
 
 start-consume: consume-robot-data-edge consume-robot-data-cloud 
 
