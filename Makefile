@@ -273,3 +273,11 @@ stop-consume: stop-consume-robot-data-cloud stop-consume-robot-data-edge
 # Data Collection
 collect-metrics:
 	uv run src/prometheus_metrics.py --edge-ip=$(EDGE_IP) --cloud-ip=$(CLOUD_IP) --experiment-name=$(EXP_NAME)
+
+spark-pods:
+	kubectl --context $(CLOUD_CONTEXT) get pods -n spark-jobs
+	kubectl --context $(EDGE_CONTEXT) get pods -n spark-jobs
+
+spark-logs:
+	kubectl --context $(CLOUD_CONTEXT) logs streaming-pipeline-kafka-avro-to-delta-driver -n spark-jobs
+	kubectl --context $(EDGE_CONTEXT) logs streaming-pipeline-kafka-avro-to-delta-driver -n spark-jobs
