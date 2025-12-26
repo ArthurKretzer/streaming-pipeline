@@ -4160,7 +4160,7 @@ prometheus:
          resources:
            requests:
              storage: 20Gi
-        selector: {}
+         selector: {}
 
     ## Using tmpfs volume
     ##
