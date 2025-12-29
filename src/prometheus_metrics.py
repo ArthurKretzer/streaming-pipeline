@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pyarrow as pa
@@ -75,6 +75,11 @@ def collect_metrics(prometheus_uri: str, experiment_name: str):
         "spark_executor_failure_count",
         "spark_executor_running_count",
         "spark_executor_success_count",
+        "spark_streaming_numInputRows_total",
+        "spark_streaming_processRate_total",
+        "spark_streaming_batchDuration_average",
+        "spark_streaming_offsetLag_total",
+        "spark_streaming_wal_writeTime_average",
         # Spark Driver Metrics (Prometheus Servlet)
         "metrics_jvm_memory_heap_used",
         "metrics_jvm_memory_heap_committed",
@@ -105,7 +110,7 @@ def collect_metrics(prometheus_uri: str, experiment_name: str):
 
     print("Collecting metrics...")
     # Intervalo de tempo: última hora
-    end_time = datetime.now(timezone.utc)
+    end_time = datetime.now(UTC)
     start_time = end_time - timedelta(hours=4, minutes=00)
 
     collected_dfs = {}
