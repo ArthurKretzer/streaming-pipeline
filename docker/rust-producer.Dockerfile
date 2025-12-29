@@ -1,4 +1,4 @@
-FROM rust:1.83-slim-bookworm as builder
+FROM rust:1.92-slim-bookworm AS builder
 WORKDIR /app
 # Install build dependencies
 RUN apt-get update && apt-get install -y pkg-config libssl-dev cmake g++
@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/
 
 # Copy binary
 COPY --from=builder /app/target/release/rust_producer .
+COPY --from=builder /app/dataset /app/dataset
+COPY --from=builder /app/schemas /app/schemas
 
 # Default command
-CMD ["./rust_producer"]
+CMD ["/app/rust_producer"]

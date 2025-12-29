@@ -28,10 +28,10 @@ pub struct Config {
     pub data_type: String,
 
     /// Path to parquet dataset
-    #[arg(long, default_value = "../data/robot_data.parquet")]
+    #[arg(long, default_value = "/app/dataset/robot_data.parquet")]
     pub dataset_path: String,
 
     /// Path to Avro schema
-    #[arg(long, default_value = "robot_data.json")]
+    #[arg(long, default_value = "/app/schemas/robot_data.json")]
     pub schema_path: String,
 }
