@@ -90,11 +90,11 @@ build-producer-rust:
 
 produce-rust-cloud:
 	-docker rm -f producer-rust-cloud
-	docker run -d --name producer-rust-cloud --net=host --env-file=./src/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 1 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-cloud --net=host --env-file=./rust_producer/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 1 --dataset-path /app/dataset/robot_data.parquet
 
 produce-100-rust-cloud:
 	-docker rm -f producer-rust-cloud
-	docker run -d --name producer-rust-cloud --net=host --env-file=./src/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-cloud --net=host --env-file=./rust_producer/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --dataset-path /app/dataset/robot_data.parquet
 
 stop-produce-rust-cloud:
 	-docker stop producer-rust-cloud
@@ -102,51 +102,51 @@ stop-produce-rust-cloud:
 
 produce-10-rust-cloud:
 	-docker rm -f producer-rust-cloud
-	docker run -d --name producer-rust-cloud --net=host --env-file=./src/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 10 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-cloud --net=host --env-file=./rust_producer/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 10 --dataset-path /app/dataset/robot_data.parquet
 
 produce-50-rust-cloud:
 	-docker rm -f producer-rust-cloud
-	docker run -d --name producer-rust-cloud --net=host --env-file=./src/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 50 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-cloud --net=host --env-file=./rust_producer/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 50 --dataset-path /app/dataset/robot_data.parquet
 
 produce-100-20hz-rust-cloud:
 	-docker rm -f producer-rust-cloud
-	docker run -d --name producer-rust-cloud --net=host --env-file=./src/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --frequency 20 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-cloud --net=host --env-file=./rust_producer/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --frequency 20 --dataset-path /app/dataset/robot_data.parquet
 
 produce-100-50hz-rust-cloud:
 	-docker rm -f producer-rust-cloud
-	docker run -d --name producer-rust-cloud --net=host --env-file=./src/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --frequency 50 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-cloud --net=host --env-file=./rust_producer/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --frequency 50 --dataset-path /app/dataset/robot_data.parquet
 
 produce-100-100hz-rust-cloud:
 	-docker rm -f producer-rust-cloud
-	docker run -d --name producer-rust-cloud --net=host --env-file=./src/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --frequency 100 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-cloud --net=host --env-file=./rust_producer/cloud.env -v $(CURDIR)/data/tcp_dump_cloud:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --frequency 100 --dataset-path /app/dataset/robot_data.parquet
 
 produce-rust-edge:
 	-docker rm -f producer-rust-edge
-	docker run -d --name producer-rust-edge --net=host --env-file=./src/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 1 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-edge --net=host --env-file=./rust_producer/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 1 --dataset-path /app/dataset/robot_data.parquet
 
 produce-10-rust-edge:
 	-docker rm -f producer-rust-edge
-	docker run -d --name producer-rust-edge --net=host --env-file=./src/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 10 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-edge --net=host --env-file=./rust_producer/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 10 --dataset-path /app/dataset/robot_data.parquet
 
 produce-50-rust-edge:
 	-docker rm -f producer-rust-edge
-	docker run -d --name producer-rust-edge --net=host --env-file=./src/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 50 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-edge --net=host --env-file=./rust_producer/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 50 --dataset-path /app/dataset/robot_data.parquet
 
 produce-100-rust-edge:
 	-docker rm -f producer-rust-edge
-	docker run -d --name producer-rust-edge --net=host --env-file=./src/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-edge --net=host --env-file=./rust_producer/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --dataset-path /app/dataset/robot_data.parquet
 
 produce-100-20hz-rust-edge:
 	-docker rm -f producer-rust-edge
-	docker run -d --name producer-rust-edge --net=host --env-file=./src/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --frequency 20 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-edge --net=host --env-file=./rust_producer/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --frequency 20 --dataset-path /app/dataset/robot_data.parquet
 
 produce-100-50hz-rust-edge:
 	-docker rm -f producer-rust-edge
-	docker run -d --name producer-rust-edge --net=host --env-file=./src/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --frequency 50 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-edge --net=host --env-file=./rust_producer/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --frequency 50 --dataset-path /app/dataset/robot_data.parquet
 
 produce-100-100hz-rust-edge:
 	-docker rm -f producer-rust-edge
-	docker run -d --name producer-rust-edge --net=host --env-file=./src/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --frequency 100 --dataset-path /app/data/robot_data.parquet
+	docker run -d --name producer-rust-edge --net=host --env-file=./rust_producer/edge.env -v $(CURDIR)/data/tcp_dump_edge:/app/data arthurkretzer/streaming-producer-rust:latest ./rust_producer --robots 100 --frequency 100 --dataset-path /app/dataset/robot_data.parquet
 
 stop-produce-rust-edge:
 	-docker stop producer-rust-edge
