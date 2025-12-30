@@ -1,4 +1,7 @@
 import { Writer, SchemaRegistry, SCHEMA_TYPE_AVRO, SCHEMA_TYPE_STRING } from "k6/x/kafka";
+import execution from 'k6/execution';
+import { Trend } from 'k6/metrics';
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 
 // Load data and schema
 const rawData = JSON.parse(open("./robot_data.json"));
@@ -13,6 +16,8 @@ const writer = new Writer({
     brokers: brokers,
     topic: topic,
     autoCreateTopic: true,
+    batchSize: 1, // Must be 1 to measure per-message ack time accurately
+    requiredAcks: 1, // Leader ack. Use -1 for all ISR if desired.
 });
 
 const schemaRegistry = new SchemaRegistry({
@@ -60,13 +65,24 @@ for (let i = 0; i < PRE_SERIALIZED_COUNT; i++) {
     });
 }
 
+// Define custom trends for each scenario
+const scenarioMetrics = {
+    'rate_10_vus_1': new Trend('ack_time_rate_10_vus_1', true),
+    'rate_10_vus_10': new Trend('ack_time_rate_10_vus_10', true),
+    'rate_10_vus_50': new Trend('ack_time_rate_10_vus_50', true),
+    'rate_10_vus_100': new Trend('ack_time_rate_10_vus_100', true),
+    'rate_20_vus_100': new Trend('ack_time_rate_20_vus_100', true),
+    'rate_50_vus_100': new Trend('ack_time_rate_50_vus_100', true),
+    'rate_100_vus_100': new Trend('ack_time_rate_100_vus_100', true),
+};
+
 export const options = {
     scenarios: {
         rate_10_vus_1: {
             executor: 'constant-arrival-rate',
             rate: 10,
             timeUnit: '1s',
-            duration: '10m',
+            duration: '5m',
             preAllocatedVUs: 1,
             maxVUs: 1,
             startTime: '0s',
@@ -76,60 +92,60 @@ export const options = {
             executor: 'constant-arrival-rate',
             rate: 100,
             timeUnit: '1s',
-            duration: '10m',
+            duration: '5m',
             preAllocatedVUs: 10,
             maxVUs: 10,
-            startTime: '2m',
+            startTime: '5m',
             gracefulStop: '10s',
         },
         rate_10_vus_50: {
             executor: 'constant-arrival-rate',
             rate: 500,
             timeUnit: '1s',
-            duration: '10m',
+            duration: '5m',
             preAllocatedVUs: 50,
             maxVUs: 50,
-            startTime: '4m',
+            startTime: '15m',
             gracefulStop: '10s',
         },
         rate_10_vus_100: {
             executor: 'constant-arrival-rate',
             rate: 1000,
             timeUnit: '1s',
-            duration: '10m',
+            duration: '5m',
             preAllocatedVUs: 100,
             maxVUs: 100,
-            startTime: '6m',
+            startTime: '20m',
             gracefulStop: '10s',
         },
         rate_20_vus_100: {
             executor: 'constant-arrival-rate',
             rate: 2000,
             timeUnit: '1s',
-            duration: '10m',
+            duration: '5m',
             preAllocatedVUs: 100,
             maxVUs: 100,
-            startTime: '8m',
+            startTime: '25m',
             gracefulStop: '10s',
         },
         rate_50_vus_100: {
             executor: 'constant-arrival-rate',
             rate: 5000,
             timeUnit: '1s',
-            duration: '10m',
+            duration: '5m',
             preAllocatedVUs: 100,
             maxVUs: 100,
-            startTime: '10m',
+            startTime: '30m',
             gracefulStop: '10s',
         },
         rate_100_vus_100: {
             executor: 'constant-arrival-rate',
             rate: 10000,
             timeUnit: '1s',
-            duration: '10m',
+            duration: '5m',
             preAllocatedVUs: 100,
             maxVUs: 100,
-            startTime: '12m',
+            startTime: '35m',
             gracefulStop: '10s',
         },
     },
@@ -158,8 +174,25 @@ export default function () {
     const messageIndex = (__VU - 1) % PRE_SERIALIZED_COUNT;
     const message = preSerializedMessages[messageIndex];
 
+    const currentScenario = execution.scenario.name;
+    const metric = scenarioMetrics[currentScenario];
+
+    const start = Date.now();
     writer.produce({ messages: [message] });
+    const latency = Date.now() - start;
+
+    if (metric) {
+        metric.add(latency);
+    }
 }
+
+export function handleSummary(data) {
+    return {
+        'summary.json': JSON.stringify(data, null, 2), // Save full summary to file
+        stdout: textSummary(data, { indent: ' ', enableColors: true }), // Show default summary in stdout
+    };
+}
+
 
 export function teardown(data) {
     writer.close();
