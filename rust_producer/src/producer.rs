@@ -194,6 +194,7 @@ impl Producer {
 
                     if let Ok((_partition, _offset)) = delivery_status {
                         // Success
+                        info!("Message sent successfully for robot {}", robot_id);
                         let latency = t_send.elapsed().as_secs_f64();
                         let mut ack_records = stats.ack_records.lock().unwrap();
                         ack_records.push(AckRecord {
