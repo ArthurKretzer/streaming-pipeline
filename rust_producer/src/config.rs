@@ -34,4 +34,20 @@ pub struct Config {
     /// Path to Avro schema
     #[arg(long, default_value = "/app/schemas/robot_data.json")]
     pub schema_path: String,
+
+    /// Enable tcpdump packet capture
+    #[arg(long, env = "ENABLE_TCPDUMP", default_value_t = false)]
+    pub tcpdump_enabled: bool,
+
+    /// Network interface for tcpdump
+    #[arg(long, default_value = "eth0")]
+    pub tcpdump_interface: String,
+
+    /// Directory for tcpdump output
+    #[arg(long, env = "TCPDUMP_OUTPUT_PATH", default_value = "tcpdump_output")]
+    pub tcpdump_output_path: String,
+
+    /// Target host to filter packets
+    #[arg(long)]
+    pub target_host: Option<String>,
 }
