@@ -1,0 +1,441 @@
+{
+    "type": "record",
+    "name": "robot_data",
+    "fields": [
+        {
+            "name": "robot_action_id",
+            "type": "float",
+            "doc": "Identifier for the robot action"
+        },
+        {
+            "name": "apparent_power",
+            "type": "float",
+            "doc": "Apparent power in VA"
+        },
+        {
+            "name": "current",
+            "type": "float",
+            "doc": "Current in A"
+        },
+        {
+            "name": "frequency",
+            "type": "float",
+            "doc": "Frequency in Hz"
+        },
+        {
+            "name": "phase_angle",
+            "type": "float",
+            "doc": "Phase angle in degrees"
+        },
+        {
+            "name": "power",
+            "type": "float",
+            "doc": "Real power in W"
+        },
+        {
+            "name": "power_factor",
+            "type": "float",
+            "doc": "Power factor (unitless)"
+        },
+        {
+            "name": "reactive_power",
+            "type": "float",
+            "doc": "Reactive power in VAR"
+        },
+        {
+            "name": "voltage",
+            "type": "float",
+            "doc": "Voltage in V"
+        },
+        {
+            "name": "j01_x_acc",
+            "type": "float",
+            "doc": "Joint 1 X Acceleration"
+        },
+        {
+            "name": "j01_y_acc",
+            "type": "float",
+            "doc": "Joint 1 Y Acceleration"
+        },
+        {
+            "name": "j01_z_acc",
+            "type": "float",
+            "doc": "Joint 1 Z Acceleration"
+        },
+        {
+            "name": "j01_x_ang_velocity",
+            "type": "float",
+            "doc": "Joint 1 X Angular Velocity"
+        },
+        {
+            "name": "j01_y_ang_velocity",
+            "type": "float",
+            "doc": "Joint 1 Y Angular Velocity"
+        },
+        {
+            "name": "j01_z_ang_velocity",
+            "type": "float",
+            "doc": "Joint 1 Z Angular Velocity"
+        },
+        {
+            "name": "j01_01_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 1 Quaternion Orientation 1"
+        },
+        {
+            "name": "j01_02_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 1 Quaternion Orientation 2"
+        },
+        {
+            "name": "j01_03_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 1 Quaternion Orientation 3"
+        },
+        {
+            "name": "j01_04_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 1 Quaternion Orientation 4"
+        },
+        {
+            "name": "j01_temperature",
+            "type": "float",
+            "doc": "Joint 1 Temperature"
+        },
+        {
+            "name": "j02_x_acc",
+            "type": "float",
+            "doc": "Joint 2 X Acceleration"
+        },
+        {
+            "name": "j02_y_acc",
+            "type": "float",
+            "doc": "Joint 2 Y Acceleration"
+        },
+        {
+            "name": "j02_z_acc",
+            "type": "float",
+            "doc": "Joint 2 Z Acceleration"
+        },
+        {
+            "name": "j02_x_ang_velocity",
+            "type": "float",
+            "doc": "Joint 2 X Angular Velocity"
+        },
+        {
+            "name": "j02_y_ang_velocity",
+            "type": "float",
+            "doc": "Joint 2 Y Angular Velocity"
+        },
+        {
+            "name": "j02_z_ang_velocity",
+            "type": "float",
+            "doc": "Joint 2 Z Angular Velocity"
+        },
+        {
+            "name": "j02_01_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 2 Quaternion Orientation 1"
+        },
+        {
+            "name": "j02_02_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 2 Quaternion Orientation 2"
+        },
+        {
+            "name": "j02_03_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 2 Quaternion Orientation 3"
+        },
+        {
+            "name": "j02_04_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 2 Quaternion Orientation 4"
+        },
+        {
+            "name": "j02_temperature",
+            "type": "float",
+            "doc": "Joint 2 Temperature"
+        },
+        {
+            "name": "j03_x_acc",
+            "type": "float",
+            "doc": "Joint 3 X Acceleration"
+        },
+        {
+            "name": "j03_y_acc",
+            "type": "float",
+            "doc": "Joint 3 Y Acceleration"
+        },
+        {
+            "name": "j03_z_acc",
+            "type": "float",
+            "doc": "Joint 3 Z Acceleration"
+        },
+        {
+            "name": "j03_x_ang_velocity",
+            "type": "float",
+            "doc": "Joint 3 X Angular Velocity"
+        },
+        {
+            "name": "j03_y_ang_velocity",
+            "type": "float",
+            "doc": "Joint 3 Y Angular Velocity"
+        },
+        {
+            "name": "j03_z_ang_velocity",
+            "type": "float",
+            "doc": "Joint 3 Z Angular Velocity"
+        },
+        {
+            "name": "j03_01_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 3 Quaternion Orientation 1"
+        },
+        {
+            "name": "j03_02_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 3 Quaternion Orientation 2"
+        },
+        {
+            "name": "j03_03_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 3 Quaternion Orientation 3"
+        },
+        {
+            "name": "j03_04_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 3 Quaternion Orientation 4"
+        },
+        {
+            "name": "j03_temperature",
+            "type": "float",
+            "doc": "Joint 3 Temperature"
+        },
+        {
+            "name": "j04_x_acc",
+            "type": "float",
+            "doc": "Joint 4 X Acceleration"
+        },
+        {
+            "name": "j04_y_acc",
+            "type": "float",
+            "doc": "Joint 4 Y Acceleration"
+        },
+        {
+            "name": "j04_z_acc",
+            "type": "float",
+            "doc": "Joint 4 Z Acceleration"
+        },
+        {
+            "name": "j04_x_ang_velocity",
+            "type": "float",
+            "doc": "Joint 4 X Angular Velocity"
+        },
+        {
+            "name": "j04_y_ang_velocity",
+            "type": "float",
+            "doc": "Joint 4 Y Angular Velocity"
+        },
+        {
+            "name": "j04_z_ang_velocity",
+            "type": "float",
+            "doc": "Joint 4 Z Angular Velocity"
+        },
+        {
+            "name": "j04_01_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 4 Quaternion Orientation 1"
+        },
+        {
+            "name": "j04_02_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 4 Quaternion Orientation 2"
+        },
+        {
+            "name": "j04_03_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 4 Quaternion Orientation 3"
+        },
+        {
+            "name": "j04_04_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 4 Quaternion Orientation 4"
+        },
+        {
+            "name": "j04_temperature",
+            "type": "float",
+            "doc": "Joint 4 Temperature"
+        },
+        {
+            "name": "j05_x_acc",
+            "type": "float",
+            "doc": "Joint 5 X Acceleration"
+        },
+        {
+            "name": "j05_y_acc",
+            "type": "float",
+            "doc": "Joint 5 Y Acceleration"
+        },
+        {
+            "name": "j05_z_acc",
+            "type": "float",
+            "doc": "Joint 5 Z Acceleration"
+        },
+        {
+            "name": "j05_x_ang_velocity",
+            "type": "float",
+            "doc": "Joint 5 X Angular Velocity"
+        },
+        {
+            "name": "j05_y_ang_velocity",
+            "type": "float",
+            "doc": "Joint 5 Y Angular Velocity"
+        },
+        {
+            "name": "j05_z_ang_velocity",
+            "type": "float",
+            "doc": "Joint 5 Z Angular Velocity"
+        },
+        {
+            "name": "j05_01_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 5 Quaternion Orientation 1"
+        },
+        {
+            "name": "j05_02_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 5 Quaternion Orientation 2"
+        },
+        {
+            "name": "j05_03_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 5 Quaternion Orientation 3"
+        },
+        {
+            "name": "j05_04_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 5 Quaternion Orientation 4"
+        },
+        {
+            "name": "j05_temperature",
+            "type": "float",
+            "doc": "Joint 5 Temperature"
+        },
+        {
+            "name": "j06_x_acc",
+            "type": "float",
+            "doc": "Joint 6 X Acceleration"
+        },
+        {
+            "name": "j06_y_acc",
+            "type": "float",
+            "doc": "Joint 6 Y Acceleration"
+        },
+        {
+            "name": "j06_z_acc",
+            "type": "float",
+            "doc": "Joint 6 Z Acceleration"
+        },
+        {
+            "name": "j06_x_ang_velocity",
+            "type": "float",
+            "doc": "Joint 6 X Angular Velocity"
+        },
+        {
+            "name": "j06_y_ang_velocity",
+            "type": "float",
+            "doc": "Joint 6 Y Angular Velocity"
+        },
+        {
+            "name": "j06_z_ang_velocity",
+            "type": "float",
+            "doc": "Joint 6 Z Angular Velocity"
+        },
+        {
+            "name": "j06_01_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 6 Quaternion Orientation 1"
+        },
+        {
+            "name": "j06_02_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 6 Quaternion Orientation 2"
+        },
+        {
+            "name": "j06_03_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 6 Quaternion Orientation 3"
+        },
+        {
+            "name": "j06_04_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 6 Quaternion Orientation 4"
+        },
+        {
+            "name": "j06_temperature",
+            "type": "float",
+            "doc": "Joint 6 Temperature"
+        },
+        {
+            "name": "j07_x_acc",
+            "type": "float",
+            "doc": "Joint 7 X Acceleration"
+        },
+        {
+            "name": "j07_y_acc",
+            "type": "float",
+            "doc": "Joint 7 Y Acceleration"
+        },
+        {
+            "name": "j07_z_acc",
+            "type": "float",
+            "doc": "Joint 7 Z Acceleration"
+        },
+        {
+            "name": "j07_x_ang_velocity",
+            "type": "float",
+            "doc": "Joint 7 X Angular Velocity"
+        },
+        {
+            "name": "j07_y_ang_velocity",
+            "type": "float",
+            "doc": "Joint 7 Y Angular Velocity"
+        },
+        {
+            "name": "j07_z_ang_velocity",
+            "type": "float",
+            "doc": "Joint 7 Z Angular Velocity"
+        },
+        {
+            "name": "j07_01_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 7 Quaternion Orientation 1"
+        },
+        {
+            "name": "j07_02_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 7 Quaternion Orientation 2"
+        },
+        {
+            "name": "j07_03_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 7 Quaternion Orientation 3"
+        },
+        {
+            "name": "j07_04_quartenion_orientation",
+            "type": "float",
+            "doc": "Joint 7 Quaternion Orientation 4"
+        },
+        {
+            "name": "j07_temperature",
+            "type": "float",
+            "doc": "Joint 7 Temperature"
+        },
+        {
+            "name": "source_timestamp",
+            "type": "long",
+            "doc": "Timestamp of data collection in milliseconds since epoch"
+        }
+    ]
+}
