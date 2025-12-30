@@ -224,7 +224,7 @@ impl Producer {
         info!("Collected {} ack latency records", stats.len());
         
         let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-        let filename = format!("../data/rust_ack_latency_{}.parquet", timestamp);
+        let filename = format!("/app/data/rust_ack_latency_{}.parquet", timestamp);
         let path = std::path::Path::new(&filename);
         let file = File::create(path).expect("Failed to create parquet file");
 
