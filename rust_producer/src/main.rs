@@ -1,7 +1,8 @@
 use clap::Parser;
 use dotenvy::dotenv;
-use log::info;
+use tracing::info;
 use tokio::signal;
+use tokio::signal::unix::{signal, SignalKind};
 
 mod config;
 mod producer;
@@ -14,7 +15,12 @@ use tcpdump_manager::TcpDumpManager;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    env_logger::init();
+
+    // Initialize non-blocking logging
+    let (non_blocking, _guard) = tracing_appender::non_blocking(std::io::stdout());
+    tracing_subscriber::fmt()
+        .with_writer(non_blocking)
+        .init();
 
     let config = Config::parse();
     info!("Starting Rust Producer with config: {:?}", config);
@@ -30,13 +36,15 @@ async fn main() {
         producer_clone.run().await;
     });
 
-    // Wait for Ctrl+C
-    match signal::ctrl_c().await {
-        Ok(()) => {
-            info!("Shutting down...");
+    // Wait for Ctrl+C or SIGTERM
+    let mut sigterm = signal(SignalKind::terminate()).expect("Failed to register SIGTERM handler");
+
+    tokio::select! {
+        _ = signal::ctrl_c() => {
+            info!("Received Ctrl+C, shutting down...");
         }
-        Err(err) => {
-            eprintln!("Unable to listen for shutdown signal: {}", err);
+        _ = sigterm.recv() => {
+            info!("Received SIGTERM, shutting down...");
         }
     }
     
