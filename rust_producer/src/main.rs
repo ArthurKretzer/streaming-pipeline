@@ -53,6 +53,9 @@ async fn main() {
 
     // Save stats
     producer.save_stats();
+
+    // Print interval report
+    producer.print_report();
     
     // Stop tcpdump
     tcpdump_manager.stop();
