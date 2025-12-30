@@ -5,9 +5,11 @@ use tokio::signal;
 
 mod config;
 mod producer;
+mod tcpdump_manager;
 
 use config::Config;
 use producer::Producer;
+use tcpdump_manager::TcpDumpManager;
 
 #[tokio::main]
 async fn main() {
@@ -16,6 +18,9 @@ async fn main() {
 
     let config = Config::parse();
     info!("Starting Rust Producer with config: {:?}", config);
+
+    let mut tcpdump_manager = TcpDumpManager::new(&config);
+    tcpdump_manager.start();
 
     let producer = Producer::new(config.clone());
     
@@ -37,4 +42,7 @@ async fn main() {
     
     // Save stats
     producer.save_stats();
+    
+    // Stop tcpdump
+    tcpdump_manager.stop();
 }
