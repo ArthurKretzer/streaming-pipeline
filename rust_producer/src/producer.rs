@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use chrono::{DateTime, Utc};
-use log::{info, warn};
+use tracing::{info, warn};
 use parquet::file::reader::{FileReader, SerializedFileReader};
 use parquet::arrow::ArrowWriter;
 use parquet::record::Row;
