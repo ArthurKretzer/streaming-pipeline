@@ -215,6 +215,12 @@ impl Producer {
             let _ = handle.await;
         }
     }
+
+    pub fn flush(&self, timeout: Duration) {
+        info!("Flushing producer messages...");
+        let _ = self.producer.flush(timeout);
+        info!("Producer flush completed");
+    }
     
     pub fn save_stats(&self) {
         let stats = self.stats.ack_records.lock().unwrap();
