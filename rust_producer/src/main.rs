@@ -48,6 +48,9 @@ async fn main() {
         }
     }
     
+    // Flush producer
+    producer.flush(std::time::Duration::from_secs(10));
+
     // Save stats
     producer.save_stats();
     
