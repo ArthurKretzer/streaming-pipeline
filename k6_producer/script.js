@@ -40,15 +40,12 @@ for (let i = 0; i < PRE_SERIALIZED_COUNT; i++) {
     // Deterministically pick a payload from the dataset
     // We use modulo to cycle through rawData if PRE_SERIALIZED_COUNT > rawData.length
     const rawPayloadIndex = i % rawData.length;
-    // Clone the object to avoid mutating the original source (though distinct load is already immutable-ish)
-    // Actually, JSON.parse creates new objects, so accessing rawData[index] gets the same ref.
-    // We create a new object.
+    // Clone the object to avoid mutating the original source
     const payload = Object.assign({}, rawData[rawPayloadIndex]);
 
     // Set timestamp to now (integer ms) - this will be static for the test duration
     payload.source_timestamp = Date.now();
-    // Set robot_action_id based on index (or keep from data, but user asked for deterministic robot id)
-    // We'll trust the payload has reasonable data, but we use 'i' to map to a robot ID for the key.
+
     // The key should correspond to the robot ID.
     const robotId = `robot-${i}`;
 
@@ -65,146 +62,110 @@ for (let i = 0; i < PRE_SERIALIZED_COUNT; i++) {
     });
 }
 
-// Define custom trends for each scenario
-const scenarioMetrics = {
-    'rate_10_vus_1': new Trend('ack_time_rate_10_vus_1', true),
-    'rate_10_vus_10': new Trend('ack_time_rate_10_vus_10', true),
-    'rate_10_vus_50': new Trend('ack_time_rate_10_vus_50', true),
-    'rate_10_vus_100': new Trend('ack_time_rate_10_vus_100', true),
-    'rate_10_vus_200': new Trend('ack_time_rate_10_vus_200', true),
-    'rate_10_vus_400': new Trend('ack_time_rate_10_vus_400', true),
-    'rate_10_vus_800': new Trend('ack_time_rate_10_vus_800', true),
-    'rate_10_vus_1600': new Trend('ack_time_rate_10_vus_1600', true),
+// Custom trends
+const ackTrend = new Trend('ack_latency');
+
+const TEST_TYPE = __ENV.TEST_TYPE || 'smoke';
+
+const SCENARIOS = {
+    smoke: {
+        executor: 'constant-arrival-rate',
+        rate: 1,
+        timeUnit: '1s',
+        duration: '1m',
+        preAllocatedVUs: 1,
+        maxVUs: 5,
+    },
+    average: {
+        // 100 robots at 10 Hz = 1000 msg/s
+        executor: 'constant-arrival-rate',
+        rate: 1000,
+        timeUnit: '1s',
+        duration: '10m', // Warmup included implicitly by running longer
+        preAllocatedVUs: 50,
+        maxVUs: 200,
+    },
+    stress: {
+        // Push beyond average in steps: 1k -> 2k -> 5k -> 10k
+        executor: 'ramping-arrival-rate',
+        startRate: 1000,
+        timeUnit: '1s',
+        preAllocatedVUs: 100,
+        maxVUs: 1000,
+        stages: [
+            { target: 1000, duration: '5m' }, // Steady at average
+            { target: 2000, duration: '5m' }, // 2x load
+            { target: 5000, duration: '5m' }, // 5x load
+            { target: 10000, duration: '5m' }, // 10x load
+        ],
+    },
+    breakpoint: {
+        // Ramp up to find max sustainable rate
+        executor: 'ramping-arrival-rate',
+        startRate: 1000,
+        timeUnit: '1s',
+        preAllocatedVUs: 200,
+        maxVUs: 2000,
+        stages: [
+            { target: 20000, duration: '15m' }, // Linear ramp to 20k to find breakpoint
+        ],
+    },
+    soak: {
+        // Long duration at nominal load
+        executor: 'constant-arrival-rate',
+        rate: 1000,
+        timeUnit: '1s',
+        duration: '4h',
+        preAllocatedVUs: 50,
+        maxVUs: 200,
+    }
 };
 
 export const options = {
     scenarios: {
-        rate_10_vus_1: {
-            executor: 'constant-arrival-rate',
-            rate: 10,
-            timeUnit: '1s',
-            duration: '5m',
-            preAllocatedVUs: 1,
-            maxVUs: 1,
-            startTime: '0s',
-            gracefulStop: '10s',
-        },
-        rate_10_vus_10: {
-            executor: 'constant-arrival-rate',
-            rate: 100,
-            timeUnit: '1s',
-            duration: '5m',
-            preAllocatedVUs: 10,
-            maxVUs: 10,
-            startTime: '5m',
-            gracefulStop: '10s',
-        },
-        rate_10_vus_50: {
-            executor: 'constant-arrival-rate',
-            rate: 500,
-            timeUnit: '1s',
-            duration: '5m',
-            preAllocatedVUs: 50,
-            maxVUs: 50,
-            startTime: '15m',
-            gracefulStop: '10s',
-        },
-        rate_10_vus_100: {
-            executor: 'constant-arrival-rate',
-            rate: 1000,
-            timeUnit: '1s',
-            duration: '5m',
-            preAllocatedVUs: 100,
-            maxVUs: 100,
-            startTime: '20m',
-            gracefulStop: '10s',
-        },
-        rate_10_vus_200: {
-            executor: 'constant-arrival-rate',
-            rate: 2000,
-            timeUnit: '1s',
-            duration: '5m',
-            preAllocatedVUs: 200,
-            maxVUs: 200,
-            startTime: '0m',
-            gracefulStop: '10s',
-        },
-        rate_10_vus_400: {
-            executor: 'constant-arrival-rate',
-            rate: 4000,
-            timeUnit: '1s',
-            duration: '5m',
-            preAllocatedVUs: 250,
-            maxVUs: 400,
-            startTime: '5m',
-            gracefulStop: '10s',
-        },
-        rate_10_vus_800: {
-            executor: 'constant-arrival-rate',
-            rate: 8000,
-            timeUnit: '1s',
-            duration: '5m',
-            preAllocatedVUs: 500,
-            maxVUs: 800,
-            startTime: '0m',
-            gracefulStop: '10s',
-        },
-        rate_10_vus_1600: {
-            executor: 'constant-arrival-rate',
-            rate: 16000,
-            timeUnit: '1s',
-            duration: '5m',
-            preAllocatedVUs: 500,
-            maxVUs: 800,
-            startTime: '5m',
-            gracefulStop: '10s',
-        },
+        [TEST_TYPE]: SCENARIOS[TEST_TYPE],
     },
     thresholds: {
         // 1) Injection fidelity: if this fails, k6 did not achieve your configured rate.
-        dropped_iterations: ['rate>0.99'],
+        dropped_iterations: ['count==0'],
 
-        // 2) Kafka acceptance: extension metrics (names can vary by version, verify in your output).
-        // If your run produces any writer errors, the breakpoint is already exceeded.
-        kafka_writer_error_count: ['rate>0.99'],
-
-        // 2) Correctness via checks: you can check that writer.produce() returned without throwing.
-        checks: ['rate>0.99'],
+        // 2) Kafka acceptance
+        kafka_writer_error_count: ['count==0'],
 
         // 3) Producer-side produce duration: set a conservative bound first, then tighten empirically.
         // This is where you will see the breakpoint emerge.
         kafka_writer_write_seconds: ['p(95)<0.050', 'p(99)<0.100'],
+
+        // Monitor ack wait time specifically as requested
+        kafka_writer_wait_seconds: ['p(95)<0.050', 'p(99)<0.100'],
+
+        // 3) Latency check (soft failure)
+        ack_latency: ['p(95)<1000'], // 1s max ack time as sanity check
     },
 };
 
-// Local cache for scenario metric to avoid map lookup on every iteration
-let cachedMetric;
-
 export default function () {
-    // Select a deterministic robot ID based on VU ID
+    // Select a deterministic robot ID based on VU ID to distribute load
     const messageIndex = (__VU - 1) % PRE_SERIALIZED_COUNT;
     const message = preSerializedMessages[messageIndex];
 
-    if (!cachedMetric) {
-        cachedMetric = scenarioMetrics[execution.scenario.name];
-    }
-
     const start = Date.now();
-    writer.produce({ messages: [message] });
-    const latency = Date.now() - start;
-
-    if (cachedMetric) {
-        cachedMetric.add(latency);
+    try {
+        writer.produce({ messages: [message] });
+        const latency = Date.now() - start;
+        ackTrend.add(latency);
+    } catch (error) {
+        // Errors will automatically increment kafka_writer_error_count
+        console.error(`Produced failed: ${error}`);
     }
 }
 
 export function handleSummary(data) {
     return {
-        'summary.json': JSON.stringify(data, null, 2), // Save full summary to file
-        stdout: textSummary(data, { indent: ' ', enableColors: true }), // Show default summary in stdout
+        [`summary-${TEST_TYPE}.json`]: JSON.stringify(data, null, 2),
+        stdout: textSummary(data, { indent: ' ', enableColors: true }),
     };
 }
-
 
 export function teardown(data) {
     writer.close();
