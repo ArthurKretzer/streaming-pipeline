@@ -342,6 +342,8 @@ stop-consume: stop-consume-robot-data-cloud stop-consume-robot-data-edge
 collect-metrics:
 	uv run src/prometheus_metrics.py --edge-ip=$(EDGE_IP) --cloud-ip=$(CLOUD_IP) --experiment-name=$(EXP_NAME)
 
+PROMETHEUS_RW_URL := http://172.16.208.243:30090/api/v1/write
+
 start-k6-smoke:
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
@@ -349,8 +351,9 @@ start-k6-smoke:
 		--workdir /scripts \
 		--net=host \
 		-e TEST_TYPE=smoke \
+		-e K6_PROMETHEUS_RW_SERVER_URL=$(PROMETHEUS_RW_URL) \
 		mostafamoradian/xk6-kafka:latest \
-		run script.js
+		run --out experimental-prometheus-rw script.js
 
 start-k6-average:
 	docker run --rm -i \
@@ -359,8 +362,9 @@ start-k6-average:
 		--workdir /scripts \
 		--net=host \
 		-e TEST_TYPE=average \
+		-e K6_PROMETHEUS_RW_SERVER_URL=$(PROMETHEUS_RW_URL) \
 		mostafamoradian/xk6-kafka:latest \
-		run script.js
+		run --out experimental-prometheus-rw script.js
 
 start-k6-stress:
 	docker run --rm -i \
@@ -369,8 +373,9 @@ start-k6-stress:
 		--workdir /scripts \
 		--net=host \
 		-e TEST_TYPE=stress \
+		-e K6_PROMETHEUS_RW_SERVER_URL=$(PROMETHEUS_RW_URL) \
 		mostafamoradian/xk6-kafka:latest \
-		run script.js
+		run --out experimental-prometheus-rw script.js
 
 start-k6-breakpoint:
 	docker run --rm -i \
@@ -379,8 +384,9 @@ start-k6-breakpoint:
 		--workdir /scripts \
 		--net=host \
 		-e TEST_TYPE=breakpoint \
+		-e K6_PROMETHEUS_RW_SERVER_URL=$(PROMETHEUS_RW_URL) \
 		mostafamoradian/xk6-kafka:latest \
-		run script.js
+		run --out experimental-prometheus-rw script.js
 
 start-k6-soak:
 	docker run --rm -i \
@@ -389,10 +395,11 @@ start-k6-soak:
 		--workdir /scripts \
 		--net=host \
 		-e TEST_TYPE=soak \
+		-e K6_PROMETHEUS_RW_SERVER_URL=$(PROMETHEUS_RW_URL) \
 		mostafamoradian/xk6-kafka:latest \
-		run script.js
+		run --out experimental-prometheus-rw script.js
 
-start-k6-experiment: start-k6-smoke
+start-k6-experiment: start-k6-smoke start-k6-average start-k6-stress start-k6-breakpoint start-k6-soak
 
 spark-pods:
 	kubectl --context $(CLOUD_CONTEXT) get pods -n spark-jobs
