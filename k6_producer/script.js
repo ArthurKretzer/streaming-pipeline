@@ -166,23 +166,24 @@ export const options = {
     },
 };
 
+// Local cache for scenario metric to avoid map lookup on every iteration
+let cachedMetric;
+
 export default function () {
     // Select a deterministic robot ID based on VU ID
-    // __VU is 1-based, so subtract 1
-    // We heavily reused messages if VUs > PRE_SERIALIZED_COUNT, but here we expect 100 VUs max matching 100 robots.
-    // If we have more VUs, they will cycle through the robots.
     const messageIndex = (__VU - 1) % PRE_SERIALIZED_COUNT;
     const message = preSerializedMessages[messageIndex];
 
-    const currentScenario = execution.scenario.name;
-    const metric = scenarioMetrics[currentScenario];
+    if (!cachedMetric) {
+        cachedMetric = scenarioMetrics[execution.scenario.name];
+    }
 
     const start = Date.now();
     writer.produce({ messages: [message] });
     const latency = Date.now() - start;
 
-    if (metric) {
-        metric.add(latency);
+    if (cachedMetric) {
+        cachedMetric.add(latency);
     }
 }
 
