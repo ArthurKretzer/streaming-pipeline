@@ -342,6 +342,58 @@ stop-consume: stop-consume-robot-data-cloud stop-consume-robot-data-edge
 collect-metrics:
 	uv run src/prometheus_metrics.py --edge-ip=$(EDGE_IP) --cloud-ip=$(CLOUD_IP) --experiment-name=$(EXP_NAME)
 
+start-k6-smoke:
+	docker run --rm -i \
+		--user $(shell id -u):$(shell id -g) \
+		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
+		--workdir /scripts \
+		--net=host \
+		-e TEST_TYPE=smoke \
+		mostafamoradian/xk6-kafka:latest \
+		run script.js
+
+start-k6-average:
+	docker run --rm -i \
+		--user $(shell id -u):$(shell id -g) \
+		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
+		--workdir /scripts \
+		--net=host \
+		-e TEST_TYPE=average \
+		mostafamoradian/xk6-kafka:latest \
+		run script.js
+
+start-k6-stress:
+	docker run --rm -i \
+		--user $(shell id -u):$(shell id -g) \
+		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
+		--workdir /scripts \
+		--net=host \
+		-e TEST_TYPE=stress \
+		mostafamoradian/xk6-kafka:latest \
+		run script.js
+
+start-k6-breakpoint:
+	docker run --rm -i \
+		--user $(shell id -u):$(shell id -g) \
+		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
+		--workdir /scripts \
+		--net=host \
+		-e TEST_TYPE=breakpoint \
+		mostafamoradian/xk6-kafka:latest \
+		run script.js
+
+start-k6-soak:
+	docker run --rm -i \
+		--user $(shell id -u):$(shell id -g) \
+		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
+		--workdir /scripts \
+		--net=host \
+		-e TEST_TYPE=soak \
+		mostafamoradian/xk6-kafka:latest \
+		run script.js
+
+start-k6-experiment: start-k6-smoke
+
 spark-pods:
 	kubectl --context $(CLOUD_CONTEXT) get pods -n spark-jobs
 	kubectl --context $(EDGE_CONTEXT) get pods -n spark-jobs
