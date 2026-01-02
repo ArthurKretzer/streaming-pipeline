@@ -137,4 +137,4 @@ spec:
     exposeExecutorMetrics: true
     prometheus:
       jmxExporterJar: /opt/spark/jars/io.prometheus.jmx_jmx_prometheus_javaagent-1.0.1.jar
-      port: 4040
+      port: 8090
