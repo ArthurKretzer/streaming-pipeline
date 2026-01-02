@@ -165,6 +165,7 @@ class KafkaConsumerAvro:
         # Write Kafka stream to Delta table
         raw_stream_query = (
             parsed_stream.writeStream.format("delta")
+            .queryName(f"raw_{self.topic_name}")
             .option(
                 "checkpointLocation",
                 f"s3a://lakehouse/delta/checkpoints/raw_{self.topic_name}",
@@ -178,7 +179,7 @@ class KafkaConsumerAvro:
             .outputMode("append")
             .option("delta.logRetentionDuration", "interval 1 day")
             .option("delta.checkpointInterval", "10")
-            .trigger(processingTime="1 seconds")
+            .trigger(processingTime="5 seconds")
             .option("truncate", "false")
             .start(raw_delta_path)
         )
