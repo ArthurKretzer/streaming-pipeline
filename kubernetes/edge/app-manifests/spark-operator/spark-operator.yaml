@@ -38,7 +38,7 @@ spec:
     path: kubernetes/edge/yamls/monitoring
   destination:
     server: "https://kubernetes.default.svc"
-    namespace: spark-operator
+    namespace: spark-jobs
   syncPolicy:
     automated:
       prune: true
