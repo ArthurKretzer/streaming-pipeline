@@ -10,6 +10,9 @@ let schemaContent = open("./schema.json");
 schemaContent = schemaContent.replace(/"type":\s*"float"/g, '"type": "double"');
 
 const brokers = (__ENV.BROKERS || "172.16.208.242:31289").split(",");
+console.info(`Broker: ${brokers}`);
+console.info(`Schema registry: ${__ENV.SCHEMA_REGISTRY_URL}`);
+console.info(`Test type: ${__ENV.TEST_TYPE}`);
 const topic = "robot_data-avro";
 
 const writer = new Writer({
@@ -25,6 +28,7 @@ const schemaRegistry = new SchemaRegistry({
 });
 
 // Create the value schema once
+console.info(`Creating schema...`);
 const valueSchemaObject = schemaRegistry.createSchema({
     subject: "robot_data-avro-value",
     schema: schemaContent,
@@ -35,6 +39,7 @@ const valueSchemaObject = schemaRegistry.createSchema({
 const PRE_SERIALIZED_COUNT = 100;
 const preSerializedMessages = [];
 
+console.info(`Pre-serializing messages to AVRO...`);
 // Initialize pre-serialized messages
 for (let i = 0; i < PRE_SERIALIZED_COUNT; i++) {
     // Deterministically pick a payload from the dataset
@@ -59,6 +64,10 @@ for (let i = 0; i < PRE_SERIALIZED_COUNT; i++) {
             schema: valueSchemaObject,
             schemaType: SCHEMA_TYPE_AVRO,
         }),
+        metadata: {
+            robotId: robotId,
+            source_timestamp: payload.source_timestamp,
+        },
     });
 }
 
@@ -144,6 +153,7 @@ export const options = {
     },
 };
 
+console.info(`Starting test ${TEST_TYPE}...`);
 export default function () {
     // Select a deterministic robot ID based on VU ID to distribute load
     const messageIndex = (__VU - 1) % PRE_SERIALIZED_COUNT;
@@ -153,7 +163,10 @@ export default function () {
     try {
         writer.produce({ messages: [message] });
         const latency = Date.now() - start;
-        ackTrend.add(latency);
+        ackTrend.add(latency, {
+            robotId: message.metadata.robotId,
+            source_timestamp: String(message.metadata.source_timestamp),
+        });
     } catch (error) {
         // Errors will automatically increment kafka_writer_error_count
         console.error(`Produced failed: ${error}`);
