@@ -42,7 +42,7 @@ class KafkaTopicConfigurator:
         self,
         topic_name: str,
         num_partitions: int = 15,
-        replication_factor: int = 3,
+        replication_factor: int = 4,
     ) -> bool:
         """
         Creates a Kafka topic if it does not already exist.
@@ -52,7 +52,7 @@ class KafkaTopicConfigurator:
             num_partitions (int): Number of partitions for the topic.
                 Broker default is 15.
             replication_factor (int): Replication factor for the topic.
-                Broker default is 3.
+                Broker default is 4.
 
         Returns:
             bool: Created (true) or not (false).
