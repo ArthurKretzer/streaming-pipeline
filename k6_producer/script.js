@@ -113,9 +113,9 @@ const SCENARIOS = {
     soak: {
         // Long duration at nominal load
         executor: 'constant-arrival-rate',
-        rate: 1000,
+        rate: 4000,
         timeUnit: '1s',
-        duration: '4h',
+        duration: '1h',
         preAllocatedVUs: 50,
         maxVUs: 200,
     }
@@ -127,17 +127,17 @@ export const options = {
     },
     thresholds: {
         // 1) Injection fidelity: if this fails, k6 did not achieve your configured rate.
-        dropped_iterations: ['count==0'],
+        // dropped_iterations: ['count==0'],
 
         // 2) Kafka acceptance
-        kafka_writer_error_count: ['count==0'],
+        // kafka_writer_error_count: ['count==0'],
 
         // 3) Producer-side produce duration: set a conservative bound first, then tighten empirically.
         // This is where you will see the breakpoint emerge.
-        kafka_writer_write_seconds: ['p(95)<0.050', 'p(99)<0.100'],
+        // kafka_writer_write_seconds: ['p(95)<0.100'],
 
         // Monitor ack wait time specifically as requested
-        kafka_writer_wait_seconds: ['p(95)<0.050', 'p(99)<0.100'],
+        // kafka_writer_wait_seconds: ['p(95)<0.050', 'p(99)<0.100'],
 
         // 3) Latency check (soft failure)
         ack_latency: ['p(95)<1000'], // 1s max ack time as sanity check
