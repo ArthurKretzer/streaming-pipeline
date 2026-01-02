@@ -342,64 +342,62 @@ stop-consume: stop-consume-robot-data-cloud stop-consume-robot-data-edge
 collect-metrics:
 	uv run src/prometheus_metrics.py --edge-ip=$(EDGE_IP) --cloud-ip=$(CLOUD_IP) --experiment-name=$(EXP_NAME)
 
-PROMETHEUS_RW_URL := http://172.16.208.243:30090/api/v1/write
-
-start-k6-smoke:
+start-k6-smoke-edge:
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
 		--workdir /scripts \
 		--net=host \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/$(ENV).env \
 		-e TEST_TYPE=smoke \
-		-e K6_PROMETHEUS_RW_SERVER_URL=$(PROMETHEUS_RW_URL) \
 		mostafamoradian/xk6-kafka:latest \
 		run --out experimental-prometheus-rw script.js
 
-start-k6-average:
+start-k6-average-edge:
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
 		--workdir /scripts \
 		--net=host \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/$(ENV).env \
 		-e TEST_TYPE=average \
-		-e K6_PROMETHEUS_RW_SERVER_URL=$(PROMETHEUS_RW_URL) \
 		mostafamoradian/xk6-kafka:latest \
 		run --out experimental-prometheus-rw script.js
 
-start-k6-stress:
+start-k6-stress-edge:
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
 		--workdir /scripts \
 		--net=host \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/$(ENV).env \
 		-e TEST_TYPE=stress \
-		-e K6_PROMETHEUS_RW_SERVER_URL=$(PROMETHEUS_RW_URL) \
 		mostafamoradian/xk6-kafka:latest \
 		run --out experimental-prometheus-rw script.js
 
-start-k6-breakpoint:
+start-k6-breakpoint-edge:
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
 		--workdir /scripts \
 		--net=host \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/$(ENV).env \
 		-e TEST_TYPE=breakpoint \
-		-e K6_PROMETHEUS_RW_SERVER_URL=$(PROMETHEUS_RW_URL) \
 		mostafamoradian/xk6-kafka:latest \
 		run --out experimental-prometheus-rw script.js
 
-start-k6-soak:
+start-k6-soak-edge:
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
 		--workdir /scripts \
 		--net=host \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/$(ENV).env  \
 		-e TEST_TYPE=soak \
-		-e K6_PROMETHEUS_RW_SERVER_URL=$(PROMETHEUS_RW_URL) \
 		mostafamoradian/xk6-kafka:latest \
 		run --out experimental-prometheus-rw script.js
 
-start-k6-experiment: start-k6-smoke start-k6-average start-k6-stress start-k6-breakpoint start-k6-soak
+start-k6-experiment: start-k6-smoke-edge start-k6-average-edge start-k6-stress-edge start-k6-breakpoint-edge start-k6-soak-edge
 
 spark-pods:
 	kubectl --context $(CLOUD_CONTEXT) get pods -n spark-jobs
