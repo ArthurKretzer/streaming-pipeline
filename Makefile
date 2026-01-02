@@ -397,7 +397,7 @@ start-k6-soak-edge:
 		mostafamoradian/xk6-kafka:1.2.0 \
 		run --out experimental-prometheus-rw --out influxdb=http://k6:my-super-secret-auth-token@localhost:8086/k6 script.js
 
-start-k6-experiment: start-k6-smoke-edge start-k6-average-edge start-k6-stress-edge start-k6-breakpoint-edge start-k6-soak-edge
+start-k6-experiment-edge: start-k6-smoke-edge start-k6-stress-edge start-k6-breakpoint-edge start-k6-spike-edge start-k6-soak-edge
 
 spark-pods:
 	kubectl --context $(CLOUD_CONTEXT) get pods -n spark-jobs
