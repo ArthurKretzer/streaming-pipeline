@@ -10,6 +10,7 @@ from pyspark.sql.functions import current_timestamp, expr
 from pyspark.sql.types import (
     FloatType,
     IntegerType,
+    LongType,
     StringType,
     StructField,
     StructType,
@@ -96,6 +97,8 @@ class KafkaConsumerAvro:
                 spark_type = StringType()
             elif field_type == "float":
                 spark_type = FloatType()
+            elif field_type == "long":
+                spark_type = LongType()
             else:
                 raise ValueError(f"Unsupported field type: {field_type}")
 
