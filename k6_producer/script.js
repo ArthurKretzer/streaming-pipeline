@@ -110,6 +110,20 @@ const SCENARIOS = {
             { target: 20000, duration: '15m' }, // Linear ramp to 20k to find breakpoint
         ],
     },
+    spike: {
+        executor: 'ramping-arrival-rate',
+        startRate: 1000,
+        timeUnit: '1s',
+        preAllocatedVUs: 100,
+        maxVUs: 2000,
+        stages: [
+            { target: 1000, duration: '1m' }, // Warm up
+            { target: 15000, duration: '30s' }, // Spike to 15x load
+            { target: 15000, duration: '1m' }, // Sustain spike
+            { target: 1000, duration: '30s' }, // Scale down / Recovery
+            { target: 1000, duration: '1m' }, // Cooldown
+        ],
+    },
     soak: {
         // Long duration at nominal load
         executor: 'constant-arrival-rate',
@@ -168,7 +182,7 @@ const ENV_TYPE = __ENV.ENV_TYPE || 'local';
 
 export function handleSummary(data) {
     return {
-        [`summary-${ENV_TYPE}-${TEST_TYPE}.json`]: JSON.stringify(data, null, 2),
+        [`./results/summary-${ENV_TYPE}-${TEST_TYPE}.json`]: JSON.stringify(data, null, 2),
         stdout: textSummary(data, { indent: ' ', enableColors: true }),
     };
 }
