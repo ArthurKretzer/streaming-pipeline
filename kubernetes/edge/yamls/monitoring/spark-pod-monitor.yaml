@@ -4,17 +4,21 @@ metadata:
   name: spark-app-monitor
   namespace: spark-jobs
   labels:
-    release: monitoring
+    # 1. Match this to your Prometheus release label
+    release: "kube-prometheus-stack" 
     app: spark
 spec:
   selector:
     matchLabels:
       spark-role: driver
+      # Matches the name in your SparkApplication metadata
       sparkoperator.k8s.io/app-name: streaming-pipeline-kafka-avro-to-delta
   podMetricsEndpoints:
-  - port: metrics
+    # Endpoint for JMX metrics (if exposeDriverMetrics: true is set)
+  - port: metrics 
     path: /metrics
     interval: 15s
-  - targetPort: 4040
-    path: /metrics/prometheus
+    # Endpoint for Native Streaming Metrics
+  - port: spark-uport
+    path: /metrics/prometheus/ # 2. Added trailing slash
     interval: 15s

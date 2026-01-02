@@ -97,6 +97,14 @@ spec:
     coreLimit: "1200m"
     memory: "2g"
     serviceAccount: spark-operator-spark
+    labels:
+      metrics-exposed: "true"
+    serviceAnnotations:
+      # This tells Prometheus (if you have "service discovery" on) 
+      # that this service carries metrics.
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "4040"
+      prometheus.io/path: "/metrics/prometheus/"
   executor:
     javaOptions: "-Divy.cache.dir=/tmp/ivy2/cache -Divy.home=/tmp/ivy2"
     env:
@@ -129,4 +137,4 @@ spec:
     exposeExecutorMetrics: true
     prometheus:
       jmxExporterJar: /opt/spark/jars/io.prometheus.jmx_jmx_prometheus_javaagent-1.0.1.jar
-      port: 8080
+      port: 4040
