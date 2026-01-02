@@ -125,6 +125,7 @@ class KafkaConsumerAvro:
             .option("fetchMaxWaitMs", "20")  # Default: 500ms
             .option("fetchMinBytes", "1")
             .option("maxPollRecords", "50000")  # Default: 500
+            .option("includeHeaders", "true")
             .load()
         )
 
@@ -140,8 +141,15 @@ class KafkaConsumerAvro:
         # Parse the JSON from the `value` column into a structured format
         parsed_stream = kafka_stream_with_timestamp.select(
             "topic",
-            "timestamp",
-            "landing_timestamp",
+            "timestamp",  # This is Kafka's LogAppendTime (Broker Receipt Time)
+            "landing_timestamp",  # This is when the message was received by Spark
+            # Extract 'sent_at' from headers (Binary -> String -> Long)
+            expr(
+                "cast(element_at(map_from_entries(headers), 'sent_at') as string)"
+            )
+            .cast("long")
+            .alias("sent_at_ts"),
+            # Extract the Avro payload from the Kafka message
             from_avro(
                 expr("substring(value, 6, length(value)-5)"),
                 avro_schema_str,
