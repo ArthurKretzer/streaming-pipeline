@@ -351,7 +351,7 @@ start-k6-smoke-edge:
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=smoke \
 		mostafamoradian/xk6-kafka:1.2.0 \
-		run --out experimental-prometheus-rw --out influxdb=http://localhost:8086/k6 script.js
+		run --out experimental-prometheus-rw --out influxdb=http://k6:my-super-secret-auth-token@localhost:8086/k6 script.js
 
 start-k6-stress-edge:
 	docker run --rm -i \
@@ -362,7 +362,7 @@ start-k6-stress-edge:
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=stress \
 		mostafamoradian/xk6-kafka:1.2.0 \
-		run --out experimental-prometheus-rw --out influxdb=http://localhost:8086/k6 script.js
+		run --out experimental-prometheus-rw --out influxdb=http://k6:my-super-secret-auth-token@localhost:8086/k6 script.js
 
 start-k6-breakpoint-edge:
 	docker run --rm -i \
@@ -373,7 +373,7 @@ start-k6-breakpoint-edge:
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=breakpoint \
 		mostafamoradian/xk6-kafka:1.2.0 \
-		run --out experimental-prometheus-rw --out influxdb=http://localhost:8086/k6 script.js
+		run --out experimental-prometheus-rw --out influxdb=http://k6:my-super-secret-auth-token@localhost:8086/k6 script.js
 
 start-k6-spike-edge:
 	docker run --rm -i \
@@ -384,7 +384,7 @@ start-k6-spike-edge:
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=spike \
 		mostafamoradian/xk6-kafka:1.2.0 \
-		run --out experimental-prometheus-rw --out influxdb=http://localhost:8086/k6 script.js
+		run --out experimental-prometheus-rw --out influxdb=http://k6:my-super-secret-auth-token@localhost:8086/k6 script.js
 
 start-k6-soak-edge:
 	docker run --rm -i \
@@ -395,7 +395,7 @@ start-k6-soak-edge:
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env  \
 		-e TEST_TYPE=soak \
 		mostafamoradian/xk6-kafka:1.2.0 \
-		run --out experimental-prometheus-rw --out influxdb=http://localhost:8086/k6 script.js
+		run --out experimental-prometheus-rw --out influxdb=http://k6:my-super-secret-auth-token@localhost:8086/k6 script.js
 
 start-k6-experiment: start-k6-smoke-edge start-k6-average-edge start-k6-stress-edge start-k6-breakpoint-edge start-k6-soak-edge
 
@@ -410,6 +410,22 @@ spark-logs:
 # InfluxDB
 start-influxdb:
 	docker compose -f docker/influxdb.yaml up -d
+	@echo "Waiting for InfluxDB to start..."
+	@sleep 10
+	@echo "Creating V1 DBRP mapping for k6..."
+	@docker exec influxdb influx v1 dbrp create \
+		--db k6 \
+		--rp default \
+		--bucket-id $$(docker exec influxdb influx bucket list --name k6 --hide-headers | cut -f 1) \
+		--default \
+		--org my-org \
+		--token my-super-secret-auth-token || echo "DBRP mapping might already exist"
+	@echo "Creating V1 auth for user k6..."
+	@docker exec influxdb influx v1 auth create \
+		--username k6 \
+		--password k6password \
+		--org my-org \
+		--token my-super-secret-auth-token || echo "V1 auth might already exist"
 
 stop-influxdb:
 	docker compose -f docker/influxdb.yaml down
