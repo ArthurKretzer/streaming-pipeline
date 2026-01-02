@@ -350,19 +350,8 @@ start-k6-smoke-edge:
 		--net=host \
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=smoke \
-		mostafamoradian/xk6-kafka:latest \
-		run --out experimental-prometheus-rw --out csv=metrics-smoke-edge.csv script.js
-
-start-k6-average-edge:
-	docker run --rm -i \
-		--user $(shell id -u):$(shell id -g) \
-		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
-		--workdir /scripts \
-		--net=host \
-		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
-		-e TEST_TYPE=average \
-		mostafamoradian/xk6-kafka:latest \
-		run --out experimental-prometheus-rw --out csv=metrics-average-edge.csv script.js
+		mostafamoradian/xk6-kafka:1.2.0 \
+		run --out experimental-prometheus-rw --out influxdb=http://localhost:8086/k6 script.js
 
 start-k6-stress-edge:
 	docker run --rm -i \
@@ -372,8 +361,8 @@ start-k6-stress-edge:
 		--net=host \
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=stress \
-		mostafamoradian/xk6-kafka:latest \
-		run --out experimental-prometheus-rw --out csv=metrics-stress-edge.csv script.js
+		mostafamoradian/xk6-kafka:1.2.0 \
+		run --out experimental-prometheus-rw --out influxdb=http://localhost:8086/k6 script.js
 
 start-k6-breakpoint-edge:
 	docker run --rm -i \
@@ -383,8 +372,8 @@ start-k6-breakpoint-edge:
 		--net=host \
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=breakpoint \
-		mostafamoradian/xk6-kafka:latest \
-		run --out experimental-prometheus-rw --out csv=metrics-breakpoint-edge.csv script.js
+		mostafamoradian/xk6-kafka:1.2.0 \
+		run --out experimental-prometheus-rw --out influxdb=http://localhost:8086/k6 script.js
 
 start-k6-soak-edge:
 	docker run --rm -i \
@@ -394,8 +383,8 @@ start-k6-soak-edge:
 		--net=host \
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env  \
 		-e TEST_TYPE=soak \
-		mostafamoradian/xk6-kafka:latest \
-		run --out experimental-prometheus-rw --out csv=metrics-soak-edge.csv script.js
+		mostafamoradian/xk6-kafka:1.2.0 \
+		run --out experimental-prometheus-rw --out influxdb=http://localhost:8086/k6 script.js
 
 start-k6-experiment: start-k6-smoke-edge start-k6-average-edge start-k6-stress-edge start-k6-breakpoint-edge start-k6-soak-edge
 
@@ -406,3 +395,10 @@ spark-pods:
 spark-logs:
 	kubectl --context $(CLOUD_CONTEXT) logs streaming-pipeline-kafka-avro-to-delta-driver -n spark-jobs
 	kubectl --context $(EDGE_CONTEXT) logs streaming-pipeline-kafka-avro-to-delta-driver -n spark-jobs
+
+# InfluxDB
+start-influxdb:
+	docker compose -f docker/influxdb.yaml up -d
+
+stop-influxdb:
+	docker compose -f docker/influxdb.yaml down
