@@ -96,6 +96,11 @@ def collect_metrics(prometheus_uri: str, experiment_name: str):
         "metrics_spark_sql_streaming_states_usedBytes",
         "metrics_spark_sql_streaming_lastProgress_numInputRows",
         "metrics_spark_sql_streaming_lastProgress_processedRowsPerSecond",
+        # Specific Spark Stream Metrics
+        "metrics_spark_jobs_streaming_pipeline_kafka_avro_to_delta_driver_spark_streaming_raw_robot_data_avro_inputRate_total_Number",
+        "metrics_spark_jobs_streaming_pipeline_kafka_avro_to_delta_driver_spark_streaming_raw_robot_data_avro_processingRate_total_Number",
+        "metrics_spark_jobs_streaming_pipeline_kafka_avro_to_delta_driver_spark_streaming_raw_robot_data_avro_latency_Number",
+        "metrics_spark_jobs_streaming_pipeline_kafka_avro_to_delta_driver_jvm_heap_usage",
     ]
 
     project_root = Path.cwd()
