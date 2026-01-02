@@ -35,42 +35,6 @@ const valueSchemaObject = schemaRegistry.createSchema({
     schemaType: SCHEMA_TYPE_AVRO,
 });
 
-// Pre-serialize messages for 100 robots to avoid runtime overhead
-const PRE_SERIALIZED_COUNT = 100;
-const preSerializedMessages = [];
-
-console.info(`Pre-serializing messages to AVRO...`);
-// Initialize pre-serialized messages
-for (let i = 0; i < PRE_SERIALIZED_COUNT; i++) {
-    // Deterministically pick a payload from the dataset
-    // We use modulo to cycle through rawData if PRE_SERIALIZED_COUNT > rawData.length
-    const rawPayloadIndex = i % rawData.length;
-    // Clone the object to avoid mutating the original source
-    const payload = Object.assign({}, rawData[rawPayloadIndex]);
-
-    // Set timestamp to now (integer ms) - this will be static for the test duration
-    payload.source_timestamp = Date.now();
-
-    // The key should correspond to the robot ID.
-    const robotId = `robot-${i}`;
-
-    preSerializedMessages.push({
-        key: schemaRegistry.serialize({
-            data: robotId,
-            schemaType: SCHEMA_TYPE_STRING,
-        }),
-        value: schemaRegistry.serialize({
-            data: payload,
-            schema: valueSchemaObject,
-            schemaType: SCHEMA_TYPE_AVRO,
-        }),
-        metadata: {
-            robotId: robotId,
-            source_timestamp: payload.source_timestamp,
-        },
-    });
-}
-
 // Custom trends
 const ackTrend = new Trend('ack_latency');
 
@@ -160,17 +124,41 @@ export const options = {
 
 console.info(`Starting test ${TEST_TYPE}...`);
 export default function () {
-    // Select a deterministic robot ID based on VU ID to distribute load
-    const messageIndex = (__VU - 1) % PRE_SERIALIZED_COUNT;
-    const message = preSerializedMessages[messageIndex];
+    const robot_id = `robot_${__VU}`;
+    // Deterministically pick a payload from the dataset
+    const rawPayloadIndex = (__VU - 1) % rawData.length;
+
+    // Clone the object to avoid mutating the original source
+    const payload = Object.assign({}, rawData[rawPayloadIndex]);
+
+    // Set dynamic properties
+    payload.robot_id = robot_id;
+    payload.source_timestamp = Date.now();
+
+    const key = schemaRegistry.serialize({
+        data: robot_id,
+        schemaType: SCHEMA_TYPE_STRING,
+    });
+
+    const value = schemaRegistry.serialize({
+        data: payload,
+        schema: valueSchemaObject,
+        schemaType: SCHEMA_TYPE_AVRO,
+    });
 
     const start = Date.now();
     try {
-        writer.produce({ messages: [message] });
+        writer.produce({
+            messages: [{
+                key: key,
+                value: value,
+            }]
+        });
         const latency = Date.now() - start;
         ackTrend.add(latency, {
-            robotId: message.metadata.robotId,
-            source_timestamp: String(message.metadata.source_timestamp),
+            robot_id: robot_id,
+            source_timestamp: String(payload.source_timestamp),
+            environment: ENV_TYPE,
         });
     } catch (error) {
         // Errors will automatically increment kafka_writer_error_count
