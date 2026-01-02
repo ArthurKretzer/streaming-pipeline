@@ -434,6 +434,6 @@ stop-influxdb:
 #make generate-influxdb-metrics START="2023-10-27T10:00:00Z" STOP="2023-10-27T11:00:00Z"
 generate-influxdb-metrics:
 	uv run k6_producer/exporter/exporter.py \
-		--start $(or $(START), 0) \
-		--stop $(or $(STOP), now()) \
-		--output-dir $(or $(OUTPUT_DIR), data/raw/k6_metrics)
+		--start=$(or $(START), -15m) \
+		--stop=$(or $(STOP), 'now()') \
+		--output-dir=$(or $(OUTPUT_DIR), data/raw/k6_metrics)
