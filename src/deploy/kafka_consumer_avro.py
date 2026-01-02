@@ -8,6 +8,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.avro.functions import from_avro
 from pyspark.sql.functions import current_timestamp, expr
 from pyspark.sql.types import (
+    DoubleType,
     FloatType,
     IntegerType,
     LongType,
@@ -99,6 +100,8 @@ class KafkaConsumerAvro:
                 spark_type = FloatType()
             elif field_type == "long":
                 spark_type = LongType()
+            elif field_type == "double":
+                spark_type = DoubleType()
             else:
                 raise ValueError(f"Unsupported field type: {field_type}")
 
