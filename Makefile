@@ -375,6 +375,17 @@ start-k6-breakpoint-edge:
 		mostafamoradian/xk6-kafka:1.2.0 \
 		run --out experimental-prometheus-rw --out influxdb=http://localhost:8086/k6 script.js
 
+start-k6-spike-edge:
+	docker run --rm -i \
+		--user $(shell id -u):$(shell id -g) \
+		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
+		--workdir /scripts \
+		--net=host \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
+		-e TEST_TYPE=spike \
+		mostafamoradian/xk6-kafka:1.2.0 \
+		run --out experimental-prometheus-rw --out influxdb=http://localhost:8086/k6 script.js
+
 start-k6-soak-edge:
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
