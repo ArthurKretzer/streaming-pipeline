@@ -4,8 +4,8 @@ import { Trend } from 'k6/metrics';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 
 // Load data and schema
-const rawData = JSON.parse(open("./robot_data.json"));
-let schemaContent = open("./schema.json");
+const rawData = JSON.parse(open("./dataset/robot_data.json"));
+let schemaContent = open("./schemas/schema.json");
 // k6/JS uses float64 (double), so we need to adjust the schema
 schemaContent = schemaContent.replace(/"type":\s*"float"/g, '"type": "double"');
 
@@ -84,15 +84,6 @@ const SCENARIOS = {
         duration: '1m',
         preAllocatedVUs: 1,
         maxVUs: 5,
-    },
-    average: {
-        // 100 robots at 10 Hz = 1000 msg/s
-        executor: 'constant-arrival-rate',
-        rate: 1000,
-        timeUnit: '1s',
-        duration: '10m', // Warmup included implicitly by running longer
-        preAllocatedVUs: 50,
-        maxVUs: 200,
     },
     stress: {
         // Push beyond average in steps: 1k -> 2k -> 5k -> 10k
