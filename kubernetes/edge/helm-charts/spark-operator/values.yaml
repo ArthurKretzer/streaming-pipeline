@@ -63,7 +63,7 @@ controller:
 
   uiService:
     # -- Specifies whether to create service for Spark web UI.
-    enable: false
+    enable: true
 
   uiIngress:
     # -- Specifies whether to create ingress for Spark web UI.

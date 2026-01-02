@@ -24,3 +24,28 @@ spec:
     syncOptions:
       - ServerSideApply=true
       - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  # app name
+  name: streaming-pod-monitor
+  # deployed yaml
+  namespace: cicd
+spec:
+  project: default
+  source:
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
+    path: kubernetes/cloud/yamls/monitoring/spark-pod-monitor.yaml
+    targetRevision: main
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: spark-jobs
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=true
+
