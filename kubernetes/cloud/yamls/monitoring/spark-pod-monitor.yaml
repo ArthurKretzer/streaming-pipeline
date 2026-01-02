@@ -15,10 +15,10 @@ spec:
       sparkoperator.k8s.io/app-name: streaming-pipeline-kafka-avro-to-delta
   podMetricsEndpoints:
     # Endpoint for JMX metrics (if exposeDriverMetrics: true is set)
-  - port: metrics 
+  - port: jmx-exporter
     path: /metrics
     interval: 15s
-    # Endpoint for Native Streaming Metrics
-  - port: spark-uport
-    path: /metrics/prometheus/ # 2. Added trailing slash
+    # 2. Corrected port name for the native Spark metrics
+  - port: spark-ui
+    path: /metrics/prometheus/
     interval: 15s
