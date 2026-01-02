@@ -9,7 +9,7 @@ let schemaContent = open("./schema.json");
 // k6/JS uses float64 (double), so we need to adjust the schema
 schemaContent = schemaContent.replace(/"type":\s*"float"/g, '"type": "double"');
 
-const brokers = ["172.16.208.242:31289"];
+const brokers = (__ENV.BROKERS || "172.16.208.242:31289").split(",");
 const topic = "robot_data-avro";
 
 const writer = new Writer({
@@ -21,12 +21,12 @@ const writer = new Writer({
 });
 
 const schemaRegistry = new SchemaRegistry({
-    url: "http://172.16.208.242:32081",
+    url: __ENV.SCHEMA_REGISTRY_URL || "http://172.16.208.242:32081",
 });
 
 // Create the value schema once
 const valueSchemaObject = schemaRegistry.createSchema({
-    subject: "robot_data-avro-value-optimized",
+    subject: "robot_data-avro-value",
     schema: schemaContent,
     schemaType: SCHEMA_TYPE_AVRO,
 });
@@ -160,9 +160,11 @@ export default function () {
     }
 }
 
+const ENV_TYPE = __ENV.ENV_TYPE || 'local';
+
 export function handleSummary(data) {
     return {
-        [`summary-${TEST_TYPE}.json`]: JSON.stringify(data, null, 2),
+        [`summary-${ENV_TYPE}-${TEST_TYPE}.json`]: JSON.stringify(data, null, 2),
         stdout: textSummary(data, { indent: ' ', enableColors: true }),
     };
 }
