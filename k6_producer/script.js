@@ -1,6 +1,7 @@
-import { Writer, SchemaRegistry, SCHEMA_TYPE_AVRO, SCHEMA_TYPE_STRING } from "k6/x/kafka";
+import { Writer, Connection, SchemaRegistry, SCHEMA_TYPE_AVRO, SCHEMA_TYPE_STRING } from "k6/x/kafka";
 import execution from 'k6/execution';
 import { Trend } from 'k6/metrics';
+import { sleep } from 'k6';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 
 // Load data and schema
@@ -10,29 +11,19 @@ let schemaContent = open("./schemas/schema.json");
 schemaContent = schemaContent.replace(/"type":\s*"float"/g, '"type": "double"');
 
 const brokers = (__ENV.BROKERS || "172.16.208.242:31289").split(",");
-console.info(`Broker: ${brokers}`);
-console.info(`Schema registry: ${__ENV.SCHEMA_REGISTRY_URL}`);
-console.info(`Test type: ${__ENV.TEST_TYPE}`);
 const topic = "robot_data-avro";
 
 const writer = new Writer({
     brokers: brokers,
     topic: topic,
-    autoCreateTopic: true,
+    autoCreateTopic: false, // Topic creation handled in setup()
+    balancer: "balancer_murmur2", // Ensure partition affinity based on key
     batchSize: 1, // Must be 1 to measure per-message ack time accurately
     requiredAcks: 1, // Leader ack. Use -1 for all ISR if desired.
 });
 
 const schemaRegistry = new SchemaRegistry({
     url: __ENV.SCHEMA_REGISTRY_URL || "http://172.16.208.242:32081",
-});
-
-// Create the value schema once
-console.info(`Creating schema...`);
-const valueSchemaObject = schemaRegistry.createSchema({
-    subject: "robot_data-avro-value",
-    schema: schemaContent,
-    schemaType: SCHEMA_TYPE_AVRO,
 });
 
 // Custom trends
@@ -103,6 +94,7 @@ export const options = {
     scenarios: {
         [TEST_TYPE]: SCENARIOS[TEST_TYPE],
     },
+    setupTimeout: '5m', // Valid for setup()
     thresholds: {
         // 1) Injection fidelity: if this fails, k6 did not achieve your configured rate.
         // dropped_iterations: ['count==0'],
@@ -122,42 +114,110 @@ export const options = {
     },
 };
 
-console.info(`Starting test ${TEST_TYPE}...`);
-export default function () {
-    const robot_id = `robot_${__VU}`;
-    // Deterministically pick a payload from the dataset
-    const rawPayloadIndex = (__VU - 1) % rawData.length;
-
-    // Clone the object to avoid mutating the original source
-    const payload = Object.assign({}, rawData[rawPayloadIndex]);
-
-    // Set dynamic properties
-    payload.robot_id = robot_id;
-    payload.source_timestamp = Date.now();
-
-    const key = schemaRegistry.serialize({
-        data: robot_id,
-        schemaType: SCHEMA_TYPE_STRING,
+export function setup() {
+    // 1. Topic Creation
+    const connection = new Connection({
+        address: brokers[0], // connect to the first broker
     });
 
-    const value = schemaRegistry.serialize({
-        data: payload,
-        schema: valueSchemaObject,
+    try {
+        const topics = connection.listTopics();
+        if (!topics.includes(topic)) {
+            connection.createTopic({
+                topic: topic,
+                numPartitions: 4,
+                replicationFactor: 4,
+                config: {
+                    "message.timestamp.type": "LogAppendTime",
+                },
+            });
+        }
+    } catch (e) {
+        // If topic creation fails (e.g. exists), log but continue if possible or throw
+        console.warn("Topic creation/check warning:", e);
+    }
+
+    connection.close();
+    sleep(2); // Wait for metadata propagation
+
+    // 2. Pre-serialization
+    // Calculate max VUs needed across all scenarios to size the array
+    // (Or just pick a safe upper bound like 2000 as per plan)
+    const MAX_VUS = 2500;
+
+    // Register schema ONCE here in setup
+    const valueSchemaObject = schemaRegistry.createSchema({
+        subject: "robot_data-avro-value",
+        schema: schemaContent,
         schemaType: SCHEMA_TYPE_AVRO,
     });
 
+    const messages = [];
+
+    const now = Date.now(); // Fixed timestamp for all messages in this batch for pre-serialization trade-off
+
+    for (let i = 0; i < MAX_VUS; i++) {
+        const robot_id = `robot_${i + 1}`;
+        // Deterministically pick a payload
+        const rawPayloadIndex = i % rawData.length;
+
+        // Clone object
+        const payload = Object.assign({}, rawData[rawPayloadIndex]);
+
+        // Set dynamic properties
+        payload.robot_id = robot_id;
+        payload.source_timestamp = now;
+
+        const keyFn = schemaRegistry.serialize({
+            data: robot_id,
+            schemaType: SCHEMA_TYPE_STRING,
+        });
+
+        const valueFn = schemaRegistry.serialize({
+            data: payload,
+            schema: valueSchemaObject,
+            schemaType: SCHEMA_TYPE_AVRO,
+        });
+
+        messages.push({
+            key: keyFn,
+            value: valueFn,
+            robot_id: robot_id, // Store plain ID for metrics
+        });
+    }
+
+    return messages;
+}
+
+export default function (data) {
+    // data is the return value of setup()
+    // __VU is 1-based, so use __VU - 1 as index
+    // Use modular arithmetic just in case __VU > data.length (safety)
+    const msg = data[(__VU - 1) % data.length];
+
     const start = Date.now();
+
+    // Kafka Headers are strictly byte arrays ([]byte). They have no concept of "types" like Integer, Long, or Float.
+    // If you send a raw Number from JavaScript (k6), you run into the Endianness Trap.
+    // The Problem: Little Endian (JS) vs. Big Endian (Java/Network)
+    // JavaScript (k6) runs on x86/ARM architectures, which are typically Little Endian.
+    // Spark (Java/Scala) runs on the JVM, which is Big Endian by standard.
+    // If you just throw a raw number into the header byte array, Spark might interpret the number 1 as 72,057,594,037,927,936 (byte reversal).
+    const sentAt = Date.now().toString();
     try {
         writer.produce({
             messages: [{
-                key: key,
-                value: value,
+                key: msg.key,
+                value: msg.value,
+                headers: {
+                    "sent_at": sentAt,
+                    "robot_id": msg.robot_id
+                }
             }]
         });
         const latency = Date.now() - start;
         ackTrend.add(latency, {
-            robot_id: robot_id,
-            source_timestamp: String(payload.source_timestamp),
+            robot_id: msg.robot_id,
             environment: ENV_TYPE,
         });
     } catch (error) {
