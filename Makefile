@@ -348,10 +348,10 @@ start-k6-smoke-edge:
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
 		--workdir /scripts \
 		--net=host \
-		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/$(ENV).env \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=smoke \
 		mostafamoradian/xk6-kafka:latest \
-		run --out experimental-prometheus-rw script.js
+		run --out experimental-prometheus-rw --out csv=metrics-smoke-edge.csv script.js
 
 start-k6-average-edge:
 	docker run --rm -i \
@@ -359,10 +359,10 @@ start-k6-average-edge:
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
 		--workdir /scripts \
 		--net=host \
-		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/$(ENV).env \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=average \
 		mostafamoradian/xk6-kafka:latest \
-		run --out experimental-prometheus-rw script.js
+		run --out experimental-prometheus-rw --out csv=metrics-average-edge.csv script.js
 
 start-k6-stress-edge:
 	docker run --rm -i \
@@ -370,10 +370,10 @@ start-k6-stress-edge:
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
 		--workdir /scripts \
 		--net=host \
-		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/$(ENV).env \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=stress \
 		mostafamoradian/xk6-kafka:latest \
-		run --out experimental-prometheus-rw script.js
+		run --out experimental-prometheus-rw --out csv=metrics-stress-edge.csv script.js
 
 start-k6-breakpoint-edge:
 	docker run --rm -i \
@@ -381,10 +381,10 @@ start-k6-breakpoint-edge:
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
 		--workdir /scripts \
 		--net=host \
-		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/$(ENV).env \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=breakpoint \
 		mostafamoradian/xk6-kafka:latest \
-		run --out experimental-prometheus-rw script.js
+		run --out experimental-prometheus-rw --out csv=metrics-breakpoint-edge.csv script.js
 
 start-k6-soak-edge:
 	docker run --rm -i \
@@ -392,10 +392,10 @@ start-k6-soak-edge:
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
 		--workdir /scripts \
 		--net=host \
-		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/$(ENV).env  \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env  \
 		-e TEST_TYPE=soak \
 		mostafamoradian/xk6-kafka:latest \
-		run --out experimental-prometheus-rw script.js
+		run --out experimental-prometheus-rw --out csv=metrics-soak-edge.csv script.js
 
 start-k6-experiment: start-k6-smoke-edge start-k6-average-edge start-k6-stress-edge start-k6-breakpoint-edge start-k6-soak-edge
 
