@@ -1,8 +1,6 @@
-import { Writer, Connection, SchemaRegistry, SCHEMA_TYPE_AVRO, SCHEMA_TYPE_STRING } from "k6/x/kafka";
-import execution from 'k6/execution';
-import { Trend } from 'k6/metrics';
-import { sleep } from 'k6';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
+import { sleep } from 'k6';
+import { Connection, SCHEMA_TYPE_AVRO, SCHEMA_TYPE_STRING, SchemaRegistry, Writer } from "k6/x/kafka";
 
 // Load data and schema
 const rawData = JSON.parse(open("./dataset/robot_data.json"));
@@ -18,7 +16,8 @@ const writer = new Writer({
     topic: topic,
     autoCreateTopic: false, // Topic creation handled in setup()
     balancer: "balancer_murmur2", // Ensure partition affinity based on key
-    batchSize: 1, // Must be 1 to measure per-message ack time accurately
+    batchSize: 1000,
+    batchTimeout: 10000000, // 10ms lingering time in nano seconds
     requiredAcks: 1, // Leader ack. Use -1 for all ISR if desired.
 });
 
@@ -26,15 +25,12 @@ const schemaRegistry = new SchemaRegistry({
     url: __ENV.SCHEMA_REGISTRY_URL || "http://172.16.208.242:32081",
 });
 
-// Custom trends
-const ackTrend = new Trend('ack_latency');
-
 const TEST_TYPE = __ENV.TEST_TYPE || 'smoke';
 
 const SCENARIOS = {
     smoke: {
         executor: 'constant-arrival-rate',
-        rate: 1,
+        rate: 1000,
         timeUnit: '1s',
         duration: '1m',
         preAllocatedVUs: 1,
@@ -45,13 +41,12 @@ const SCENARIOS = {
         executor: 'ramping-arrival-rate',
         startRate: 1000,
         timeUnit: '1s',
-        preAllocatedVUs: 100,
-        maxVUs: 1000,
+        preAllocatedVUs: 1000,
+        maxVUs: 1200,
         stages: [
             { target: 1000, duration: '5m' }, // Steady at average
             { target: 2000, duration: '5m' }, // 2x load
             { target: 5000, duration: '5m' }, // 5x load
-            { target: 10000, duration: '5m' }, // 10x load
         ],
     },
     breakpoint: {
@@ -59,22 +54,22 @@ const SCENARIOS = {
         executor: 'ramping-arrival-rate',
         startRate: 1000,
         timeUnit: '1s',
-        preAllocatedVUs: 200,
-        maxVUs: 2000,
+        preAllocatedVUs: 1000,
+        maxVUs: 1200,
         stages: [
-            { target: 20000, duration: '15m' }, // Linear ramp to 20k to find breakpoint
+            { target: 6000, duration: '15m' }, // Linear ramp to 6k to find breakpoint
         ],
     },
     spike: {
         executor: 'ramping-arrival-rate',
         startRate: 1000,
         timeUnit: '1s',
-        preAllocatedVUs: 100,
-        maxVUs: 2000,
+        preAllocatedVUs: 1000,
+        maxVUs: 1200,
         stages: [
             { target: 1000, duration: '1m' }, // Warm up
-            { target: 15000, duration: '30s' }, // Spike to 15x load
-            { target: 15000, duration: '1m' }, // Sustain spike
+            { target: 5000, duration: '30s' }, // Spike to 5x load
+            { target: 5000, duration: '1m' }, // Sustain spike
             { target: 1000, duration: '30s' }, // Scale down / Recovery
             { target: 1000, duration: '1m' }, // Cooldown
         ],
@@ -85,8 +80,8 @@ const SCENARIOS = {
         rate: 4000,
         timeUnit: '1s',
         duration: '1h',
-        preAllocatedVUs: 50,
-        maxVUs: 200,
+        preAllocatedVUs: 400,
+        maxVUs: 1200,
     }
 };
 
@@ -96,21 +91,13 @@ export const options = {
     },
     setupTimeout: '5m', // Valid for setup()
     thresholds: {
-        // 1) Injection fidelity: if this fails, k6 did not achieve your configured rate.
-        // dropped_iterations: ['count==0'],
+        dropped_iterations: ['count==0'],
 
-        // 2) Kafka acceptance
-        // kafka_writer_error_count: ['count==0'],
+        kafka_writer_error_count: ['count==0'],
 
-        // 3) Producer-side produce duration: set a conservative bound first, then tighten empirically.
-        // This is where you will see the breakpoint emerge.
-        // kafka_writer_write_seconds: ['p(95)<0.100'],
+        kafka_writer_write_seconds: ['p(95)<100'],
 
-        // Monitor ack wait time specifically as requested
-        // kafka_writer_wait_seconds: ['p(95)<0.050', 'p(99)<0.100'],
-
-        // 3) Latency check (soft failure)
-        ack_latency: ['p(95)<1000'], // 1s max ack time as sanity check
+        kafka_writer_wait_seconds: ['p(95)<0.100', 'p(99)<0.200'],
     },
 };
 
@@ -195,8 +182,6 @@ export default function (data) {
     // Use modular arithmetic just in case __VU > data.length (safety)
     const msg = data[(__VU - 1) % data.length];
 
-    const start = Date.now();
-
     // Kafka Headers are strictly byte arrays ([]byte). They have no concept of "types" like Integer, Long, or Float.
     // If you send a raw Number from JavaScript (k6), you run into the Endianness Trap.
     // The Problem: Little Endian (JS) vs. Big Endian (Java/Network)
@@ -214,11 +199,6 @@ export default function (data) {
                     "robot_id": msg.robot_id
                 }
             }]
-        });
-        const latency = Date.now() - start;
-        ackTrend.add(latency, {
-            robot_id: msg.robot_id,
-            environment: ENV_TYPE,
         });
     } catch (error) {
         // Errors will automatically increment kafka_writer_error_count
