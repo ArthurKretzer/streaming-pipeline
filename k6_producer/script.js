@@ -30,18 +30,18 @@ const TEST_TYPE = __ENV.TEST_TYPE || 'smoke';
 const SCENARIOS = {
     smoke: {
         executor: 'constant-arrival-rate',
-        rate: 1000,
+        rate: 500,
         timeUnit: '1s',
         duration: '1m',
-        preAllocatedVUs: 1,
-        maxVUs: 5,
+        preAllocatedVUs: 500,
+        maxVUs: 1000,
     },
     stress: {
         // Push beyond average in steps: 1k -> 2k -> 5k -> 10k
         executor: 'ramping-arrival-rate',
         startRate: 1000,
         timeUnit: '1s',
-        preAllocatedVUs: 1000,
+        preAllocatedVUs: 400,
         maxVUs: 1200,
         stages: [
             { target: 1000, duration: '5m' }, // Steady at average
@@ -54,7 +54,7 @@ const SCENARIOS = {
         executor: 'ramping-arrival-rate',
         startRate: 1000,
         timeUnit: '1s',
-        preAllocatedVUs: 1000,
+        preAllocatedVUs: 400,
         maxVUs: 1200,
         stages: [
             { target: 6000, duration: '15m' }, // Linear ramp to 6k to find breakpoint
@@ -64,7 +64,7 @@ const SCENARIOS = {
         executor: 'ramping-arrival-rate',
         startRate: 1000,
         timeUnit: '1s',
-        preAllocatedVUs: 1000,
+        preAllocatedVUs: 400,
         maxVUs: 1200,
         stages: [
             { target: 1000, duration: '1m' }, // Warm up
