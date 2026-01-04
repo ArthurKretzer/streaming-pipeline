@@ -351,7 +351,7 @@ start-k6-smoke-edge:
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=smoke \
 		mostafamoradian/xk6-kafka:1.2.0 \
-		run --out csv=results/smoke_edge.csv script.js
+		run --out csv=results/smoke_edge.gz script.js
 
 start-k6-stress-edge:
 	docker run --rm -i \
@@ -362,7 +362,7 @@ start-k6-stress-edge:
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=stress \
 		mostafamoradian/xk6-kafka:1.2.0 \
-		run --out csv=results/stress_edge.csv script.js
+		run --out csv=results/stress_edge.gz script.js
 
 start-k6-breakpoint-edge:
 	docker run --rm -i \
@@ -373,7 +373,7 @@ start-k6-breakpoint-edge:
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=breakpoint \
 		mostafamoradian/xk6-kafka:1.2.0 \
-		run --out csv=results/breakpoint_edge.csv script.js
+		run --out csv=results/breakpoint_edge.gz script.js
 
 start-k6-spike-edge:
 	docker run --rm -i \
@@ -384,7 +384,7 @@ start-k6-spike-edge:
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
 		-e TEST_TYPE=spike \
 		mostafamoradian/xk6-kafka:1.2.0 \
-		run --out csv=results/spike_edge.csv script.js
+		run --out csv=results/spike_edge.gz script.js
 
 start-k6-soak-edge:
 	docker run --rm -i \
@@ -395,7 +395,7 @@ start-k6-soak-edge:
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env  \
 		-e TEST_TYPE=soak \
 		mostafamoradian/xk6-kafka:1.2.0 \
-		run --out csv=results/soak_edge.csv script.js
+		run --out csv=results/soak_edge.gz script.js
 
 start-k6-experiment-edge:
 	-$(MAKE) start-k6-smoke-edge
@@ -436,7 +436,7 @@ stop-influxdb:
 	docker compose -f docker/influxdb.yaml down
 
 #make generate-influxdb-metrics START="-15m" STOP="now()"
-#make generate-influxdb-metrics START="2023-10-27T10:00:00Z" STOP="2023-10-27T11:00:00Z"
+#make generate-influxdb-metrics START="2026-01-02T13:52:00Z"
 generate-influxdb-metrics:
 	uv run k6_producer/exporter/exporter.py \
 		--start=$(or $(START), -15m) \
