@@ -10,7 +10,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      strimzi.io/cluster: streaming
+      strimzi.io/cluster: master
       strimzi.io/kind: Kafka
   podMetricsEndpoints:
     - path: /metrics
