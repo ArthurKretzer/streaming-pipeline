@@ -431,7 +431,7 @@ start-k6-smoke-edge:
 		run --out csv=results/smoke_edge.gz script.js
 
 start-k6-stress-edge:
-	make -C monitoring record DURATION=m INTERVAL=900s OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_stress_edge.csv &
+	make -C monitoring record DURATION=920s INTERVAL=900s OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_stress_edge.csv &
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
