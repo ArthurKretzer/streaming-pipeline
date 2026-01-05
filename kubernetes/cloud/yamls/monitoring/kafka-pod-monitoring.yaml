@@ -6,7 +6,7 @@ metadata:
   labels:
     # 1. Match this to your Prometheus release label
     release: "kube-prometheus-stack"
-    app: spark
+    app: strimzi
 spec:
   selector:
     matchLabels:
