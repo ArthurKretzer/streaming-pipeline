@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: spark-pod-monitor
+  name: pod-monitor
   namespace: cicd
 spec:
   project: default
@@ -11,7 +11,7 @@ spec:
     path: kubernetes/edge/yamls/monitoring
   destination:
     server: "https://kubernetes.default.svc"
-    namespace: spark-jobs
+    namespace: monitoring
   syncPolicy:
     automated:
       prune: true
