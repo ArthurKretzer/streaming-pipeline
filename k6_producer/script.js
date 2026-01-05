@@ -57,7 +57,7 @@ const SCENARIOS = {
         preAllocatedVUs: 400,
         maxVUs: 1200,
         stages: [
-            { target: 15000, duration: '15m' }, // Linear ramp to 10k to find breakpoint
+            { target: 10000, duration: '15m' }, // Linear ramp to 10k to find breakpoint
         ],
     },
     spike: {
