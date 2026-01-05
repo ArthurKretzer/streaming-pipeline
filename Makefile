@@ -343,7 +343,7 @@ collect-metrics:
 	uv run src/prometheus_metrics.py --edge-ip=$(EDGE_IP) --cloud-ip=$(CLOUD_IP) --experiment-name=$(EXP_NAME)
 
 start-k6-smoke-edge:
-	make -C monitoring record DURATION=70s INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_smoke_edge.csv &
+	make -C monitoring record DURATION=100s INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_smoke_edge.csv &
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
@@ -355,7 +355,7 @@ start-k6-smoke-edge:
 		run --out csv=results/smoke_edge.gz script.js
 
 start-k6-stress-edge:
-	make -C monitoring record DURATION=910s INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_stress_edge.csv &
+	make -C monitoring record DURATION=17m INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_stress_edge.csv &
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
@@ -367,7 +367,7 @@ start-k6-stress-edge:
 		run --out csv=results/stress_edge.gz script.js
 
 start-k6-breakpoint-edge:
-	make -C monitoring record DURATION=910s INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_breakpoint_edge.csv &
+	make -C monitoring record DURATION=17m INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_breakpoint_edge.csv &
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
@@ -379,7 +379,7 @@ start-k6-breakpoint-edge:
 		run --out csv=results/breakpoint_edge.gz script.js
 
 start-k6-spike-edge:
-	make -C monitoring record DURATION=250s INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_spike_edge.csv &
+	make -C monitoring record DURATION=5m INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_spike_edge.csv &
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
@@ -391,7 +391,7 @@ start-k6-spike-edge:
 		run --out csv=results/spike_edge.gz script.js
 
 start-k6-soak-edge:
-	make -C monitoring record DURATION=3610s INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_soak_edge.csv &
+	make -C monitoring record DURATION=62m INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_soak_edge.csv &
 	docker run --rm -i \
 		--user $(shell id -u):$(shell id -g) \
 		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
