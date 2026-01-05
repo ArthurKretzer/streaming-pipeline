@@ -16,8 +16,8 @@ const writer = new Writer({
     topic: topic,
     autoCreateTopic: false, // Topic creation handled in setup()
     balancer: "balancer_murmur2", // Ensure partition affinity based on key
-    batchSize: 1000,
-    batchTimeout: 10000000, // 10ms lingering time in nano seconds
+    batchSize: 1,
+    batchTimeout: 0, // Go defaults to 1s if 0 is provided, but batch size of 1 ignores it.
     requiredAcks: 1, // Leader ack. Use -1 for all ISR if desired.
 });
 
@@ -44,9 +44,9 @@ const SCENARIOS = {
         preAllocatedVUs: 400,
         maxVUs: 1200,
         stages: [
-            { target: 1000, duration: '5m' }, // Steady at average
-            { target: 2000, duration: '5m' }, // 2x load
-            { target: 5000, duration: '5m' }, // 5x load
+            { target: 8000, duration: '5m' }, // Scale-up
+            { target: 8000, duration: '5m' }, // Steady 5x load
+            { target: 0, duration: '5m' }, // Scale-down
         ],
     },
     breakpoint: {
@@ -57,7 +57,7 @@ const SCENARIOS = {
         preAllocatedVUs: 400,
         maxVUs: 1200,
         stages: [
-            { target: 6000, duration: '15m' }, // Linear ramp to 6k to find breakpoint
+            { target: 15000, duration: '15m' }, // Linear ramp to 10k to find breakpoint
         ],
     },
     spike: {
@@ -68,10 +68,10 @@ const SCENARIOS = {
         maxVUs: 1200,
         stages: [
             { target: 1000, duration: '1m' }, // Warm up
-            { target: 5000, duration: '30s' }, // Spike to 5x load
-            { target: 5000, duration: '1m' }, // Sustain spike
-            { target: 1000, duration: '30s' }, // Scale down / Recovery
-            { target: 1000, duration: '1m' }, // Cooldown
+            { target: 8000, duration: '30s' }, // Spike to 5x load
+            { target: 8000, duration: '1m' }, // Sustain spike
+            { target: 4000, duration: '30s' }, // Scale down / Recovery
+            { target: 4000, duration: '1m' }, // Cooldown
         ],
     },
     soak: {

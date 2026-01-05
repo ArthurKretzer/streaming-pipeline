@@ -342,6 +342,82 @@ stop-consume: stop-consume-robot-data-cloud stop-consume-robot-data-edge
 collect-metrics:
 	uv run src/prometheus_metrics.py --edge-ip=$(EDGE_IP) --cloud-ip=$(CLOUD_IP) --experiment-name=$(EXP_NAME)
 
+start-k6-smoke-cloud:
+	make -C monitoring record DURATION=100s INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_smoke_cloud.csv &
+	docker run --rm -i \
+		--user $(shell id -u):$(shell id -g) \
+		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
+		--workdir /scripts \
+		--net=host \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/cloud.env \
+		-e TEST_TYPE=smoke \
+		mostafamoradian/xk6-kafka:1.2.0 \
+		run --out csv=results/smoke_cloud.gz script.js
+
+start-k6-stress-cloud:
+	make -C monitoring record DURATION=17m INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_stress_cloud.csv &
+	docker run --rm -i \
+		--user $(shell id -u):$(shell id -g) \
+		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
+		--workdir /scripts \
+		--net=host \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/cloud.env \
+		-e TEST_TYPE=stress \
+		mostafamoradian/xk6-kafka:1.2.0 \
+		run --out csv=results/stress_cloud.gz script.js
+
+start-k6-breakpoint-cloud:
+	make -C monitoring record DURATION=17m INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_breakpoint_cloud.csv &
+	docker run --rm -i \
+		--user $(shell id -u):$(shell id -g) \
+		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
+		--workdir /scripts \
+		--net=host \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/cloud.env \
+		-e TEST_TYPE=breakpoint \
+		mostafamoradian/xk6-kafka:1.2.0 \
+		run --out csv=results/breakpoint_cloud.gz script.js
+
+start-k6-spike-cloud:
+	make -C monitoring record DURATION=5m INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_spike_cloud.csv &
+	docker run --rm -i \
+		--user $(shell id -u):$(shell id -g) \
+		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
+		--workdir /scripts \
+		--net=host \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/cloud.env \
+		-e TEST_TYPE=spike \
+		mostafamoradian/xk6-kafka:1.2.0 \
+		run --out csv=results/spike_cloud.gz script.js
+
+start-k6-soak-cloud:
+	make -C monitoring record DURATION=62m INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_soak_cloud.csv &
+	docker run --rm -i \
+		--user $(shell id -u):$(shell id -g) \
+		-v /home/arthur/dev/streaming-pipeline/k6_producer:/scripts \
+		--workdir /scripts \
+		--net=host \
+		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/cloud.env  \
+		-e TEST_TYPE=soak \
+		mostafamoradian/xk6-kafka:1.2.0 \
+		run --out csv=results/soak_cloud.gz script.js
+
+start-k6-experiment-cloud:
+	@echo "Starting consumer..."
+	$(MAKE) consume-robot-data-cloud
+	@echo "Waiting 2 min for next experiment..."
+	sleep 120
+	-$(MAKE) start-k6-smoke-cloud
+	@echo "Waiting 2 min for next experiment..."
+	sleep 120
+	-$(MAKE) start-k6-stress-cloud
+	@echo "Waiting 2 min for next experiment..."
+	sleep 120
+	-$(MAKE) start-k6-breakpoint-cloud
+	@echo "Waiting 2 min for next experiment..."
+	sleep 120
+	-$(MAKE) start-k6-soak-cloud
+	
 start-k6-smoke-edge:
 	make -C monitoring record DURATION=100s INTERVAL=1 OUTPUT_FILE=$(CURDIR)/k6_producer/results/resources_smoke_edge.csv &
 	docker run --rm -i \
@@ -408,9 +484,14 @@ start-k6-experiment-edge:
 	@echo "Waiting 5 minutes for consumer start..."
 	sleep 300
 	-$(MAKE) start-k6-smoke-edge
+	@echo "Waiting 2 min for next experiment..."
+	sleep 120
 	-$(MAKE) start-k6-stress-edge
+	@echo "Waiting 2 min for next experiment..."
+	sleep 120
 	-$(MAKE) start-k6-breakpoint-edge
-	-$(MAKE) start-k6-spike-edge
+	@echo "Waiting 2 min for next experiment..."
+	sleep 120
 	-$(MAKE) start-k6-soak-edge
 
 spark-pods-edge:
