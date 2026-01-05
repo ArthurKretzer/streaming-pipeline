@@ -409,14 +409,21 @@ start-k6-experiment-edge:
 	-$(MAKE) start-k6-spike-edge
 	-$(MAKE) start-k6-soak-edge
 
-spark-pods:
-	kubectl --context $(CLOUD_CONTEXT) get pods -n spark-jobs
+spark-pods-edge:
 	kubectl --context $(EDGE_CONTEXT) get pods -n spark-jobs
 
-spark-logs:
-	kubectl --context $(CLOUD_CONTEXT) logs streaming-pipeline-kafka-avro-to-delta-driver -n spark-jobs
+spark-pods-logs-edge:
 	kubectl --context $(EDGE_CONTEXT) logs streaming-pipeline-kafka-avro-to-delta-driver -n spark-jobs
 
+spark-pods-cloud:
+	kubectl --context $(CLOUD_CONTEXT) get pods -n spark-jobs
+
+spark-pods-logs-cloud:
+	kubectl --context $(CLOUD_CONTEXT) logs streaming-pipeline-kafka-avro-to-delta-driver -n spark-jobs
+
+spark-pods: spark-pods-edge spark-pods-cloud
+
+spark-logs: spark-pods-logs-edge spark-pods-logs-cloud
 # InfluxDB
 start-influxdb:
 	docker compose -f docker/influxdb.yaml up -d
