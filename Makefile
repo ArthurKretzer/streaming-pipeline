@@ -374,7 +374,7 @@ start-k6-breakpoint-cloud:
 		--workdir /scripts \
 		--net=host \
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/cloud.env \
-		-e TEST_TYPE=breakpoint \
+		-e TEST_TYPE=breakpointcloud \
 		mostafamoradian/xk6-kafka:1.2.0 \
 		run --out csv=results/breakpoint_cloud.gz script.js
 
@@ -450,7 +450,7 @@ start-k6-breakpoint-edge:
 		--workdir /scripts \
 		--net=host \
 		--env-file /home/arthur/dev/streaming-pipeline/k6_producer/edge.env \
-		-e TEST_TYPE=breakpoint \
+		-e TEST_TYPE=breakpointedge \
 		mostafamoradian/xk6-kafka:1.2.0 \
 		run --out csv=results/breakpoint_edge.gz script.js
 

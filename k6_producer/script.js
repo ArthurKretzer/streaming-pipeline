@@ -49,7 +49,7 @@ const SCENARIOS = {
             { target: 0, duration: '5m' }, // Scale-down
         ],
     },
-    breakpoint: {
+    breakpointcloud: {
         // Ramp up to find max sustainable rate
         executor: 'ramping-arrival-rate',
         startRate: 1000,
@@ -58,6 +58,17 @@ const SCENARIOS = {
         maxVUs: 1200,
         stages: [
             { target: 10000, duration: '15m' }, // Linear ramp to 10k to find breakpoint
+        ],
+    },
+    breakpointedge: {
+        // Ramp up to find max sustainable rate
+        executor: 'ramping-arrival-rate',
+        startRate: 1000,
+        timeUnit: '1s',
+        preAllocatedVUs: 400,
+        maxVUs: 1200,
+        stages: [
+            { target: 15000, duration: '15m' }, // Linear ramp to 10k to find breakpoint
         ],
     },
     spike: {
