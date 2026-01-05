@@ -32,11 +32,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
     path: kubernetes/edge/yamls/ingestion/broker
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: ingestion
   syncPolicy:
     automated:
@@ -51,11 +51,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
     path: kubernetes/edge/yamls/ingestion/cruise-control
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: ingestion
   syncPolicy:
     automated:
@@ -70,11 +70,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
     path: kubernetes/edge/yamls/ingestion/metrics
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: ingestion
   syncPolicy:
     automated:
@@ -89,11 +89,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
     path: kubernetes/edge/helm-charts/cp-schema-registry
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: ingestion
   syncPolicy:
     automated:
@@ -108,11 +108,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/ArthurKretzer/streaming-pipeline.git'
+    repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
     targetRevision: main
     path: kubernetes/edge/helm-charts/kafka-ui
   destination:
-    server: 'https://kubernetes.default.svc'
+    server: "https://kubernetes.default.svc"
     namespace: ingestion
   syncPolicy:
     automated:

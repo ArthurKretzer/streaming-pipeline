@@ -1,26 +1,18 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  # app name
-  name: spark-operator
-  # deployed yaml
+  name: spark-pod-monitor
   namespace: cicd
 spec:
   project: default
   source:
     repoURL: "https://github.com/ArthurKretzer/streaming-pipeline.git"
-    path: kubernetes/cloud/helm-charts/spark-operator
     targetRevision: main
-    helm:
-      valueFiles:
-        - values.yaml
+    path: kubernetes/cloud/yamls/monitoring
   destination:
     server: "https://kubernetes.default.svc"
-    namespace: spark-operator
+    namespace: spark-jobs
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
-    syncOptions:
-      - ServerSideApply=true
-      - CreateNamespace=true

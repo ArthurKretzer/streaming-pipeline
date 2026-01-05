@@ -5,7 +5,7 @@ metadata:
   namespace: spark-jobs
   labels:
     # 1. Match this to your Prometheus release label
-    release: "kube-prometheus-stack" 
+    release: "kube-prometheus-stack"
     app: spark
 spec:
   selector:
@@ -15,10 +15,10 @@ spec:
       sparkoperator.k8s.io/app-name: streaming-pipeline-kafka-avro-to-delta
   podMetricsEndpoints:
     # Endpoint for JMX metrics (if exposeDriverMetrics: true is set)
-  - port: jmx-exporter
-    path: /metrics
-    interval: 15s
-    # 2. Corrected port name for the native Spark metrics
-  - port: spark-ui
-    path: /metrics/prometheus/
-    interval: 15s
+    - port: jmx-exporter
+      path: /metrics
+      interval: 5s
+      # 2. Corrected port name for the native Spark metrics
+    - port: spark-ui
+      path: /metrics/prometheus/
+      interval: 5s

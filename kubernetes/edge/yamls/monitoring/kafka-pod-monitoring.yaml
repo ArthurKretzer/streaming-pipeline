@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: kafka-app-monitor
+  namespace: ingestion
+  labels:
+    # 1. Match this to your Prometheus release label
+    release: "kube-prometheus-stack"
+    app: spark
+spec:
+  selector:
+    matchLabels:
+      strimzi.io/cluster: streaming
+      strimzi.io/kind: Kafka
+  podMetricsEndpoints:
+    - path: /metrics
+      port: tcp-prometheus
+      interval: 5s
+      scrapeTimeout: 5s
