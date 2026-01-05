@@ -403,6 +403,10 @@ start-k6-soak-edge:
 		run --out csv=results/soak_edge.gz script.js
 
 start-k6-experiment-edge:
+	@echo "Starting consumer..."
+	$(MAKE) consume-robot-data-edge
+	@echo "Waiting 5 minutes for consumer start..."
+	sleep 300
 	-$(MAKE) start-k6-smoke-edge
 	-$(MAKE) start-k6-stress-edge
 	-$(MAKE) start-k6-breakpoint-edge
@@ -424,6 +428,7 @@ spark-pods-logs-cloud:
 spark-pods: spark-pods-edge spark-pods-cloud
 
 spark-logs: spark-pods-logs-edge spark-pods-logs-cloud
+
 # InfluxDB
 start-influxdb:
 	docker compose -f docker/influxdb.yaml up -d
