@@ -59,17 +59,16 @@ spec:
       volumes:
         - id: 0
           type: persistent-claim
-          size: 15Gi
-          deleteClaim: true
-        - id: 1
-          type: persistent-claim
-          size: 15Gi
+          size: 100Gi
           deleteClaim: true
     template:
       pod:
+        metadata:
+          annotations:
+            prometheus.io/scrape: "false"
         affinity:
           podAntiAffinity:
-            # "Required" ensures they NEVER share a node. 
+            # "Required" ensures they NEVER share a node.
             # Use "preferred" if you want to allow it only as a last resort.
             requiredDuringSchedulingIgnoredDuringExecution:
               - labelSelector:
@@ -79,6 +78,14 @@ spec:
                       values:
                         - master-kafka
                 topologyKey: "kubernetes.io/hostname"
+      bootstrapService:
+        metadata:
+          annotations:
+            prometheus.io/scrape: "false"
+      brokersService:
+        metadata:
+          annotations:
+            prometheus.io/scrape: "false"
     # resource limitation
     # -xms -xmx set as same as resources [limit]
     resources:

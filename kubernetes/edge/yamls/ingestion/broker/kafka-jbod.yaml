@@ -30,14 +30,14 @@ spec:
           bootstrap:
             nodePort: 31289
           brokers:
-          - broker: 0
-            nodePort: 31290
-          - broker: 1
-            nodePort: 31291
-          - broker: 2
-            nodePort: 31292
-          - broker: 3
-            nodePort: 31293
+            - broker: 0
+              nodePort: 31290
+            - broker: 1
+              nodePort: 31291
+            - broker: 2
+              nodePort: 31292
+            - broker: 3
+              nodePort: 31293
     readinessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
@@ -57,19 +57,18 @@ spec:
     storage:
       type: jbod
       volumes:
-      - id: 0
-        type: persistent-claim
-        size: 15Gi
-        deleteClaim: true
-      - id: 1
-        type: persistent-claim
-        size: 15Gi
-        deleteClaim: true
+        - id: 0
+          type: persistent-claim
+          size: 100Gi
+          deleteClaim: true
     template:
       pod:
+        metadata:
+          annotations:
+            prometheus.io/scrape: "false"
         affinity:
           podAntiAffinity:
-            # "Required" ensures they NEVER share a node. 
+            # "Required" ensures they NEVER share a node.
             # Use "preferred" if you want to allow it only as a last resort.
             requiredDuringSchedulingIgnoredDuringExecution:
               - labelSelector:
@@ -79,6 +78,14 @@ spec:
                       values:
                         - streaming-kafka
                 topologyKey: "kubernetes.io/hostname"
+        bootstrapService:
+          metadata:
+            annotations:
+              prometheus.io/scrape: "false"
+        brokersService:
+          metadata:
+            annotations:
+              prometheus.io/scrape: "false"
     # resource limitation
     # -xms -xmx set as same as resources [limit]
     resources:
@@ -98,9 +105,9 @@ spec:
   zookeeper:
     replicas: 4
     storage:
-        type: persistent-claim
-        size: 10Gi
-        deleteClaim: true
+      type: persistent-claim
+      size: 10Gi
+      deleteClaim: true
     resources:
       # requests and limits
       requests:
