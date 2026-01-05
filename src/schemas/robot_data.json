@@ -434,8 +434,8 @@
         },
         {
             "name": "source_timestamp",
-            "type": "string",
-            "doc": "Timestamp of data collection in ISO 8601 format"
+            "type": "long",
+            "doc": "Timestamp of data collection in milliseconds since epoch"
         }
     ]
 }
