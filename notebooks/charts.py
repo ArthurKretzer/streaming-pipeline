@@ -1190,6 +1190,55 @@ def latency_box_plot(
     plt.show()
 
 
+def _downsample_for_plot(df: pd.DataFrame, x: str, y: str, rule: str) -> pd.DataFrame:
+    """Downsamples the DataFrame for plotting by aggregating data over time intervals.
+
+    Preserves outliers by keeping min, mean, and max for each interval.
+
+    Args:
+        df: The input DataFrame containing the data to be downsampled.
+        x: The name of the column containing timestamp data.
+        y: The name of the column containing the values to be aggregated.
+        rule: The offset string or object representing target conversion (e.g., '1s', '1min').
+
+    Returns:
+        A new DataFrame with downsampled data containing min, mean, and max values
+        for each interval, sorted by the timestamp column.
+    """
+    if df.empty or not rule:
+        return df
+
+    # Ensure x is datetime for resampling
+    if not pd.api.types.is_datetime64_any_dtype(df[x]):
+        try:
+            df = df.copy()
+            df[x] = pd.to_datetime(df[x])
+        except Exception:
+            return df  # Cannot resample non-datetime
+
+    # Resample and calculate min, mean, max
+    # We aggregate y by the rule on x
+    resampled = df.set_index(x)[[y]].resample(rule).agg(["min", "mean", "max"])
+
+    # Drop intervals with no data
+    resampled = resampled.dropna()
+
+    # Flatten the result: we want rows for min, mean, and max
+    # The columns are currently a MultiIndex: (y, 'min'), (y, 'mean'), (y, 'max')
+    # We will extract each and concatenate them.
+    
+    dfs = []
+    for stat in ["min", "mean", "max"]:
+        temp = resampled[(y, stat)].reset_index()
+        temp.columns = [x, y]
+        dfs.append(temp)
+
+    downsampled = pd.concat(dfs, ignore_index=True)
+    downsampled = downsampled.sort_values(by=x)
+
+    return downsampled
+
+
 def latency_line_plot(
     df_cloud: pd.DataFrame,
     df_edge: pd.DataFrame,
@@ -1198,10 +1247,18 @@ def latency_line_plot(
     title: str = "Latency from Source to Kafka Broker (Cloud vs Edge)",
     linestyle: str = "none",
     save_path: str = None,
+    downsample_rule: str = None,
 ):
     if df_cloud.empty and df_edge.empty:
         print("⚠️ All DataFrames are empty. Nothing to plot.")
         return
+
+    # Apply downsampling if requested
+    if downsample_rule:
+        if not df_cloud.empty:
+            df_cloud = _downsample_for_plot(df_cloud, x, y, downsample_rule)
+        if not df_edge.empty:
+            df_edge = _downsample_for_plot(df_edge, x, y, downsample_rule)
 
     plt.figure(figsize=(12, 6))
 
