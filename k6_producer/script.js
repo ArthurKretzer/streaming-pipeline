@@ -37,16 +37,15 @@ const SCENARIOS = {
         maxVUs: 1000,
     },
     stress: {
-        // Push beyond average in steps: 1k -> 2k -> 5k -> 10k
         executor: 'ramping-arrival-rate',
         startRate: 1000,
         timeUnit: '1s',
         preAllocatedVUs: 400,
         maxVUs: 1200,
         stages: [
-            { target: 8000, duration: '5m' }, // Scale-up
-            { target: 8000, duration: '5m' }, // Steady 5x load
-            { target: 0, duration: '5m' }, // Scale-down
+            { target: 8000, duration: '5m' },
+            { target: 8000, duration: '5m' },
+            { target: 0, duration: '5m' },
         ],
     },
     breakpointcloud: {
