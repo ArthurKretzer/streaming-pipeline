@@ -9,7 +9,7 @@ import pandas as pd
 import pytz
 import seaborn as sns
 from matplotlib.patches import Patch
-from utils import get_true_spark_run_starts
+from utils import get_true_spark_run_starts, simplify_pod_name
 
 NODE_CPU_LIMITS = {
     "flncpcsrv-k8s-w01": 400,
@@ -27,6 +27,30 @@ NODE_MEMORY_LIMITS = {
     "flncpcsrv-k8s-w11": 40.960,  # 40 GiB
 }
 
+
+def calculate_rate(df: pd.DataFrame, value_col='value', columns:list[str]=["kubernetes_pod_name", "topic"]) -> pd.Series:
+    """Calculates the rate per second for counter metrics."""
+    # Group by labels (topic, instance, etc.) to calculate rates correctly
+    group_cols = columns
+    
+    def get_rate(group):
+        # Rate = (val_t2 - val_t1) / (time_t2 - time_t1 in seconds)
+        delta_val = group[value_col].diff()
+        delta_time = group.index.to_series().diff().dt.total_seconds()
+        
+        # Avoid division by zero if timestamps are duplicate
+        delta_time = delta_time.replace(0, pd.NA).fillna(1.0) 
+
+        rate = delta_val / delta_time
+        
+        # Handle Prometheus counter resets
+        reset_mask = delta_val < 0
+        if reset_mask.any():
+            rate.loc[reset_mask] = group.loc[reset_mask, value_col] / delta_time.loc[reset_mask]
+            
+        return rate
+
+    return df.groupby(group_cols, group_keys=False).apply(get_rate)
 
 def annotate_spark_starts(
     ax,
@@ -118,12 +142,24 @@ def cpu_chart(
     # df_status["pod"] = df_status["pod"].apply(simplify_pod_name)
 
     # Calculate diffs and remove resets
-    df["value_diff"] = df.groupby("id")["value"].diff()
-    df["time_diff"] = df.groupby("id")["timestamp"].diff().dt.total_seconds()
-    df = df[(df["value_diff"] > 0) & (df["time_diff"] > 0)].copy()
+    # Calculate diffs and remove resets using calculate_rate
+    # Ensure timestamp is index for calculate_rate
+    df = df.set_index("timestamp")
+    df["rate"] = calculate_rate(df, columns=["id"])
+    
+    # Convert rate to percentage (if needed - original code did * 100)
+    # The original code was: (val_diff / time_diff) * 100
+    # calculate_rate returns val_diff / time_diff per second.
+    # So we multiply by 100 to get percentage (assuming value is CPU seconds and we want percent of a core? Or usage in some unit?)
+    # Original: (df["value_diff"] / df["time_diff"]) * 100
+    df["rate"] = df["rate"] * 100
+    
+    # Reset index to get timestamp back as column
+    df = df.reset_index()
+    
+    # Filter out NaNs/Inf if any
+    df = df.dropna(subset=["rate"])
 
-    # Compute CPU rate as % and apply a 3-point rolling average
-    df["rate"] = (df["value_diff"] / df["time_diff"]) * 100
     df["cpu_percent"] = df.groupby("pod")["rate"].transform(
         lambda x: x.rolling(window=3, min_periods=1).mean()
     )
@@ -183,22 +219,22 @@ def cpu_chart(
 def cpu_chart_stacked(
     df: pd.DataFrame,
     df_status: pd.DataFrame,
+    node_cpu_limits={},
     title: str = "CPU Usage by Pod",
-    node_cpu_limits=NODE_CPU_LIMITS,
     save_path: str = None,
 ):
-    # Define your desired timezone
-    local_tz = pytz.timezone("America/Sao_Paulo")
 
     # === Step 1: Preprocess Raw Data ===
     df = df.sort_values(by=["id", "pod", "timestamp"]).dropna(subset="container")
-    # df["pod"] = df["pod"].apply(simplify_pod_name)
+    df["pod"] = df["pod"].apply(simplify_pod_name)
 
-    df["value_diff"] = df.groupby("id")["value"].diff()
-    df["time_diff"] = df.groupby("id")["timestamp"].diff().dt.total_seconds()
-    df = df[(df["value_diff"] > 0) & (df["time_diff"] > 0)].copy()
+    
+    # Use calculate_rate
+    df = df.set_index("timestamp")
+    df["rate"] = calculate_rate(df, columns=["id"])
+    df["rate"] = df["rate"] * 100
+    df = df.reset_index().dropna(subset=["rate"])
 
-    df["rate"] = (df["value_diff"] / df["time_diff"]) * 100
     df["cpu_percent"] = df.groupby("pod")["rate"].transform(
         lambda x: x.rolling(window=3, min_periods=1).mean()
     )
@@ -215,13 +251,19 @@ def cpu_chart_stacked(
         .reset_index()
     )
 
-    # === Step 3: Plotting Setup ===
-    unique_pods = sorted(df["pod"].unique())
-    palette = plt.get_cmap("tab20")
-    colors = [palette(i % palette.N) for i in range(len(unique_pods))]
-    pod_color_map = dict(zip(unique_pods, colors))
+    df_resampled["relative_time"] = (df_resampled["timestamp"] - df_resampled["timestamp"].min()).dt.total_seconds()
 
-    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(18, 12), sharex=False)
+    # === Step 3: Plotting Setup ===
+    unique_pods = sorted(df_resampled["pod"].unique())
+    # Combine tab20, tab20b, and tab20c to provide 60 distinct colors
+    palette = (
+        list(plt.get_cmap("tab20").colors)
+        + list(plt.get_cmap("tab20b").colors)
+        + list(plt.get_cmap("tab20c").colors)
+    )
+    pod_color_map = {pod: palette[i % len(palette)] for i, pod in enumerate(unique_pods)}
+
+    fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(18, 12), sharex=True)
     axes = axes.flatten()
 
     for i, node in enumerate(node_cpu_limits.keys()):
@@ -234,7 +276,7 @@ def cpu_chart_stacked(
 
         pivot_df = (
             node_data.pivot_table(
-                index="timestamp",
+                index="relative_time",
                 columns="pod",
                 values="cpu_percent",
                 aggfunc="mean",
@@ -263,11 +305,32 @@ def cpu_chart_stacked(
         )
 
         # === Reusable annotation call ===
-        annotate_spark_starts(ax, df, df_status, node, pod_color_map)
+        # annotate_spark_starts(ax, df, df_status, node, pod_color_map)
 
-        ax.legend(loc="upper right", fontsize="x-small", ncol=2)
+        # === LEGEND FILTERING: SHOW ONLY TOP OFFENDERS ===
+        # Calculate mean CPU usage to identify top offenders
+        top_n = 5
+        pod_means = pivot_df.mean().sort_values(ascending=False)
+        top_offenders = pod_means.head(top_n).index.tolist()
+
+        handles, labels = ax.get_legend_handles_labels()
+        filtered_handles = []
+        filtered_labels = []
+
+        for h, l in zip(handles, labels):
+            # Keep "CPU Limit" and the top N pods
+            if l == "CPU Limit" or l in top_offenders:
+                filtered_handles.append(h)
+                filtered_labels.append(l)
+
+        ax.legend(
+            filtered_handles,
+            filtered_labels,
+            loc="upper right",
+            fontsize="x-small",
+            ncol=2,
+        )
         ax.grid(True)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
 
     # Hide unused subplots
     for j in range(len(node_cpu_limits), len(axes)):
@@ -282,50 +345,82 @@ def cpu_chart_stacked(
 
 
 def cpu_chart_nodes(
-    df: pd.DataFrame,
+    df_edge: pd.DataFrame,
+    df_cloud: pd.DataFrame,
     title: str = "Total CPU Usage per Node",
+    max_cpu: int = 4,
     save_path: str = None,
 ):
-    # Load your CPU dataset
-    cpu_df = df.sort_values(by=["id", "pod", "timestamp"]).dropna(subset="container")
+    # === Helper to process CPU dataframe ===
+    def process_cpu_df(df):
 
-    # === Preprocess CPU usage ===
-    cpu_df["value_diff"] = cpu_df.groupby("id")["value"].diff()
-    cpu_df["time_diff"] = cpu_df.groupby("id")["timestamp"].diff().dt.total_seconds()
-    cpu_df = cpu_df[(cpu_df["value_diff"] > 0) & (cpu_df["time_diff"] > 0)].copy()
+        df = df[df["node"] != "server-k8s-m01"]
 
-    cpu_df["rate"] = (cpu_df["value_diff"] / cpu_df["time_diff"]) * 100
-    cpu_df["cpu_percent"] = cpu_df.groupby("pod")["rate"].transform(
-        lambda x: x.rolling(window=3, min_periods=1).mean()
-    )
+        df = df.sort_values(by=["id", "pod", "timestamp"]).dropna(subset="container").copy()
+        
+        # Use calculate_rate
+        df = df.set_index("timestamp")
+        df["rate"] = calculate_rate(df, columns=["id"])
+        df["rate"] = df["rate"] * 100
+        df = df.reset_index().dropna(subset=["rate"])
 
-    df_resampled = (
-        cpu_df[["timestamp", "node", "pod", "cpu_percent"]]
-        .set_index("timestamp")
-        .groupby(["node", "pod"])
-        .resample("40s")
-        .mean(numeric_only=True)
-        .reset_index()
-    )
+        df["cpu_percent"] = df.groupby("pod")["rate"].transform(
+            lambda x: x.rolling(window=3, min_periods=1).mean()
+        )
 
-    # === Step 3: Sum CPU usage per node and timestamp ===
-    df_node_total_cpu = (
-        df_resampled.groupby(["timestamp", "node"])["cpu_percent"]
-        .sum()
-        .unstack(level="node")
-        .fillna(0)
-    )
+        df_resampled = (
+            df[["timestamp", "node", "pod", "cpu_percent"]]
+            .set_index("timestamp")
+            .groupby(["node", "pod"])
+            .resample("30s")
+            .mean(numeric_only=True)
+            .reset_index()
+        )
 
-    # === Step 4: Plotting ===
-    plt.figure(figsize=(14, 6))
-    for node in df_node_total_cpu.columns:
-        plt.plot(df_node_total_cpu.index, df_node_total_cpu[node], label=node)
+        # Sum CPU usage per node and timestamp
+        df_node_total_cpu = (
+            df_resampled.groupby(["timestamp", "node"])["cpu_percent"]
+            .sum()
+            .unstack(level="node")
+            .fillna(0)
+        )
 
-    plt.title(title)
-    plt.xlabel("Time")
-    plt.ylabel("CPU Usage (%)")
-    plt.legend(title="Node")
-    plt.grid(True)
+        df_node_total_cpu.index = (
+            df_node_total_cpu.index - df_node_total_cpu.index.min()
+        ).total_seconds()
+
+        return df_node_total_cpu
+
+    # === Process both environments ===
+    df_node_total_edge = process_cpu_df(df_edge)
+    df_node_total_cloud = process_cpu_df(df_cloud)
+
+    # === Plotting ===
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(14, 12), sharex=False)
+    
+    datasets = [("Edge", df_node_total_edge), ("Cloud", df_node_total_cloud)]
+    
+    for ax, (env_name, df_node_total) in zip(axes, datasets):
+        for node in df_node_total.columns:
+            ax.plot(
+                df_node_total.index,
+                df_node_total[node],
+                label=node
+            )
+
+        ax.axhline(
+            y=max_cpu * 100,
+            color="red",
+            linestyle="--",
+            label=f"Max CPU ({max_cpu})",
+        )
+
+        ax.set_title(f"{env_name} - {title}")
+        ax.set_ylabel("CPU Usage (%)")
+        ax.legend(title="Node", loc="upper right")
+        ax.grid(True)
+    
+    axes[-1].set_xlabel("Time Elased (s)")
     plt.tight_layout()
     if save_path:
         plt.savefig(save_path, dpi=400, bbox_inches="tight")
@@ -386,7 +481,7 @@ def memory_chart(
             y=node_memory_limits[node],
             color="red",
             linestyle="--",
-            label="CPU Limit",
+            label="Memory Limit",
         )
 
         # === Reusable annotation call ===
@@ -410,44 +505,49 @@ def memory_chart(
 
 def memory_chart_stacked(
     df: pd.DataFrame,
-    df_status: pd.DataFrame,
     title: str = "Memory Usage by Pod",
-    node_memory_limits=NODE_MEMORY_LIMITS,
+    node_memory_limits={},
     save_path: str = None,
 ):
-    # Define your desired timezone
-    local_tz = pytz.timezone("America/Sao_Paulo")
-
     # === Step 1: Preprocessing ===
     memory_df = (
         df.sort_values(by=["timestamp", "pod"]).dropna(subset="container").copy()
     )
+    # Simplify pod names
+    memory_df["pod"] = memory_df["pod"].apply(simplify_pod_name)
 
     # Convert bytes to MiB
     memory_df["memory_gib"] = memory_df["value"] / (1024 * 1024 * 1024)  # Gib
 
     # Smooth using rolling average
-    memory_df["memory_gib_smoothed"] = memory_df.groupby("pod")["memory_gib"].transform(
-        lambda x: x.rolling(window=3, min_periods=1).mean()
-    )
+    # memory_df["memory_gib_smoothed"] = memory_df.groupby("pod")["memory_gib"].transform(
+    #     lambda x: x.rolling(window=3, min_periods=1).mean()
+    # )
 
     memory_df["memory_limit"] = memory_df["node"].map(node_memory_limits)
 
     # === Step 2: Resample every 30 seconds ===
+    # Use raw memory_gib instead of smoothed
     memory_resampled = (
-        memory_df[["timestamp", "node", "pod", "id", "memory_gib_smoothed"]]
+        memory_df[["timestamp", "node", "pod", "memory_gib"]]
         .set_index("timestamp")
-        .groupby(["node", "pod", "id"])
-        .resample("40s")
+        .groupby(["node", "pod"])
+        .resample("30s")
         .mean(numeric_only=True)
         .reset_index()
     )
 
+    memory_resampled["relative_time"] = (memory_resampled["timestamp"] - memory_resampled["timestamp"].min()).dt.total_seconds()
+
     # === Step 3: Color Palette ===
     unique_pods = sorted(memory_df["pod"].unique())
-    palette = plt.get_cmap("tab20")
-    colors = [palette(i % palette.N) for i in range(len(unique_pods))]
-    pod_color_map = dict(zip(unique_pods, colors))
+    # Combine tab20, tab20b, and tab20c to provide 60 distinct colors
+    palette = (
+        list(plt.get_cmap("tab20").colors)
+        + list(plt.get_cmap("tab20b").colors)
+        + list(plt.get_cmap("tab20c").colors)
+    )
+    pod_color_map = {pod: palette[i % len(palette)] for i, pod in enumerate(unique_pods)}
 
     # === Step 4: Plotting ===
     fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(18, 12), sharex=False)
@@ -463,22 +563,27 @@ def memory_chart_stacked(
 
         pivot_df = (
             node_data.pivot_table(
-                index="timestamp",
+                index="relative_time",
                 columns="pod",
-                values="memory_gib_smoothed",
+                values="memory_gib",
                 aggfunc="mean",
             )
             .fillna(0)
             .sort_index()
         )
 
-        present_pods = pivot_df.columns.tolist()
-        colors_present = [pod_color_map[pod] for pod in present_pods]
+        # === Sort pods by "Top Offender" (Max Usage) ===
+        pod_max = pivot_df.max().sort_values(ascending=False)
+        sorted_pods = pod_max.index.tolist()
+
+        # Reorder DataFrame and Colors
+        pivot_df = pivot_df[sorted_pods]
+        colors_present = [pod_color_map[pod] for pod in sorted_pods if pod in pod_color_map]
 
         ax.stackplot(
             pivot_df.index,
             pivot_df.T.values,
-            labels=present_pods,
+            labels=sorted_pods,
             colors=colors_present,
         )
 
@@ -492,17 +597,38 @@ def memory_chart_stacked(
         )
 
         # === Reusable annotation call ===
-        annotate_spark_starts(ax, memory_df, df_status, node, pod_color_map)
+        # annotate_spark_starts(ax, memory_df, df_status, node, pod_color_map)
 
-        ax.legend(loc="upper right", fontsize="x-small", ncol=2)
+        # === LEGEND FILTERING: SHOW ONLY TOP OFFENDERS ===
+        # Calculate mean Memory usage to identify top offenders
+        top_n = 5
+        pod_means = pivot_df.mean().sort_values(ascending=False)
+        top_offenders = pod_means.head(top_n).index.tolist()
+
+        handles, labels = ax.get_legend_handles_labels()
+        filtered_handles = []
+        filtered_labels = []
+
+        for h, l in zip(handles, labels):
+            # Keep "Memory Limit" and the top N pods
+            if l == "Memory Limit" or l in top_offenders:
+                filtered_handles.append(h)
+                filtered_labels.append(l)
+
+        ax.legend(
+            filtered_handles,
+            filtered_labels,
+            loc="upper right",
+            fontsize="x-small",
+            ncol=2,
+        )
         ax.grid(True)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M", tz=local_tz))
 
     # Remove unused plots
     for j in range(len(node_memory_limits), len(axes)):
         fig.delaxes(axes[j])
 
-    axes[-1].set_xlabel("Time")
+    axes[-1].set_xlabel("Elapsed Time (s)")
     fig.suptitle(title, fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     if save_path:
@@ -511,49 +637,92 @@ def memory_chart_stacked(
 
 
 def memory_chart_nodes(
-    df: pd.DataFrame, title: str = "Memory Usage by Pod", save_path: str = None
+    df_edge: pd.DataFrame,
+    df_cloud: pd.DataFrame,
+    title: str = "Total Memory Usage per Node",
+    save_path: str = None,
 ):
-    # Load your memory dataset
-    memory_df = (
-        df.sort_values(by=["timestamp", "pod"]).dropna(subset="container").copy()
-    )
+    # === Helper to process Memory dataframe ===
+    def process_memory_df(df):
+        if df.empty:
+            return pd.DataFrame()
+        
+        # Filter master node
+        df = df[df["node"] != "server-k8s-m01"]
 
-    # === Preprocess Memory usage ===
-    memory_df_proc = memory_df.sort_values(by=["timestamp", "pod"]).copy()
-    memory_df_proc["memory_gib"] = memory_df_proc["value"] / (1024**3)  # bytes → GiB
-    memory_df_proc["memory_gib_smoothed"] = memory_df_proc.groupby("pod")[
-        "memory_gib"
-    ].transform(lambda x: x.rolling(window=3, min_periods=1).mean())
+        memory_df = df.sort_values(by=["timestamp", "pod"]).dropna(subset="container").copy()
+        
+        # Simplify pod names (good for consistency)
+        memory_df["pod"] = memory_df["pod"].apply(simplify_pod_name)
+        
+        # Convert bytes to GiB
+        memory_df["memory_gib"] = memory_df["value"] / (1024**3)
 
-    # === Aggregate by node and resample ===
-    memory_df_proc["node"] = memory_df_proc["node"].astype(str)
+        # Smooth
+        # memory_df["memory_gib_smoothed"] = memory_df.groupby("pod")["memory_gib"].transform(
+        #     lambda x: x.rolling(window=3, min_periods=1).mean()
+        # )
+        
+        # Aggregate by node and resample
+        memory_df["node"] = memory_df["node"].astype(str)
 
-    memory_resampled = (
-        memory_df_proc[["timestamp", "node", "pod", "id", "memory_gib_smoothed"]]
-        .set_index("timestamp")
-        .groupby(["node", "pod", "id"])
-        .resample("40s")
-        .mean(numeric_only=True)
-        .reset_index()
-    )
+        memory_resampled = (
+            memory_df[["timestamp", "node", "pod", "memory_gib"]]
+            .set_index("timestamp")
+            .groupby(["node", "pod"])
+            .resample("30s")
+            .mean(numeric_only=True)
+            .reset_index()
+        )
+        
+        # Calculate Relative Time (Elapsed Seconds)
+        start_time = memory_resampled["timestamp"].min()
+        memory_resampled["relative_time"] = (memory_resampled["timestamp"] - start_time).dt.total_seconds()
 
-    total_mem_per_node = (
-        memory_resampled.groupby(["timestamp", "node"])["memory_gib_smoothed"]
-        .sum()
-        .unstack(level="node")
-        .fillna(0)
-    )
+        total_mem_per_node = (
+            memory_resampled.groupby(["relative_time", "node"])["memory_gib"]
+            .sum()
+            .unstack(level="node")
+            .fillna(0)
+        )
+        return total_mem_per_node
 
-    # === Plot Memory ===
-    plt.figure(figsize=(14, 6))
-    for node in total_mem_per_node.columns:
-        plt.plot(total_mem_per_node.index, total_mem_per_node[node], label=node)
+    # === Process both environments ===
+    df_node_total_edge = process_memory_df(df_edge)
+    df_node_total_cloud = process_memory_df(df_cloud)
 
-    plt.title(title)
-    plt.xlabel("Time")
-    plt.ylabel("Memory Usage (GiB)")
-    plt.legend(title="Node")
-    plt.grid(True)
+    # === Plotting ===
+    # Sharex=True allows comparing timeline if they have similar duration
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(14, 12), sharex=False) 
+    
+    datasets = [("Edge", df_node_total_edge), ("Cloud", df_node_total_cloud)]
+    
+    for ax, (env_name, df_node_total) in zip(axes, datasets):
+        if df_node_total.empty:
+            ax.text(0.5, 0.5, "No Data", ha='center', va='center')
+            ax.set_title(f"{env_name} - {title}")
+            continue
+
+        # Sort nodes by "Top Offender" (Max Usage)
+        node_max = df_node_total.max().sort_values(ascending=False)
+        sorted_nodes = node_max.index.tolist()
+
+        for node in sorted_nodes:
+            ax.plot(df_node_total.index, df_node_total[node], label=node)
+
+        ax.axhline(
+            y=8.192,
+            color="red",
+            linestyle="--",
+            label="Memory Limit (8 GiB)",
+        )
+
+        ax.set_title(f"{env_name} - {title}")
+        ax.set_ylabel("Memory Usage (GiB)")
+        ax.legend(title="Node", loc="upper right")
+        ax.grid(True)
+    
+    axes[-1].set_xlabel("Elapsed Time (s)")
     plt.tight_layout()
     if save_path:
         plt.savefig(save_path, dpi=400, bbox_inches="tight")
