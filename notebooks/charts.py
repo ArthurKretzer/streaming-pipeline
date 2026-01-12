@@ -1146,8 +1146,8 @@ def latency_box_plot(
 ):
     # Custom colors for each category
     custom_palette = {
-        "Cloud": "#1f77b4",  # blue
-        "Edge": "#ff7f0e",  # orange
+        "Edge": "#1f77b4",  # blue
+        "Cloud": "#ff7f0e",  # orange
     }
 
     dfs_to_concat = []
@@ -1321,9 +1321,15 @@ def latency_distribution_plot(
 
     df_kde = pd.concat(dfs_to_concat, ignore_index=True)
 
-    stats = df_kde.groupby("Environment")[x].agg(["mean", "median", "std"])
+    stats = df_kde.groupby("Environment")[x].agg(["min", "max", "mean", "median", "std"])
     print("📊 Statistics:")
     print(stats)
+
+    # Custom colors for each category
+    custom_palette = {
+        "Edge": "#1f77b4",  # blue
+        "Cloud": "#ff7f0e",  # orange
+    }
 
     plt.figure(figsize=(10, 6))
     sns.kdeplot(
@@ -1333,6 +1339,9 @@ def latency_distribution_plot(
         fill=True,
         common_norm=False,
         alpha=0.4,
+        clip=(0, None),  # Trunca a estimativa no zero
+        linewidth=1.5,
+        palette=custom_palette,
     )
 
     plt.title(title)
