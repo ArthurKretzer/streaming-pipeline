@@ -6,10 +6,10 @@ import os
 import seaborn as sns
 
 # --- Configuration ---
-START_TIME_EDGE_STR = "2026-01-05 16:07:20"
-END_TIME_EDGE_STR = "2026-01-05 16:25:00"
-START_TIME_CLOUD_STR = "2026-01-05 13:31:00"
-END_TIME_CLOUD_STR = "2026-01-05 13:48:10"
+START_TIME_EDGE_STR = "2026-01-05 16:25:00"
+END_TIME_EDGE_STR = "2026-01-05 17:28:00"
+START_TIME_CLOUD_STR = "2026-01-05 13:48:00"
+END_TIME_CLOUD_STR = "2026-01-05 14:51:00"
 
 # Timezone offset: User provided GMT-3, Prometheus is UTC. Add 3h.
 TIMEZONE_OFFSET = pd.Timedelta(hours=3)
@@ -140,9 +140,6 @@ def plot_gantt(ax, df_intervals, title, x_limit, color_map, gaps=[]):
     # Plot gaps first (background)
     for gap in gaps:
         ax.axvspan(gap['start_offset'], gap['end_offset'], color='gray', alpha=0.3, label='Metric Gap' if 'Metric Gap' not in ax.get_legend_handles_labels()[1] else "")
-        # Add text annotation for the gap
-        ax.text(gap['start_offset'] + gap['duration']/2, ax.get_ylim()[1], "Gap", ha='center', va='bottom', fontsize=8, color='gray')
-
     if df_intervals.empty:
         ax.text(0.5, 0.5, "No Running Pods Found", transform=ax.transAxes, ha='center')
         ax.set_xlim(0, x_limit)
@@ -169,10 +166,11 @@ def plot_gantt(ax, df_intervals, title, x_limit, color_map, gaps=[]):
         )
         
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(unique_pods, fontsize=8)
+    ax.set_yticklabels(unique_pods, fontsize=12)
+    ax.tick_params(axis='x', labelsize=12)
     ax.set_ylim(-0.5, len(unique_pods) - 0.5)
     ax.set_xlim(0, x_limit)
-    ax.set_xlabel("Elapsed Time (s)")
+    ax.set_xlabel("Elapsed Time (s)", fontsize=12)
     ax.set_title(title, fontsize=12, fontweight='bold')
     ax.grid(True, axis='x', linestyle='--', alpha=0.5)
 
