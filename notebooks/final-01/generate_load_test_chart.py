@@ -66,16 +66,16 @@ def generate_chart():
     # X-Axis Labels
     # "Short" around 5-10, "Medium" around 40-50, "Very Long!" around 90-100
     ax.set_xticks([5, 40, 95])
-    ax.set_xticklabels(['Short', 'Medium', 'Very Long!'], color='darkgrey', fontsize=12)
+    ax.set_xticklabels(['Short', 'Medium', 'Very Long!'], color='#333333', fontsize=12)
     
     # Y-Axis Labels
     # "Few" (Smoke level), "Average" (Soak level), "Above Average" (Stress level), "Unrealistic" (Breakpoint max)
     ax.set_yticks([2, 4, 7, 10])
-    ax.set_yticklabels(['Few', 'Average', 'Above\nAverage', 'Unrealistic'], color='darkgrey', fontsize=12)
+    ax.set_yticklabels(['Few', 'Average', 'Above\nAverage', 'Unrealistic'], color='#333333', fontsize=12)
 
     # Main Labels
-    ax.set_xlabel('Duration', loc='right', fontsize=14, color='silver', fontweight='bold')
-    ax.set_ylabel('VUs/Throughput', loc='top', fontsize=14, color='silver', fontweight='bold', rotation=0)
+    ax.set_xlabel('Duration', loc='right', fontsize=14, color='#333333', fontweight='bold')
+    ax.set_ylabel('VUs/Throughput', loc='top', fontsize=14, color='#333333', fontweight='bold', rotation=0)
     ax.yaxis.set_label_coords(-0.05, 1.02) # Move Y label to top left
 
     # Title
