@@ -1351,13 +1351,14 @@ def latency_box_plot(
         palette=custom_palette,
     )
     plt.title(title, fontsize=14, fontweight="bold")
-    plt.ylabel("Latency (seconds)", fontsize=12)
-    plt.xlabel("Elapsed Time (s)", fontsize=12)
-    plt.yticks(fontsize=12)
+    plt.ylabel("Latency (seconds)", fontsize=14)
+    plt.xlabel("Environment", fontsize=14)
+    plt.xticks(fontsize=14)
+    plt.yticks(fontsize=14)
     
     if ax.get_legend():
-        plt.setp(ax.get_legend().get_texts(), fontsize='10')
-        plt.setp(ax.get_legend().get_title(), fontsize='10')
+        plt.setp(ax.get_legend().get_texts(), fontsize='14')
+        plt.setp(ax.get_legend().get_title(), fontsize='14')
 
     plt.grid(True, axis="y", linestyle="--", alpha=0.7)
     plt.tight_layout()
@@ -1521,13 +1522,13 @@ def latency_distribution_plot(
     )
 
     plt.title(title, fontsize=14, fontweight="bold")
-    plt.xlabel("Elapsed Time (s)", fontsize=12)
-    plt.ylabel("Density", fontsize=12)
-    plt.yticks(fontsize=12)
+    plt.xlabel("Latency", fontsize=14)
+    plt.ylabel("Density", fontsize=14)
+    plt.yticks(fontsize=14)
     
     if ax.get_legend():
-        plt.setp(ax.get_legend().get_texts(), fontsize='10')
-        plt.setp(ax.get_legend().get_title(), fontsize='10')
+        plt.setp(ax.get_legend().get_texts(), fontsize='14')
+        plt.setp(ax.get_legend().get_title(), fontsize='14')
 
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.tight_layout()
