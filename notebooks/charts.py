@@ -218,7 +218,6 @@ def cpu_chart(
 
 def cpu_chart_stacked(
     df: pd.DataFrame,
-    df_status: pd.DataFrame,
     node_cpu_limits={},
     title: str = "CPU Usage by Pod",
     save_path: str = None,
@@ -1344,14 +1343,22 @@ def latency_box_plot(
 
     # 4. Plot with Seaborn
     plt.figure(figsize=(8, 6))
-    sns.boxplot(
+    ax = sns.boxplot(
         data=df_boxplot,
         x="Environment",
         y=y,
+        hue="Environment",
         palette=custom_palette,
     )
-    plt.title(title)
-    plt.ylabel("Latency (seconds)")
+    plt.title(title, fontsize=14, fontweight="bold")
+    plt.ylabel("Latency (seconds)", fontsize=12)
+    plt.xlabel("Elapsed Time (s)", fontsize=12)
+    plt.yticks(fontsize=12)
+    
+    if ax.get_legend():
+        plt.setp(ax.get_legend().get_texts(), fontsize='10')
+        plt.setp(ax.get_legend().get_title(), fontsize='10')
+
     plt.grid(True, axis="y", linestyle="--", alpha=0.7)
     plt.tight_layout()
     if save_path:
@@ -1501,7 +1508,7 @@ def latency_distribution_plot(
     }
 
     plt.figure(figsize=(10, 6))
-    sns.kdeplot(
+    ax = sns.kdeplot(
         data=df_kde,
         x=x,
         hue="Environment",
@@ -1513,9 +1520,15 @@ def latency_distribution_plot(
         palette=custom_palette,
     )
 
-    plt.title(title)
-    plt.xlabel("Latency (seconds)")
-    plt.ylabel("Density")
+    plt.title(title, fontsize=14, fontweight="bold")
+    plt.xlabel("Elapsed Time (s)", fontsize=12)
+    plt.ylabel("Density", fontsize=12)
+    plt.yticks(fontsize=12)
+    
+    if ax.get_legend():
+        plt.setp(ax.get_legend().get_texts(), fontsize='10')
+        plt.setp(ax.get_legend().get_title(), fontsize='10')
+
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.tight_layout()
     if save_path:
