@@ -108,17 +108,46 @@ def get_pod_intervals(df, start_time_ref):
             
     return pd.DataFrame(intervals)
 
-def plot_gantt(ax, df_intervals, title, x_limit):
+def detect_prometheus_gaps(df, start_time_ref, threshold=45.0):
+    """
+    Detects gaps in Prometheus scrapes within the dataframe.
+    Returns list of dicts: {'start_offset': s, 'duration': s}
+    """
+    if df.empty:
+        return []
+        
+    timestamps = pd.Series(df.index.unique()).sort_values()
+    diffs = timestamps.diff().dt.total_seconds()
+    
+    gaps = []
+    gap_indices = diffs[diffs > threshold].index
+    
+    for idx in gap_indices:
+        t_end = timestamps[idx]
+        t_start = timestamps[idx-1]
+        
+        gaps.append({
+            'start_offset': (t_start - start_time_ref).total_seconds(),
+            'end_offset': (t_end - start_time_ref).total_seconds(),
+            'duration': (t_end - t_start).total_seconds()
+        })
+        
+    return gaps
+
+def plot_gantt(ax, df_intervals, title, x_limit, color_map, gaps=[]):
     """Plots a Gantt chart on the given axes."""
+    
+    # Plot gaps first (background)
+    for gap in gaps:
+        ax.axvspan(gap['start_offset'], gap['end_offset'], color='gray', alpha=0.3, label='Metric Gap' if 'Metric Gap' not in ax.get_legend_handles_labels()[1] else "")
+        # Add text annotation for the gap
+        ax.text(gap['start_offset'] + gap['duration']/2, ax.get_ylim()[1], "Gap", ha='center', va='bottom', fontsize=8, color='gray')
+
     if df_intervals.empty:
         ax.text(0.5, 0.5, "No Running Pods Found", transform=ax.transAxes, ha='center')
+        ax.set_xlim(0, x_limit)
         return
 
-    # Assign colors to namespaces
-    unique_namespaces = df_intervals['namespace'].unique()
-    palette = sns.color_palette("husl", len(unique_namespaces))
-    color_map = dict(zip(unique_namespaces, palette))
-    
     # Sort pods to group by namespace for better visuals
     df_intervals = df_intervals.sort_values(by=['namespace', 'pod'])
     
@@ -134,7 +163,7 @@ def plot_gantt(ax, df_intervals, title, x_limit):
             width=row['duration'], 
             left=row['start_offset'], 
             height=0.6, 
-            color=color_map[row['namespace']],
+            color=color_map.get(row['namespace'], 'black'), # Fallback to black if missing
             edgecolor='none',
             alpha=0.9
         )
@@ -148,8 +177,17 @@ def plot_gantt(ax, df_intervals, title, x_limit):
     ax.grid(True, axis='x', linestyle='--', alpha=0.5)
 
     # Add legend
-    handles = [plt.Rectangle((0,0),1,1, color=color_map[ns]) for ns in unique_namespaces]
-    ax.legend(handles, unique_namespaces, loc='upper right', fontsize='small')
+    # Only include namespaces present in this subplot
+    unique_namespaces = df_intervals['namespace'].unique()
+    handles = [plt.Rectangle((0,0),1,1, color=color_map[ns]) for ns in unique_namespaces if ns in color_map]
+    labels = [ns for ns in unique_namespaces if ns in color_map]
+    
+    if gaps:
+        handles.append(plt.Rectangle((0,0),1,1, color='gray', alpha=0.3))
+        labels.append("Metric Gap")
+        
+    ax.legend(handles, labels, loc='upper right', fontsize='small')
+
 
 import re
 
@@ -244,6 +282,15 @@ def main():
     print("Loading Cloud Data...")
     df_cloud = load_and_filter_data(CLOUD_PATH, start_cloud, end_cloud, NAMESPACES_OF_INTEREST)
     intervals_cloud = get_pod_intervals(df_cloud, start_cloud)
+    
+    # Reload raw cloud data to check gaps (before pod filtering)
+    df_cloud_raw = pd.read_parquet(CLOUD_PATH)
+    # Filter only by time for gap check
+    df_cloud_raw = df_cloud_raw[(df_cloud_raw.index >= start_cloud) & (df_cloud_raw.index <= end_cloud)]
+    gaps_cloud = detect_prometheus_gaps(df_cloud_raw, start_cloud)
+    if gaps_cloud:
+        print(f"Found {len(gaps_cloud)} gaps in Cloud metrics.")
+    
     if not intervals_cloud.empty:
         intervals_cloud['pod'] = intervals_cloud['pod'].apply(simplify_pod_name)
         # Filter for interested pods
@@ -255,6 +302,14 @@ def main():
     print("Loading Edge Data...")
     df_edge = load_and_filter_data(EDGE_PATH, start_edge, end_edge, NAMESPACES_OF_INTEREST)
     intervals_edge = get_pod_intervals(df_edge, start_edge)
+    
+    # Reload raw edge data to check gaps
+    df_edge_raw = pd.read_parquet(EDGE_PATH)
+    df_edge_raw = df_edge_raw[(df_edge_raw.index >= start_edge) & (df_edge_raw.index <= end_edge)]
+    gaps_edge = detect_prometheus_gaps(df_edge_raw, start_edge)
+    if gaps_edge:
+        print(f"Found {len(gaps_edge)} gaps in Edge metrics.")
+        
     if not intervals_edge.empty:
         intervals_edge['pod'] = intervals_edge['pod'].apply(simplify_pod_name)
         allowed_prefixes = ['kafka-broker', 'zookeeper', 'spark-driver', 'spark-executor', 'minio']
@@ -262,16 +317,24 @@ def main():
         
     print(f"Found {len(intervals_edge)} intervals for Edge.")
     
+    
     # Setup plot - Side by Side
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 6), sharey=True)
     
-    # Common Y-axis (Union of pods) to ensure alignment if sharing Y
-    # To make sharey work nicely, we should ideally have the same Y-axis categories.
-    # But for now, let's just plot them. If sharey=True, matplotlib handles it but might mask missing ones on one side.
-    # Let's trust sharey=True with the filtered list which should be very similar.
+    # Generate Global Color Map
+    all_namespaces = set()
+    if not intervals_cloud.empty:
+        all_namespaces.update(intervals_cloud['namespace'].unique())
+    if not intervals_edge.empty:
+        all_namespaces.update(intervals_edge['namespace'].unique())
     
-    plot_gantt(ax1, intervals_cloud, "Cloud Environment", max_duration)
-    plot_gantt(ax2, intervals_edge, "Edge Environment", max_duration)
+    # Sort for consistent color assignment across runs
+    sorted_namespaces = sorted(list(all_namespaces))
+    palette = sns.color_palette("husl", len(sorted_namespaces))
+    global_color_map = dict(zip(sorted_namespaces, palette))
+    
+    plot_gantt(ax1, intervals_cloud, "Cloud Environment", max_duration, global_color_map, gaps_cloud)
+    plot_gantt(ax2, intervals_edge, "Edge Environment", max_duration, global_color_map, gaps_edge)
     
     plt.tight_layout()
     plt.savefig(OUTPUT_FILE, dpi=400)
