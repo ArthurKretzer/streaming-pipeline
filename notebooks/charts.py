@@ -28,29 +28,36 @@ NODE_MEMORY_LIMITS = {
 }
 
 
-def calculate_rate(df: pd.DataFrame, value_col='value', columns:list[str]=["kubernetes_pod_name", "topic"]) -> pd.Series:
+def calculate_rate(
+    df: pd.DataFrame,
+    value_col="value",
+    columns: list[str] = ["kubernetes_pod_name", "topic"],
+) -> pd.Series:
     """Calculates the rate per second for counter metrics."""
     # Group by labels (topic, instance, etc.) to calculate rates correctly
     group_cols = columns
-    
+
     def get_rate(group):
         # Rate = (val_t2 - val_t1) / (time_t2 - time_t1 in seconds)
         delta_val = group[value_col].diff()
         delta_time = group.index.to_series().diff().dt.total_seconds()
-        
+
         # Avoid division by zero if timestamps are duplicate
-        delta_time = delta_time.replace(0, pd.NA).fillna(1.0) 
+        delta_time = delta_time.replace(0, pd.NA).fillna(1.0)
 
         rate = delta_val / delta_time
-        
+
         # Handle Prometheus counter resets
         reset_mask = delta_val < 0
         if reset_mask.any():
-            rate.loc[reset_mask] = group.loc[reset_mask, value_col] / delta_time.loc[reset_mask]
-            
+            rate.loc[reset_mask] = (
+                group.loc[reset_mask, value_col] / delta_time.loc[reset_mask]
+            )
+
         return rate
 
     return df.groupby(group_cols, group_keys=False).apply(get_rate)
+
 
 def annotate_spark_starts(
     ax,
@@ -146,17 +153,17 @@ def cpu_chart(
     # Ensure timestamp is index for calculate_rate
     df = df.set_index("timestamp")
     df["rate"] = calculate_rate(df, columns=["id"])
-    
+
     # Convert rate to percentage (if needed - original code did * 100)
     # The original code was: (val_diff / time_diff) * 100
     # calculate_rate returns val_diff / time_diff per second.
     # So we multiply by 100 to get percentage (assuming value is CPU seconds and we want percent of a core? Or usage in some unit?)
     # Original: (df["value_diff"] / df["time_diff"]) * 100
     df["rate"] = df["rate"] * 100
-    
+
     # Reset index to get timestamp back as column
     df = df.reset_index()
-    
+
     # Filter out NaNs/Inf if any
     df = df.dropna(subset=["rate"])
 
@@ -222,12 +229,10 @@ def cpu_chart_stacked(
     title: str = "CPU Usage by Pod",
     save_path: str = None,
 ):
-
     # === Step 1: Preprocess Raw Data ===
     df = df.sort_values(by=["id", "pod", "timestamp"]).dropna(subset="container")
     df["pod"] = df["pod"].apply(simplify_pod_name)
 
-    
     # Use calculate_rate
     df = df.set_index("timestamp")
     df["rate"] = calculate_rate(df, columns=["id"])
@@ -250,7 +255,9 @@ def cpu_chart_stacked(
         .reset_index()
     )
 
-    df_resampled["relative_time"] = (df_resampled["timestamp"] - df_resampled["timestamp"].min()).dt.total_seconds()
+    df_resampled["relative_time"] = (
+        df_resampled["timestamp"] - df_resampled["timestamp"].min()
+    ).dt.total_seconds()
 
     # === Step 3: Plotting Setup ===
     unique_pods = sorted(df_resampled["pod"].unique())
@@ -260,7 +267,9 @@ def cpu_chart_stacked(
         + list(plt.get_cmap("tab20b").colors)
         + list(plt.get_cmap("tab20c").colors)
     )
-    pod_color_map = {pod: palette[i % len(palette)] for i, pod in enumerate(unique_pods)}
+    pod_color_map = {
+        pod: palette[i % len(palette)] for i, pod in enumerate(unique_pods)
+    }
 
     fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(18, 12), sharex=True)
     axes = axes.flatten()
@@ -352,11 +361,14 @@ def cpu_chart_nodes(
 ):
     # === Helper to process CPU dataframe ===
     def process_cpu_df(df):
-
         df = df[df["node"] != "server-k8s-m01"]
 
-        df = df.sort_values(by=["id", "pod", "timestamp"]).dropna(subset="container").copy()
-        
+        df = (
+            df.sort_values(by=["id", "pod", "timestamp"])
+            .dropna(subset="container")
+            .copy()
+        )
+
         # Use calculate_rate
         df = df.set_index("timestamp")
         df["rate"] = calculate_rate(df, columns=["id"])
@@ -396,16 +408,12 @@ def cpu_chart_nodes(
 
     # === Plotting ===
     fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(14, 12), sharex=False)
-    
+
     datasets = [("Edge", df_node_total_edge), ("Cloud", df_node_total_cloud)]
-    
+
     for ax, (env_name, df_node_total) in zip(axes, datasets):
         for node in df_node_total.columns:
-            ax.plot(
-                df_node_total.index,
-                df_node_total[node],
-                label=node
-            )
+            ax.plot(df_node_total.index, df_node_total[node], label=node)
 
         ax.axhline(
             y=max_cpu * 100,
@@ -418,7 +426,7 @@ def cpu_chart_nodes(
         ax.set_ylabel("CPU Usage (%)")
         ax.legend(title="Node", loc="upper right")
         ax.grid(True)
-    
+
     axes[-1].set_xlabel("Time Elased (s)")
     plt.tight_layout()
     if save_path:
@@ -536,7 +544,9 @@ def memory_chart_stacked(
         .reset_index()
     )
 
-    memory_resampled["relative_time"] = (memory_resampled["timestamp"] - memory_resampled["timestamp"].min()).dt.total_seconds()
+    memory_resampled["relative_time"] = (
+        memory_resampled["timestamp"] - memory_resampled["timestamp"].min()
+    ).dt.total_seconds()
 
     # === Step 3: Color Palette ===
     unique_pods = sorted(memory_df["pod"].unique())
@@ -546,7 +556,9 @@ def memory_chart_stacked(
         + list(plt.get_cmap("tab20b").colors)
         + list(plt.get_cmap("tab20c").colors)
     )
-    pod_color_map = {pod: palette[i % len(palette)] for i, pod in enumerate(unique_pods)}
+    pod_color_map = {
+        pod: palette[i % len(palette)] for i, pod in enumerate(unique_pods)
+    }
 
     # === Step 4: Plotting ===
     fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(18, 12), sharex=False)
@@ -577,7 +589,9 @@ def memory_chart_stacked(
 
         # Reorder DataFrame and Colors
         pivot_df = pivot_df[sorted_pods]
-        colors_present = [pod_color_map[pod] for pod in sorted_pods if pod in pod_color_map]
+        colors_present = [
+            pod_color_map[pod] for pod in sorted_pods if pod in pod_color_map
+        ]
 
         ax.stackplot(
             pivot_df.index,
@@ -645,15 +659,17 @@ def memory_chart_nodes(
     def process_memory_df(df):
         if df.empty:
             return pd.DataFrame()
-        
+
         # Filter master node
         df = df[df["node"] != "server-k8s-m01"]
 
-        memory_df = df.sort_values(by=["timestamp", "pod"]).dropna(subset="container").copy()
-        
+        memory_df = (
+            df.sort_values(by=["timestamp", "pod"]).dropna(subset="container").copy()
+        )
+
         # Simplify pod names (good for consistency)
         memory_df["pod"] = memory_df["pod"].apply(simplify_pod_name)
-        
+
         # Convert bytes to GiB
         memory_df["memory_gib"] = memory_df["value"] / (1024**3)
 
@@ -661,7 +677,7 @@ def memory_chart_nodes(
         # memory_df["memory_gib_smoothed"] = memory_df.groupby("pod")["memory_gib"].transform(
         #     lambda x: x.rolling(window=3, min_periods=1).mean()
         # )
-        
+
         # Aggregate by node and resample
         memory_df["node"] = memory_df["node"].astype(str)
 
@@ -673,10 +689,12 @@ def memory_chart_nodes(
             .mean(numeric_only=True)
             .reset_index()
         )
-        
+
         # Calculate Relative Time (Elapsed Seconds)
         start_time = memory_resampled["timestamp"].min()
-        memory_resampled["relative_time"] = (memory_resampled["timestamp"] - start_time).dt.total_seconds()
+        memory_resampled["relative_time"] = (
+            memory_resampled["timestamp"] - start_time
+        ).dt.total_seconds()
 
         total_mem_per_node = (
             memory_resampled.groupby(["relative_time", "node"])["memory_gib"]
@@ -692,13 +710,13 @@ def memory_chart_nodes(
 
     # === Plotting ===
     # Sharex=True allows comparing timeline if they have similar duration
-    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(14, 12), sharex=False) 
-    
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(14, 12), sharex=False)
+
     datasets = [("Edge", df_node_total_edge), ("Cloud", df_node_total_cloud)]
-    
+
     for ax, (env_name, df_node_total) in zip(axes, datasets):
         if df_node_total.empty:
-            ax.text(0.5, 0.5, "No Data", ha='center', va='center')
+            ax.text(0.5, 0.5, "No Data", ha="center", va="center")
             ax.set_title(f"{env_name} - {title}")
             continue
 
@@ -720,7 +738,7 @@ def memory_chart_nodes(
         ax.set_ylabel("Memory Usage (GiB)")
         ax.legend(title="Node", loc="upper right")
         ax.grid(True)
-    
+
     axes[-1].set_xlabel("Elapsed Time (s)")
     plt.tight_layout()
     if save_path:
@@ -1320,19 +1338,19 @@ def latency_box_plot(
 
     dfs_to_concat = []
 
-    # 1. Prepare Cloud DataFrame if not empty
-    if not df_cloud.empty:
-        if y in df_cloud.columns:
-            df_cloud_box = df_cloud[[y]].copy()
-            df_cloud_box["Environment"] = "Cloud"
-            dfs_to_concat.append(df_cloud_box)
-
     # 2. Prepare Edge DataFrame if not empty
     if not df_edge.empty:
         if y in df_edge.columns:
             df_edge_box = df_edge[[y]].copy()
             df_edge_box["Environment"] = "Edge"
             dfs_to_concat.append(df_edge_box)
+
+    # 1. Prepare Cloud DataFrame if not empty
+    if not df_cloud.empty:
+        if y in df_cloud.columns:
+            df_cloud_box = df_cloud[[y]].copy()
+            df_cloud_box["Environment"] = "Cloud"
+            dfs_to_concat.append(df_cloud_box)
 
     # 3. Concatenate if we have data
     if not dfs_to_concat:
@@ -1355,10 +1373,10 @@ def latency_box_plot(
     plt.xlabel("Environment", fontsize=14)
     plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
-    
+
     if ax.get_legend():
-        plt.setp(ax.get_legend().get_texts(), fontsize='14')
-        plt.setp(ax.get_legend().get_title(), fontsize='14')
+        plt.setp(ax.get_legend().get_texts(), fontsize="14")
+        plt.setp(ax.get_legend().get_title(), fontsize="14")
 
     plt.grid(True, axis="y", linestyle="--", alpha=0.7)
     plt.tight_layout()
@@ -1403,7 +1421,7 @@ def _downsample_for_plot(df: pd.DataFrame, x: str, y: str, rule: str) -> pd.Data
     # Flatten the result: we want rows for min, mean, and max
     # The columns are currently a MultiIndex: (y, 'min'), (y, 'mean'), (y, 'max')
     # We will extract each and concatenate them.
-    
+
     dfs = []
     for stat in ["min", "mean", "max"]:
         temp = resampled[(y, stat)].reset_index()
@@ -1498,7 +1516,9 @@ def latency_distribution_plot(
 
     df_kde = pd.concat(dfs_to_concat, ignore_index=True)
 
-    stats = df_kde.groupby("Environment")[x].agg(["min", "max", "mean", "median", "std"])
+    stats = df_kde.groupby("Environment")[x].agg(
+        ["min", "max", "mean", "median", "std"]
+    )
     print("📊 Statistics:")
     print(stats)
 
@@ -1525,10 +1545,10 @@ def latency_distribution_plot(
     plt.xlabel("Latency", fontsize=14)
     plt.ylabel("Density", fontsize=14)
     plt.yticks(fontsize=14)
-    
+
     if ax.get_legend():
-        plt.setp(ax.get_legend().get_texts(), fontsize='14')
-        plt.setp(ax.get_legend().get_title(), fontsize='14')
+        plt.setp(ax.get_legend().get_texts(), fontsize="14")
+        plt.setp(ax.get_legend().get_title(), fontsize="14")
 
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.tight_layout()
